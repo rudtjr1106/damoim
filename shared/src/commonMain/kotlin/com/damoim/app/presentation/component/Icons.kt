@@ -4,7 +4,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -24,13 +26,11 @@ fun KakaoBubbleIcon(tint: Color, modifier: Modifier = Modifier.size(20.dp)) {
         val w = size.width
         val h = size.height
         val path = Path().apply {
-            // 둥근 말풍선 몸통
             addOval(
                 androidx.compose.ui.geometry.Rect(
                     left = w * 0.1f, top = h * 0.16f, right = w * 0.9f, bottom = h * 0.72f,
                 ),
             )
-            // 말풍선 꼬리
             moveTo(w * 0.32f, h * 0.62f)
             lineTo(w * 0.24f, h * 0.86f)
             lineTo(w * 0.46f, h * 0.66f)
@@ -40,7 +40,7 @@ fun KakaoBubbleIcon(tint: Color, modifier: Modifier = Modifier.size(20.dp)) {
     }
 }
 
-/** 체크 표시(동의 항목·완료). */
+/** 체크 표시(완료). */
 @Composable
 fun CheckIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp), strokeWidth: Float = 2.2f) {
     Canvas(modifier) {
@@ -87,5 +87,29 @@ fun ExclamationIcon(tint: Color, modifier: Modifier = Modifier.size(28.dp), stro
             cap = StrokeCap.Round,
         )
         drawCircle(color = tint, radius = strokeWidth * density * 0.7f, center = Offset(cx, size.height * 0.74f))
+    }
+}
+
+/** 카메라(프로필 사진 편집 배지). 외곽선 스타일이라 어떤 배경에서도 또렷하다. */
+@Composable
+fun CameraIcon(tint: Color, modifier: Modifier = Modifier.size(16.dp), strokeWidth: Float = 1.6f) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val sw = strokeWidth * density
+        // 몸체
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(w * 0.12f, h * 0.34f),
+            size = Size(w * 0.76f, h * 0.44f),
+            cornerRadius = CornerRadius(w * 0.12f, w * 0.12f),
+            style = Stroke(width = sw),
+        )
+        // 상단 뷰파인더 돌기
+        drawLine(tint, Offset(w * 0.40f, h * 0.34f), Offset(w * 0.45f, h * 0.24f), sw, cap = StrokeCap.Round)
+        drawLine(tint, Offset(w * 0.60f, h * 0.34f), Offset(w * 0.55f, h * 0.24f), sw, cap = StrokeCap.Round)
+        drawLine(tint, Offset(w * 0.45f, h * 0.24f), Offset(w * 0.55f, h * 0.24f), sw, cap = StrokeCap.Round)
+        // 렌즈
+        drawCircle(color = tint, radius = w * 0.13f, center = Offset(w * 0.5f, h * 0.56f), style = Stroke(width = sw))
     }
 }

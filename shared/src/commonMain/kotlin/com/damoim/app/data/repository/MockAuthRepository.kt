@@ -19,12 +19,14 @@ class MockAuthRepository : AuthRepository {
 
     override suspend fun updateProfile(
         nickname: String,
+        contact: String,
         profileImageUrl: String?,
     ): DataResult<AuthUser> {
         delay(NETWORK_DELAY_MS)
         return DataResult.Success(
             MockData.kakaoUser.copy(
                 nickname = nickname,
+                contact = contact,
                 profileImageUrl = profileImageUrl,
                 needsProfileSetup = false,
             ),

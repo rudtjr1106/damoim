@@ -67,6 +67,7 @@ fun KakaoButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    loading: Boolean = false,
 ) {
     val colors = DamoimTheme.colors
     Row(
@@ -76,6 +77,7 @@ fun KakaoButton(
             .clip(RoundedCornerShape(14.dp))
             .background(colors.kakao)
             .clickable(
+                enabled = !loading,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick,
@@ -83,13 +85,21 @@ fun KakaoButton(
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        KakaoBubbleIcon(tint = colors.onKakao, modifier = Modifier.size(20.dp))
-        Text(
-            text = text,
-            style = DamoimTheme.typography.button,
-            color = colors.onKakao,
-            modifier = Modifier.padding(start = 8.dp),
-        )
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(22.dp),
+                color = colors.onKakao,
+                strokeWidth = 2.dp,
+            )
+        } else {
+            KakaoBubbleIcon(tint = colors.onKakao, modifier = Modifier.size(20.dp))
+            Text(
+                text = text,
+                style = DamoimTheme.typography.button,
+                color = colors.onKakao,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
     }
 }
 

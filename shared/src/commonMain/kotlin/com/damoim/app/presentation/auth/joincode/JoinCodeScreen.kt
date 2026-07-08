@@ -19,48 +19,77 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.domain.model.Club
 import com.damoim.app.domain.usecase.SubmitJoinCodeUseCase
 import com.damoim.app.presentation.component.BackTopBar
 import com.damoim.app.presentation.component.PrimaryButton
+import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
 /**
- * 화면 03 가입 코드 입력. 6자리 세그먼트 입력 → 신청.
+ * 화면 03 가입 코드 입력 — Route(상태·이벤트·네비게이션).
  */
 @Composable
-fun JoinCodeScreen(
-    onBack: () -> Unit,
-    onNavigateComplete: (com.damoim.app.domain.model.Club) -> Unit,
-    onNavigateRejected: (com.damoim.app.domain.model.Club, String) -> Unit,
+fun JoinCodeRoute(
     viewModel: JoinCodeViewModel = viewModel { JoinCodeViewModel(AppGraph.submitJoinCodeUseCase) },
+    onBack: () -> Unit = {},
+    onNavigateComplete: (Club) -> Unit = {},
+    onNavigateRejected: (Club, String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsState()
-    val colors = DamoimTheme.colors
-    val focusRequester = remember { FocusRequester() }
 
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+    LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {
                 is JoinCodeSideEffect.NavigateToComplete -> onNavigateComplete(effect.club)
                 is JoinCodeSideEffect.NavigateToRejected -> onNavigateRejected(effect.club, effect.reason)
             }
         }
+    }
+
+    JoinCodeScreen(
+        state = state,
+        onBack = onBack,
+        onCodeChange = viewModel::onCodeChange,
+        onSubmit = viewModel::onSubmit,
+    )
+}
+
+/**
+ * 화면 03 가입 코드 입력 — Screen(무상태 UI). 6자리 세그먼트 입력.
+ */
+@Composable
+fun JoinCodeScreen(
+    state: JoinCodeUiState = JoinCodeUiState(),
+    onBack: () -> Unit = {},
+    onCodeChange: (String) -> Unit = {},
+    onSubmit: () -> Unit = {},
+) {
+    val colors = DamoimTheme.colors
+    val focusRequester = remember { FocusRequester() }
+    val inInspection = LocalInspectionMode.current
+
+    // 프리뷰(inspection)에서는 미부착 FocusRequester 크래시 방지를 위해 요청하지 않음
+    LaunchedEffect(Unit) {
+        if (!inInspection) focusRequester.requestFocus()
     }
 
     Column(
@@ -70,20 +99,16 @@ fun JoinCodeScreen(
 
         Column(Modifier.padding(horizontal = 24.dp)) {
             Spacer(Modifier.height(8.dp))
-            Text("가입 코드를\n입력해주세요", style = DamoimTheme.typography.headline, color = colors.textPrimary)
+            Text(DamoimStrings.JOINCODE_TITLE, style = DamoimTheme.typography.headline, color = colors.textPrimary)
             Spacer(Modifier.height(8.dp))
-            Text(
-                "동아리장에게 받은 6자리 코드를 입력하면\n가입 신청이 전달돼요",
-                style = DamoimTheme.typography.body,
-                color = colors.textMuted,
-            )
+            Text(DamoimStrings.JOINCODE_SUBTITLE, style = DamoimTheme.typography.body, color = colors.textMuted)
             Spacer(Modifier.height(28.dp))
 
             CodeCells(
                 code = state.code,
                 focusRequester = focusRequester,
-                onChange = viewModel::onCodeChange,
-                onSubmit = viewModel::onSubmit,
+                onChange = onCodeChange,
+                onSubmit = onSubmit,
                 isError = state.errorMessage != null,
             )
             Spacer(Modifier.height(12.dp))
@@ -91,9 +116,8 @@ fun JoinCodeScreen(
                 Text(it, style = DamoimTheme.typography.caption, color = colors.error, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                 Spacer(Modifier.height(4.dp))
             }
-            // 데모용 코드 안내 (서버 연동 시 제거)
             Text(
-                "테스트 코드 — DAMOIM: 신청 완료 · REJECT: 거절 · EXPIRE: 오류",
+                DamoimStrings.JOINCODE_TEST_HINT,
                 style = DamoimTheme.typography.label,
                 color = colors.textDisabled,
                 textAlign = TextAlign.Center,
@@ -104,8 +128,8 @@ fun JoinCodeScreen(
         Spacer(Modifier.weight(1f))
         Column(Modifier.padding(horizontal = 24.dp)) {
             PrimaryButton(
-                text = "가입 신청하기",
-                onClick = viewModel::onSubmit,
+                text = DamoimStrings.JOINCODE_SUBMIT,
+                onClick = onSubmit,
                 enabled = state.canSubmit,
                 loading = state.isSubmitting,
             )
@@ -124,7 +148,6 @@ private fun CodeCells(
 ) {
     val colors = DamoimTheme.colors
     Box {
-        // 보이지 않는 입력 필드가 포커스/키보드를 담당 (셀은 decoration으로 렌더)
         BasicTextField(
             value = code,
             onValueChange = onChange,
@@ -164,4 +187,10 @@ private fun CodeCells(
             },
         )
     }
+}
+
+@Preview
+@Composable
+private fun JoinCodeScreenPreview() {
+    DamoimTheme { JoinCodeScreen(state = JoinCodeUiState(code = "DA3")) }
 }

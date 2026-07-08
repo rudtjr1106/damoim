@@ -9,22 +9,60 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.damoim.app.core.di.AppGraph
 import com.damoim.app.presentation.component.DamoimLogoMark
 import com.damoim.app.presentation.component.KakaoButton
-import androidx.compose.material3.Text
+import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
 /**
- * 화면 01 로그인 / 온보딩. 브랜드 배경 + 로고 + 카카오 시작하기.
+ * 화면 01 로그인/온보딩 — Route(상태·이벤트·네비게이션).
+ * 카카오 로그인을 직접 수행하고 결과에 따라 프로필 설정/시작하기로 이동한다.
+ */
+@Composable
+fun LoginRoute(
+    viewModel: LoginViewModel = viewModel { LoginViewModel(AppGraph.loginWithKakaoUseCase) },
+    onNavigateProfileSetup: () -> Unit = {},
+    onNavigateStart: () -> Unit = {},
+    onShowError: (String) -> Unit = {},
+) {
+    val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(viewModel) {
+        viewModel.sideEffect.collect { effect ->
+            when (effect) {
+                LoginSideEffect.NavigateToProfileSetup -> onNavigateProfileSetup()
+                LoginSideEffect.NavigateToStart -> onNavigateStart()
+                is LoginSideEffect.ShowError -> onShowError(effect.message)
+            }
+        }
+    }
+
+    LoginScreen(
+        isLoading = state.isLoading,
+        onKakaoClick = viewModel::onKakaoLogin,
+    )
+}
+
+/**
+ * 화면 01 로그인/온보딩 — Screen(무상태 UI). 브랜드 배경 + 로고 + 카카오 시작하기.
  */
 @Composable
 fun LoginScreen(
-    onKakaoClick: () -> Unit,
+    isLoading: Boolean = false,
+    onKakaoClick: () -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     Column(
@@ -35,7 +73,6 @@ fun LoginScreen(
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // 로고 + 서비스명 (중앙)
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center,
@@ -43,25 +80,30 @@ fun LoginScreen(
         ) {
             DamoimLogoMark(modifier = Modifier.size(88.dp), onBrand = true)
             Spacer(Modifier.height(20.dp))
-            Text(text = "다모임", style = DamoimTheme.typography.display, color = colors.onPrimary)
+            Text(text = DamoimStrings.APP_NAME, style = DamoimTheme.typography.display, color = colors.onPrimary)
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "우리 동아리의 모든 것을\n한곳에서",
-                style = DamoimTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Normal),
+                text = DamoimStrings.LOGIN_TAGLINE,
+                style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal),
                 color = colors.onPrimary.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
             )
         }
 
-        // 하단 CTA
-        KakaoButton(text = "카카오로 시작하기", onClick = onKakaoClick)
+        KakaoButton(text = DamoimStrings.LOGIN_KAKAO_START, onClick = onKakaoClick, loading = isLoading)
         Spacer(Modifier.height(12.dp))
         Text(
-            text = "로그인 후 가입 코드로 동아리에 참여할 수 있어요\n시작하면 이용약관 및 개인정보 처리방침에 동의하게 됩니다",
+            text = DamoimStrings.LOGIN_FOOTER,
             style = DamoimTheme.typography.caption,
             color = colors.onPrimary.copy(alpha = 0.55f),
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 40.dp),
         )
     }
+}
+
+@Preview
+@Composable
+private fun LoginScreenPreview() {
+    DamoimTheme { LoginScreen() }
 }

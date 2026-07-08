@@ -1,9 +1,12 @@
 package com.damoim.app.presentation.auth.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,35 +14,43 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.domain.usecase.UpdateProfileUseCase
+import com.damoim.app.presentation.component.CameraIcon
+import com.damoim.app.presentation.component.DamoimTextField
 import com.damoim.app.presentation.component.InitialAvatar
 import com.damoim.app.presentation.component.PrimaryButton
+import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
 /**
- * 화면 31 프로필 설정(가입 직후). 아바타 + 닉네임 입력 + 완료 CTA.
+ * 화면 31 프로필 설정 — Route(상태·이벤트·네비게이션).
  */
 @Composable
-fun ProfileSetupScreen(
-    onNavigateStart: () -> Unit,
+fun ProfileSetupRoute(
     viewModel: ProfileSetupViewModel = viewModel { ProfileSetupViewModel(AppGraph.updateProfileUseCase) },
+    onNavigateStart: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
-    val colors = DamoimTheme.colors
 
-    androidx.compose.runtime.LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {
                 ProfileSetupSideEffect.NavigateToStart -> onNavigateStart()
@@ -47,6 +58,28 @@ fun ProfileSetupScreen(
         }
     }
 
+    ProfileSetupScreen(
+        state = state,
+        onNicknameChange = viewModel::onNicknameChange,
+        onContactChange = viewModel::onContactChange,
+        onSubmit = viewModel::onSubmit,
+        // 실제 사진 선택은 플랫폼 이미지 피커(expect/actual) 연동 시 구현. 지금은 UI만.
+        onPickPhoto = {},
+    )
+}
+
+/**
+ * 화면 31 프로필 설정 — Screen(무상태 UI). 프로필 사진 + 이름(카운터) + 연락처 + 완료.
+ */
+@Composable
+fun ProfileSetupScreen(
+    state: ProfileSetupUiState = ProfileSetupUiState(),
+    onNicknameChange: (String) -> Unit = {},
+    onContactChange: (String) -> Unit = {},
+    onSubmit: () -> Unit = {},
+    onPickPhoto: () -> Unit = {},
+) {
+    val colors = DamoimTheme.colors
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -55,25 +88,47 @@ fun ProfileSetupScreen(
             .padding(horizontal = 24.dp),
     ) {
         Spacer(Modifier.height(40.dp))
-        Text("거의 다 왔어요!\n프로필을 설정해주세요", style = DamoimTheme.typography.headline, color = colors.textPrimary)
+        Text(DamoimStrings.PROFILE_TITLE, style = DamoimTheme.typography.headline, color = colors.textPrimary)
         Spacer(Modifier.height(8.dp))
-        Text("동아리에서 사용할 이름이에요", style = DamoimTheme.typography.body, color = colors.textMuted)
+        Text(DamoimStrings.PROFILE_SUBTITLE, style = DamoimTheme.typography.body, color = colors.textMuted)
 
-        Spacer(Modifier.height(32.dp))
-        InitialAvatar(
-            initial = state.nickname.ifBlank { "다" },
-            modifier = Modifier.size(96.dp).align(Alignment.CenterHorizontally),
+        // 프로필 사진 (아바타 + 카메라 편집 배지)
+        Spacer(Modifier.height(28.dp))
+        ProfilePhoto(
+            initial = state.nickname.ifBlank { DamoimStrings.PROFILE_AVATAR_FALLBACK },
+            onPickPhoto = onPickPhoto,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
 
-        Spacer(Modifier.height(32.dp))
-        // 닉네임 입력 필드
-        Text("이름", style = DamoimTheme.typography.bodySmall, color = colors.textSecondary)
+        // 이름 (실명 권장) * + 글자수 카운터
+        Spacer(Modifier.height(28.dp))
+        FieldLabel(
+            label = DamoimStrings.PROFILE_NICKNAME_LABEL,
+            required = true,
+            counter = DamoimStrings.charCounter(state.nickname.length, UpdateProfileUseCase.MAX_NICKNAME_LENGTH),
+        )
         Spacer(Modifier.height(8.dp))
-        NicknameField(
+        DamoimTextField(
             value = state.nickname,
-            onValueChange = viewModel::onNicknameChange,
-            onSubmit = viewModel::onSubmit,
+            onValueChange = onNicknameChange,
+            placeholder = DamoimStrings.PROFILE_NICKNAME_PLACEHOLDER,
+            isError = state.errorMessage != null,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         )
+
+        // 연락처 *
+        Spacer(Modifier.height(20.dp))
+        FieldLabel(label = DamoimStrings.PROFILE_CONTACT_LABEL, required = true)
+        Spacer(Modifier.height(8.dp))
+        DamoimTextField(
+            value = state.contact,
+            onValueChange = onContactChange,
+            placeholder = DamoimStrings.PROFILE_CONTACT_PLACEHOLDER,
+            isError = state.errorMessage != null,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+        )
+
         state.errorMessage?.let {
             Spacer(Modifier.height(8.dp))
             Text(it, style = DamoimTheme.typography.caption, color = colors.error)
@@ -81,8 +136,8 @@ fun ProfileSetupScreen(
 
         Spacer(Modifier.weight(1f))
         PrimaryButton(
-            text = "완료",
-            onClick = viewModel::onSubmit,
+            text = DamoimStrings.COMMON_DONE,
+            onClick = onSubmit,
             enabled = state.canSubmit,
             loading = state.isSaving,
         )
@@ -90,35 +145,60 @@ fun ProfileSetupScreen(
     }
 }
 
+/** 입력 라벨 행: 라벨 + 필수(*) + 우측 글자수 카운터(선택). */
 @Composable
-private fun NicknameField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    onSubmit: () -> Unit,
+private fun FieldLabel(
+    label: String,
+    required: Boolean = false,
+    counter: String? = null,
 ) {
     val colors = DamoimTheme.colors
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(colors.surfaceInput)
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-        contentAlignment = Alignment.CenterStart,
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = DamoimTheme.typography.titleMedium.copy(color = colors.textPrimary),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(colors.primary),
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onSubmit() }),
-            decorationBox = { inner ->
-                if (value.isEmpty()) {
-                    Text("이름을 입력해주세요", style = DamoimTheme.typography.titleMedium, color = colors.textDisabled)
-                }
-                inner()
-            },
-        )
+        Text(label, style = DamoimTheme.typography.bodySmall, color = colors.textSecondary)
+        if (required) {
+            Text(" ${DamoimStrings.REQUIRED_MARK}", style = DamoimTheme.typography.bodySmall, color = colors.primary)
+        }
+        Spacer(Modifier.weight(1f))
+        if (counter != null) {
+            Text(counter, style = DamoimTheme.typography.caption, color = colors.textDisabled)
+        }
     }
+}
+
+/** 프로필 사진: 이니셜 아바타 위에 카메라 편집 배지를 겹친 형태. */
+@Composable
+private fun ProfilePhoto(
+    initial: String,
+    onPickPhoto: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = DamoimTheme.colors
+    Box(modifier = modifier.size(96.dp)) {
+        InitialAvatar(initial = initial, modifier = Modifier.size(96.dp))
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(30.dp)
+                .clip(CircleShape)
+                .background(colors.primary)
+                .border(2.dp, colors.surface, CircleShape)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onPickPhoto,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            CameraIcon(tint = colors.onPrimary, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun ProfileSetupScreenPreview() {
+    DamoimTheme { ProfileSetupScreen() }
 }

@@ -9,8 +9,7 @@ import com.damoim.app.domain.model.Club
  * 백스택으로 관리한다. 데이터가 필요한 화면(완료/거절)은 파라미터를 직접 담는다.
  */
 sealed interface AuthDestination {
-    data object Login : AuthDestination              // 01
-    data object KakaoConsent : AuthDestination       // 02
+    data object Login : AuthDestination              // 01 (로그인 수행 포함)
     data object ProfileSetup : AuthDestination       // 31
     data object Start : AuthDestination              // 32
     data object JoinCode : AuthDestination           // 03

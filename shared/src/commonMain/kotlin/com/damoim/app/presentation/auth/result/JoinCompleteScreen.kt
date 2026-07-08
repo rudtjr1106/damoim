@@ -2,7 +2,6 @@ package com.damoim.app.presentation.auth.result
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,19 +21,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.damoim.app.domain.model.Club
 import com.damoim.app.presentation.component.CheckIcon
 import com.damoim.app.presentation.component.PrimaryButton
+import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
+/** 프리뷰/기본값용 샘플 동아리. */
+internal val PreviewClub = Club(
+    id = 10L,
+    name = "UMC 앱디자인 동아리",
+    category = "IT · 개발",
+    description = "매 기수 실제 앱을 함께 만드는 동아리",
+    memberCount = 28,
+    emblemColor = 0xFF2F6DD3,
+)
+
 /**
- * 화면 04 가입 신청 완료. 신청한 동아리 요약 + 승인 대기 안내.
+ * 화면 04 가입 신청 완료 — Route(네비게이션).
+ */
+@Composable
+fun JoinCompleteRoute(
+    club: Club = PreviewClub,
+    onConfirm: () -> Unit = {},
+) {
+    JoinCompleteScreen(club = club, onConfirm = onConfirm)
+}
+
+/**
+ * 화면 04 가입 신청 완료 — Screen(무상태 UI). 동아리 요약 + 승인 대기 안내.
  */
 @Composable
 fun JoinCompleteScreen(
-    club: Club,
-    onConfirm: () -> Unit,
+    club: Club = PreviewClub,
+    onConfirm: () -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     Column(
@@ -49,10 +71,10 @@ fun JoinCompleteScreen(
         ) { CheckIcon(tint = colors.primary, modifier = Modifier.size(40.dp), strokeWidth = 2.6f) }
 
         Spacer(Modifier.height(24.dp))
-        Text("가입 신청 완료!", style = DamoimTheme.typography.headline, color = colors.textPrimary)
+        Text(DamoimStrings.JOIN_COMPLETE_TITLE, style = DamoimTheme.typography.headline, color = colors.textPrimary)
         Spacer(Modifier.height(8.dp))
         Text(
-            "동아리장이 신청을 확인하고 있어요\n승인되면 알림으로 알려드릴게요",
+            DamoimStrings.JOIN_COMPLETE_MESSAGE,
             style = DamoimTheme.typography.body,
             color = colors.textMuted,
             textAlign = TextAlign.Center,
@@ -62,7 +84,7 @@ fun JoinCompleteScreen(
         ClubSummaryCard(club)
 
         Spacer(Modifier.weight(1f))
-        PrimaryButton(text = "확인", onClick = onConfirm)
+        PrimaryButton(text = DamoimStrings.COMMON_CONFIRM, onClick = onConfirm)
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -90,10 +112,16 @@ internal fun ClubSummaryCard(club: Club) {
             Text(club.name, style = DamoimTheme.typography.titleMedium, color = colors.textPrimary)
             Spacer(Modifier.height(2.dp))
             Text(
-                "${club.category} · 멤버 ${club.memberCount}명",
+                DamoimStrings.clubMeta(club.category, club.memberCount),
                 style = DamoimTheme.typography.caption,
                 color = colors.textMuted,
             )
         }
     }
+}
+
+@Preview
+@Composable
+private fun JoinCompleteScreenPreview() {
+    DamoimTheme { JoinCompleteScreen() }
 }
