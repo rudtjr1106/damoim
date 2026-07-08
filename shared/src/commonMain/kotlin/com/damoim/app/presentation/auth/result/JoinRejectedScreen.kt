@@ -19,7 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.damoim.app.domain.model.Club
-import com.damoim.app.presentation.component.ExclamationIcon
+import com.damoim.app.presentation.component.CloseIcon
 import com.damoim.app.presentation.component.PrimaryButton
 import com.damoim.app.presentation.component.SecondaryTextButton
 import com.damoim.app.presentation.theme.DamoimStrings
@@ -60,7 +60,7 @@ fun JoinRejectedScreen(
         Box(
             modifier = Modifier.size(88.dp).clip(CircleShape).background(colors.errorContainer),
             contentAlignment = Alignment.Center,
-        ) { ExclamationIcon(tint = colors.error, modifier = Modifier.size(40.dp), strokeWidth = 2.8f) }
+        ) { CloseIcon(tint = colors.error, modifier = Modifier.size(40.dp)) }
 
         Spacer(Modifier.height(24.dp))
         Text(DamoimStrings.JOIN_REJECTED_TITLE, style = DamoimTheme.typography.headline, color = colors.textPrimary)

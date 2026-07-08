@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <!-- 경고 삼각형 -->
+  <path
+      android:strokeColor="#000000"
+      android:strokeWidth="1.9"
+      android:strokeLineJoin="round"
+      android:pathData="M12,3.5 L2.5,20 h19 z"/>
+  <!-- 느낌표 획 -->
+  <path
+      android:strokeColor="#000000"
+      android:strokeWidth="1.9"
+      android:strokeLineCap="round"
+      android:pathData="M12,10 V14"/>
+  <!-- 느낌표 점 -->
+  <path
+      android:strokeColor="#000000"
+      android:strokeWidth="1.9"
+      android:strokeLineCap="round"
+      android:pathData="M12,16.8 V17.2"/>
+</vector>

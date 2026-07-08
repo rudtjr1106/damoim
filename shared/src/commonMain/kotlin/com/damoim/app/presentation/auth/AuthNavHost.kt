@@ -57,6 +57,7 @@ fun AuthNavHost() {
 
             AuthDestination.JoinCode -> JoinCodeRoute(
                 onBack = { back() },
+                onCreateClub = { toast = DamoimStrings.TOAST_CREATE_CLUB_TODO },
                 onNavigateComplete = { club -> navigate(AuthDestination.JoinComplete(club)) },
                 onNavigateRejected = { club, reason -> navigate(AuthDestination.JoinRejected(club, reason)) },
             )

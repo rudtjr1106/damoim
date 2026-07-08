@@ -1,115 +1,69 @@
 package com.damoim.app.presentation.component
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.painterResource
+import damoim.shared.generated.resources.Res
+import damoim.shared.generated.resources.ic_camera
+import damoim.shared.generated.resources.ic_check
+import damoim.shared.generated.resources.ic_chevron_left
+import damoim.shared.generated.resources.ic_chevron_right
+import damoim.shared.generated.resources.ic_close
+import damoim.shared.generated.resources.ic_info
+import damoim.shared.generated.resources.ic_lock
+import damoim.shared.generated.resources.ic_people
+import damoim.shared.generated.resources.ic_plus
+import damoim.shared.generated.resources.ic_warning
 
 /**
- * 디자인의 인라인 SVG 아이콘들을 Canvas로 옮긴 것.
- * 아이콘 폰트/외부 리소스 의존 없이 commonMain에서 동작하도록 최소한만 직접 그린다.
+ * 아이콘 = composeResources/drawable 의 벡터 드로어블(디자인 원본 SVG path 기반)을 tint해서 렌더.
+ *
+ * 각 함수는 얇은 래퍼로, `tint`로 색을 지정하고 `modifier.size`로 크기를 정한다.
+ * 새 아이콘은 drawable/ic_*.xml 추가 후 여기 래퍼만 한 줄 늘리면 된다.
  */
 
-/** 카카오 말풍선. */
 @Composable
-fun KakaoBubbleIcon(tint: Color, modifier: Modifier = Modifier.size(20.dp)) {
-    Canvas(modifier) {
-        val w = size.width
-        val h = size.height
-        val path = Path().apply {
-            addOval(
-                androidx.compose.ui.geometry.Rect(
-                    left = w * 0.1f, top = h * 0.16f, right = w * 0.9f, bottom = h * 0.72f,
-                ),
-            )
-            moveTo(w * 0.32f, h * 0.62f)
-            lineTo(w * 0.24f, h * 0.86f)
-            lineTo(w * 0.46f, h * 0.66f)
-            close()
-        }
-        drawPath(path, color = tint)
-    }
-}
+fun CheckIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp)) =
+    Icon(painterResource(Res.drawable.ic_check), contentDescription = null, tint = tint, modifier = modifier)
 
-/** 체크 표시(완료). */
 @Composable
-fun CheckIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp), strokeWidth: Float = 2.2f) {
-    Canvas(modifier) {
-        val path = Path().apply {
-            moveTo(size.width * 0.22f, size.height * 0.53f)
-            lineTo(size.width * 0.42f, size.height * 0.72f)
-            lineTo(size.width * 0.80f, size.height * 0.30f)
-        }
-        drawPath(
-            path = path,
-            color = tint,
-            style = Stroke(width = strokeWidth * density, cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
-    }
-}
+fun BackChevronIcon(tint: Color, modifier: Modifier = Modifier.size(24.dp)) =
+    Icon(painterResource(Res.drawable.ic_chevron_left), contentDescription = null, tint = tint, modifier = modifier)
 
-/** 뒤로가기 셰브론 (‹). */
 @Composable
-fun BackChevronIcon(tint: Color, modifier: Modifier = Modifier.size(24.dp), strokeWidth: Float = 1.8f) {
-    Canvas(modifier) {
-        val path = Path().apply {
-            moveTo(size.width * 0.62f, size.height * 0.22f)
-            lineTo(size.width * 0.34f, size.height * 0.5f)
-            lineTo(size.width * 0.62f, size.height * 0.78f)
-        }
-        drawPath(
-            path = path,
-            color = tint,
-            style = Stroke(width = strokeWidth * density, cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
-    }
-}
+fun ChevronRightIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp)) =
+    Icon(painterResource(Res.drawable.ic_chevron_right), contentDescription = null, tint = tint, modifier = modifier)
 
-/** 느낌표(거절/오류 상태 아이콘 내부). */
 @Composable
-fun ExclamationIcon(tint: Color, modifier: Modifier = Modifier.size(28.dp), strokeWidth: Float = 2.4f) {
-    Canvas(modifier) {
-        val cx = size.width / 2f
-        drawLine(
-            color = tint,
-            start = Offset(cx, size.height * 0.24f),
-            end = Offset(cx, size.height * 0.58f),
-            strokeWidth = strokeWidth * density,
-            cap = StrokeCap.Round,
-        )
-        drawCircle(color = tint, radius = strokeWidth * density * 0.7f, center = Offset(cx, size.height * 0.74f))
-    }
-}
+fun PlusIcon(tint: Color, modifier: Modifier = Modifier.size(21.dp)) =
+    Icon(painterResource(Res.drawable.ic_plus), contentDescription = null, tint = tint, modifier = modifier)
 
-/** 카메라(프로필 사진 편집 배지). 외곽선 스타일이라 어떤 배경에서도 또렷하다. */
 @Composable
-fun CameraIcon(tint: Color, modifier: Modifier = Modifier.size(16.dp), strokeWidth: Float = 1.6f) {
-    Canvas(modifier) {
-        val w = size.width
-        val h = size.height
-        val sw = strokeWidth * density
-        // 몸체
-        drawRoundRect(
-            color = tint,
-            topLeft = Offset(w * 0.12f, h * 0.34f),
-            size = Size(w * 0.76f, h * 0.44f),
-            cornerRadius = CornerRadius(w * 0.12f, w * 0.12f),
-            style = Stroke(width = sw),
-        )
-        // 상단 뷰파인더 돌기
-        drawLine(tint, Offset(w * 0.40f, h * 0.34f), Offset(w * 0.45f, h * 0.24f), sw, cap = StrokeCap.Round)
-        drawLine(tint, Offset(w * 0.60f, h * 0.34f), Offset(w * 0.55f, h * 0.24f), sw, cap = StrokeCap.Round)
-        drawLine(tint, Offset(w * 0.45f, h * 0.24f), Offset(w * 0.55f, h * 0.24f), sw, cap = StrokeCap.Round)
-        // 렌즈
-        drawCircle(color = tint, radius = w * 0.13f, center = Offset(w * 0.5f, h * 0.56f), style = Stroke(width = sw))
-    }
-}
+fun LockIcon(tint: Color, modifier: Modifier = Modifier.size(21.dp)) =
+    Icon(painterResource(Res.drawable.ic_lock), contentDescription = null, tint = tint, modifier = modifier)
+
+@Composable
+fun InfoIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp)) =
+    Icon(painterResource(Res.drawable.ic_info), contentDescription = null, tint = tint, modifier = modifier)
+
+/** 닫기/거절(X). 화면 38 가입 거절 아이콘. */
+@Composable
+fun CloseIcon(tint: Color, modifier: Modifier = Modifier.size(24.dp)) =
+    Icon(painterResource(Res.drawable.ic_close), contentDescription = null, tint = tint, modifier = modifier)
+
+/** 경고(느낌표 삼각형). 오류 안내 배너 등. */
+@Composable
+fun WarningIcon(tint: Color, modifier: Modifier = Modifier.size(24.dp)) =
+    Icon(painterResource(Res.drawable.ic_warning), contentDescription = null, tint = tint, modifier = modifier)
+
+@Composable
+fun CameraIcon(tint: Color, modifier: Modifier = Modifier.size(16.dp)) =
+    Icon(painterResource(Res.drawable.ic_camera), contentDescription = null, tint = tint, modifier = modifier)
+
+@Composable
+fun PeopleIcon(tint: Color, modifier: Modifier = Modifier.size(40.dp)) =
+    Icon(painterResource(Res.drawable.ic_people), contentDescription = null, tint = tint, modifier = modifier)

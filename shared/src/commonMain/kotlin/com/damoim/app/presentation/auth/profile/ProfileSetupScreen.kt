@@ -1,5 +1,6 @@
 package com.damoim.app.presentation.auth.profile
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,10 +23,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,9 +45,15 @@ import com.damoim.app.presentation.component.InitialAvatar
 import com.damoim.app.presentation.component.PrimaryButton
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
+import com.preat.peekaboo.image.picker.SelectionMode
+import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
+import com.preat.peekaboo.image.picker.toImageBitmap
 
 /**
- * 화면 31 프로필 설정 — Route(상태·이벤트·네비게이션).
+ * 화면 31 프로필 설정 — Route(상태·이벤트·네비게이션 + 이미지 피커).
+ *
+ * 사진 선택은 Peekaboo 이미지 피커(Android=Photo Picker, iOS=PHPicker)를 사용해 Android/iOS 모두 동작.
+ * 선택 결과(ByteArray)는 toImageBitmap()으로 변환해 화면에 표시한다. (서버 업로드는 추후: 지금은 표시만)
  */
 @Composable
 fun ProfileSetupRoute(
@@ -49,6 +61,16 @@ fun ProfileSetupRoute(
     onNavigateStart: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    var pickedPhoto by remember { mutableStateOf<ImageBitmap?>(null) }
+    val scope = rememberCoroutineScope()
+
+    val imagePicker = rememberImagePickerLauncher(
+        selectionMode = SelectionMode.Single,
+        scope = scope,
+        onResult = { byteArrays ->
+            byteArrays.firstOrNull()?.let { pickedPhoto = it.toImageBitmap() }
+        },
+    )
 
     LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { effect ->
@@ -60,11 +82,11 @@ fun ProfileSetupRoute(
 
     ProfileSetupScreen(
         state = state,
+        pickedPhoto = pickedPhoto,
         onNicknameChange = viewModel::onNicknameChange,
         onContactChange = viewModel::onContactChange,
         onSubmit = viewModel::onSubmit,
-        // 실제 사진 선택은 플랫폼 이미지 피커(expect/actual) 연동 시 구현. 지금은 UI만.
-        onPickPhoto = {},
+        onPickPhoto = { imagePicker.launch() },
     )
 }
 
@@ -74,6 +96,7 @@ fun ProfileSetupRoute(
 @Composable
 fun ProfileSetupScreen(
     state: ProfileSetupUiState = ProfileSetupUiState(),
+    pickedPhoto: ImageBitmap? = null,
     onNicknameChange: (String) -> Unit = {},
     onContactChange: (String) -> Unit = {},
     onSubmit: () -> Unit = {},
@@ -92,10 +115,11 @@ fun ProfileSetupScreen(
         Spacer(Modifier.height(8.dp))
         Text(DamoimStrings.PROFILE_SUBTITLE, style = DamoimTheme.typography.body, color = colors.textMuted)
 
-        // 프로필 사진 (아바타 + 카메라 편집 배지)
+        // 프로필 사진 (선택된 사진 or 이니셜 아바타 + 카메라 편집 배지)
         Spacer(Modifier.height(28.dp))
         ProfilePhoto(
             initial = state.nickname.ifBlank { DamoimStrings.PROFILE_AVATAR_FALLBACK },
+            photo = pickedPhoto,
             onPickPhoto = onPickPhoto,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
@@ -168,16 +192,26 @@ private fun FieldLabel(
     }
 }
 
-/** 프로필 사진: 이니셜 아바타 위에 카메라 편집 배지를 겹친 형태. */
+/** 프로필 사진: 선택된 사진(원형 크롭) 또는 이니셜 아바타 위에 카메라 편집 배지. */
 @Composable
 private fun ProfilePhoto(
     initial: String,
+    photo: ImageBitmap?,
     onPickPhoto: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = DamoimTheme.colors
     Box(modifier = modifier.size(96.dp)) {
-        InitialAvatar(initial = initial, modifier = Modifier.size(96.dp))
+        if (photo != null) {
+            Image(
+                bitmap = photo,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(96.dp).clip(CircleShape),
+            )
+        } else {
+            InitialAvatar(initial = initial, modifier = Modifier.size(96.dp))
+        }
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)

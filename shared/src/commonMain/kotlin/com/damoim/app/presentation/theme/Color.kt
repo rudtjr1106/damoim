@@ -20,6 +20,7 @@ data class DamoimColors(
     val primaryContainer: Color = Color(0xFFE9F3FF),
     val primaryContainerHigh: Color = Color(0xFFCDE0F9),
     val accentSky: Color = Color(0xFF68B7ED),
+    val accentSkySoft: Color = Color(0xFFA4C0E4), // 연한 페리윙클 — 점선/보조 테두리 (oklch 0.8 0.06 255)
     val onDarkNavy: Color = Color(0xFF172846),
 
     // Neutral (텍스트/선/면)

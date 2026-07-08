@@ -3,6 +3,7 @@ package com.damoim.app.presentation.component
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +55,39 @@ fun DamoimLogoMark(
                 path = smile,
                 color = mouth,
                 style = Stroke(width = w * 0.085f, cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
+        }
+    }
+}
+
+/**
+ * 작은 로고 배지 — primary 배경 + 흰 심볼. 상단 헤더의 "다모임" 옆 아이콘 등에 사용(디자인 32).
+ */
+@Composable
+fun DamoimLogoBadge(
+    modifier: Modifier = Modifier.size(30.dp),
+    cornerRadius: androidx.compose.ui.unit.Dp = 10.dp,
+) {
+    val colors = DamoimTheme.colors
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(colors.primary),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.fillMaxSize(0.56f)) {
+            val w = size.width
+            val h = size.height
+            drawCircle(Color.White, radius = w * 0.17f, center = Offset(w * 0.35f, h * 0.42f))
+            drawCircle(Color.White.copy(alpha = 0.6f), radius = w * 0.17f, center = Offset(w * 0.65f, h * 0.42f))
+            val smile = Path().apply {
+                moveTo(w * 0.21f, h * 0.79f)
+                cubicTo(w * 0.29f, h * 0.66f, w * 0.71f, h * 0.66f, w * 0.79f, h * 0.79f)
+            }
+            drawPath(
+                path = smile,
+                color = Color.White,
+                style = Stroke(width = w * 0.09f, cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
         }
     }

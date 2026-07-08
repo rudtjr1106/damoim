@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.presentation.component.DamoimLogoMark
-import com.damoim.app.presentation.component.KakaoButton
+import com.damoim.app.presentation.component.KakaoLoginButton
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
@@ -90,7 +90,7 @@ fun LoginScreen(
             )
         }
 
-        KakaoButton(text = DamoimStrings.LOGIN_KAKAO_START, onClick = onKakaoClick, loading = isLoading)
+        KakaoLoginButton(onClick = onKakaoClick, loading = isLoading)
         Spacer(Modifier.height(12.dp))
         Text(
             text = DamoimStrings.LOGIN_FOOTER,

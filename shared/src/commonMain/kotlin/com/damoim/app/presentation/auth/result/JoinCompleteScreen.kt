@@ -68,7 +68,7 @@ fun JoinCompleteScreen(
         Box(
             modifier = Modifier.size(88.dp).clip(CircleShape).background(colors.primaryContainer),
             contentAlignment = Alignment.Center,
-        ) { CheckIcon(tint = colors.primary, modifier = Modifier.size(40.dp), strokeWidth = 2.6f) }
+        ) { CheckIcon(tint = colors.primary, modifier = Modifier.size(40.dp)) }
 
         Spacer(Modifier.height(24.dp))
         Text(DamoimStrings.JOIN_COMPLETE_TITLE, style = DamoimTheme.typography.headline, color = colors.textPrimary)
