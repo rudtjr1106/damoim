@@ -2,33 +2,42 @@ package com.damoim.app.core.di
 
 import com.damoim.app.data.repository.MockAuthRepository
 import com.damoim.app.data.repository.MockClubRepository
+import com.damoim.app.data.repository.MockNotificationRepository
 import com.damoim.app.domain.repository.AuthRepository
 import com.damoim.app.domain.repository.ClubRepository
+import com.damoim.app.domain.repository.NotificationRepository
+import com.damoim.app.domain.usecase.CreateClubUseCase
+import com.damoim.app.domain.usecase.DecideApplicantUseCase
+import com.damoim.app.domain.usecase.GetClubInfoUseCase
+import com.damoim.app.domain.usecase.GetHomeSummaryUseCase
+import com.damoim.app.domain.usecase.GetJoinApplicantsUseCase
+import com.damoim.app.domain.usecase.GetNotificationsUseCase
 import com.damoim.app.domain.usecase.LoginWithKakaoUseCase
+import com.damoim.app.domain.usecase.RegenerateJoinCodeUseCase
 import com.damoim.app.domain.usecase.SubmitJoinCodeUseCase
 import com.damoim.app.domain.usecase.UpdateProfileUseCase
 
 /**
- * 임시 수동 DI 컨테이너 (Service Locator).
- *
- * 서버와 정식 DI(Koin 등)가 붙기 전까지 의존성을 한 곳에서 조립한다.
- * - Repository는 lazy 싱글턴 (지금은 Mock 구현)
- * - UseCase는 매 호출마다 생성 (stateless라 무해)
- *
- * ViewModel은 이 UseCase들을 생성자 주입으로 받으므로, 나중에 Koin으로 옮길 때
- * ViewModel/UseCase/Repository 코드는 그대로 두고 이 파일만 module 정의로 대체하면 된다.
+ * 임시 수동 DI 컨테이너 (Service Locator). 서버·정식 DI(Koin) 도입 전까지 의존성을 조립한다.
+ * Repository는 lazy 싱글턴(Mock), UseCase는 매 호출 생성(stateless).
  */
 object AppGraph {
 
     private val authRepository: AuthRepository by lazy { MockAuthRepository() }
     private val clubRepository: ClubRepository by lazy { MockClubRepository() }
+    private val notificationRepository: NotificationRepository by lazy { MockNotificationRepository() }
 
-    val loginWithKakaoUseCase: LoginWithKakaoUseCase
-        get() = LoginWithKakaoUseCase(authRepository)
+    // A. 인증·가입
+    val loginWithKakaoUseCase get() = LoginWithKakaoUseCase(authRepository)
+    val updateProfileUseCase get() = UpdateProfileUseCase(authRepository)
+    val submitJoinCodeUseCase get() = SubmitJoinCodeUseCase(clubRepository)
 
-    val updateProfileUseCase: UpdateProfileUseCase
-        get() = UpdateProfileUseCase(authRepository)
-
-    val submitJoinCodeUseCase: SubmitJoinCodeUseCase
-        get() = SubmitJoinCodeUseCase(clubRepository)
+    // B. 홈·동아리 관리
+    val createClubUseCase get() = CreateClubUseCase(clubRepository)
+    val getHomeSummaryUseCase get() = GetHomeSummaryUseCase(clubRepository)
+    val getClubInfoUseCase get() = GetClubInfoUseCase(clubRepository)
+    val regenerateJoinCodeUseCase get() = RegenerateJoinCodeUseCase(clubRepository)
+    val getJoinApplicantsUseCase get() = GetJoinApplicantsUseCase(clubRepository)
+    val decideApplicantUseCase get() = DecideApplicantUseCase(clubRepository)
+    val getNotificationsUseCase get() = GetNotificationsUseCase(notificationRepository)
 }
