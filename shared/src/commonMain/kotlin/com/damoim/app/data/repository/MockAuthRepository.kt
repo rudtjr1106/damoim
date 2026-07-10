@@ -1,20 +1,23 @@
 package com.damoim.app.data.repository
 
 import com.damoim.app.core.result.DataResult
-import com.damoim.app.data.mock.MockData
+import com.damoim.app.data.mock.MockStore
 import com.damoim.app.domain.model.AuthUser
 import com.damoim.app.domain.repository.AuthRepository
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 
 /**
- * [AuthRepository]의 Mock 구현. 네트워크 지연을 흉내 내기 위해 delay를 준다.
- * 서버가 붙으면 이 클래스를 Ktor 기반 구현으로 교체한다(인터페이스는 그대로).
+ * [AuthRepository]의 Mock 구현 — [MockStore]에 위임. 카카오 SDK/서버 도입 시 교체.
+ * 프로필 설정 값이 세션 동안 유지되어 댓글 작성자·홈 인사말 등에 반영된다.
  */
 class MockAuthRepository : AuthRepository {
 
+    override fun observeUser(): Flow<AuthUser> = MockStore.user
+
     override suspend fun loginWithKakao(): DataResult<AuthUser> {
         delay(NETWORK_DELAY_MS)
-        return DataResult.Success(MockData.kakaoUser)
+        return DataResult.Success(MockStore.login())
     }
 
     override suspend fun updateProfile(
@@ -23,14 +26,7 @@ class MockAuthRepository : AuthRepository {
         profileImageUrl: String?,
     ): DataResult<AuthUser> {
         delay(NETWORK_DELAY_MS)
-        return DataResult.Success(
-            MockData.kakaoUser.copy(
-                nickname = nickname,
-                contact = contact,
-                profileImageUrl = profileImageUrl,
-                needsProfileSetup = false,
-            ),
-        )
+        return DataResult.Success(MockStore.updateProfile(nickname, contact, profileImageUrl))
     }
 
     private companion object {
