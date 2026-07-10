@@ -6,6 +6,7 @@ import com.damoim.app.data.mock.MockData
 import com.damoim.app.data.mock.MockStore
 import com.damoim.app.domain.model.Club
 import com.damoim.app.domain.model.ClubRole
+import com.damoim.app.domain.model.Cohort
 import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.model.ApplicantsBoard
 import com.damoim.app.domain.model.JoinRequestResult
@@ -38,6 +39,8 @@ class MockClubRepository : ClubRepository {
     override fun observeHomeSummary(): Flow<HomeSummary?> = MockStore.homeSummaryFlow()
 
     override fun observeClub(): Flow<Club?> = MockStore.session.map { it?.club }
+
+    override fun observeCohorts(): Flow<List<Cohort>> = MockStore.cohortsFlow()
 
     override suspend fun regenerateJoinCode(): DataResult<String> {
         delay(NETWORK_DELAY_MS)

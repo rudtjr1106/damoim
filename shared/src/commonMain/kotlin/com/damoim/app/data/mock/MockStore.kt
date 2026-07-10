@@ -6,6 +6,7 @@ import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.BoardPost
 import com.damoim.app.domain.model.Club
 import com.damoim.app.domain.model.ClubRole
+import com.damoim.app.domain.model.Cohort
 import com.damoim.app.domain.model.Comment
 import com.damoim.app.domain.model.HomeAlert
 import com.damoim.app.domain.model.AlertKind
@@ -21,11 +22,15 @@ import com.damoim.app.domain.model.PostDraft
 import com.damoim.app.domain.model.RecruitApplicant
 import com.damoim.app.domain.model.RecruitInfo
 import com.damoim.app.domain.model.RecruitStatus
+import com.damoim.app.domain.model.ResourceDraft
+import com.damoim.app.domain.model.ResourceFile
+import com.damoim.app.domain.model.ResourceFolder
 import com.damoim.app.domain.repository.BoardHomeData
 import com.damoim.app.domain.repository.SearchFileHit
 import com.damoim.app.domain.repository.SearchResults
 import com.damoim.app.domain.repository.SearchScheduleHit
 import com.damoim.app.domain.repository.SearchSuggestions
+import com.damoim.app.domain.repository.StorageUsage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -102,6 +107,8 @@ object MockStore {
         _comments.value = emptyMap()
         _pending.value = emptyList()
         _processed.value = emptyList()
+        _resources.value = emptyList()
+        _cohorts.value = listOf(Cohort(1, "1기", "1기", 1))   // 새 동아리는 1기부터 시작
         _notifications.value = listOf(
             AppNotification(nextId++, com.damoim.app.domain.model.NotificationType.NOTICE, "$name 동아리가 만들어졌어요. 가입 코드를 공유해 부원을 초대해보세요!", "방금 전", isUnread = true),
         )
@@ -148,6 +155,12 @@ object MockStore {
 
     private val _notifications = MutableStateFlow<List<AppNotification>>(emptyList())
     val notifications: StateFlow<List<AppNotification>> = _notifications.asStateFlow()
+
+    // ══════════ 기수(19/42 · 69 공개 범위) ══════════
+
+    private val _cohorts = MutableStateFlow<List<Cohort>>(emptyList())
+
+    fun cohortsFlow(): Flow<List<Cohort>> = _cohorts.asStateFlow()
 
     fun markAllNotificationsRead() =
         _notifications.update { list -> list.map { it.copy(isUnread = false) } }
@@ -342,6 +355,62 @@ object MockStore {
         _posts.update { list -> list.map { if (it.id == postId) it.copy(commentCount = it.commentCount + 1) else it } }
     }
 
+    // ══════════ 자료실(67/68/69) ══════════
+
+    private val _resources = MutableStateFlow<List<ResourceFile>>(emptyList())
+
+    fun resourcesFlow(folder: ResourceFolder?): Flow<List<ResourceFile>> = _resources.map { list ->
+        (if (folder == null) list else list.filter { it.folder == folder })
+            .sortedByDescending { it.createdAt }
+    }
+
+    fun resourceDetailFlow(resourceId: Long): Flow<ResourceFile?> =
+        _resources.map { list -> list.firstOrNull { it.id == resourceId } }
+
+    fun storageFlow(): Flow<StorageUsage> = _resources.map { list ->
+        val used = list.sumOf { it.sizeBytes }
+        StorageUsage(
+            usedBytes = used,
+            totalBytes = MockResourceData.QUOTA_BYTES,
+            usedLabel = MockResourceData.formatStorageLabel(used),
+            totalLabel = MockResourceData.QUOTA_LABEL,
+            count = list.size,
+        )
+    }
+
+    /** 69 업로드. 업로더는 현재 사용자, 목록 최상단에 노출된다. */
+    fun uploadResource(draft: ResourceDraft): Long {
+        val id = nextId++
+        val ext = draft.fileName.substringAfterLast('.', "").uppercase().take(4).ifBlank { "DOC" }
+        _resources.update { list ->
+            list + ResourceFile(
+                id = id,
+                title = draft.title,
+                fileName = draft.fileName,
+                ext = ext,
+                description = draft.description,
+                folder = draft.folder,
+                sizeLabel = draft.sizeLabel,
+                sizeBytes = MockResourceData.parseSizeToBytes(draft.sizeLabel),
+                uploaderId = _user.value.id,
+                uploaderName = myName,
+                uploaderIsLeader = role == ClubRole.LEADER,
+                uploadedLabel = "방금 전",
+                visibility = draft.visibility,
+                cohortIds = draft.cohortIds,
+                createdAt = orderCounter++,
+            )
+        }
+        return id
+    }
+
+    fun deleteResource(resourceId: Long) =
+        _resources.update { list -> list.filterNot { it.id == resourceId } }
+
+    fun incrementDownload(resourceId: Long) = _resources.update { list ->
+        list.map { if (it.id == resourceId) it.copy(downloadCount = it.downloadCount + 1) else it }
+    }
+
     // ══════════ 검색(85/40/76) ══════════
 
     private val _recentSearches = MutableStateFlow(listOf("MT", "신입 부원 모집", "회칙", "OT 일정"))
@@ -426,6 +495,8 @@ object MockStore {
         _pending.value = MockData.applicants
         _processed.value = MockData.processedApplicants
         _notifications.value = MockData.notifications
+        _resources.value = MockResourceData.seedResources()
+        _cohorts.value = MockData.cohorts
         orderCounter = 1_000_000L + seeded.size + 1
     }
 

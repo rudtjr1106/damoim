@@ -2,6 +2,7 @@ package com.damoim.app.data.mock
 
 import com.damoim.app.domain.model.AppNotification
 import com.damoim.app.domain.model.Club
+import com.damoim.app.domain.model.Cohort
 import com.damoim.app.domain.model.JoinApplicant
 import com.damoim.app.domain.model.JoinRequestResult
 import com.damoim.app.domain.model.JoinStatus
@@ -13,6 +14,13 @@ import com.damoim.app.domain.model.UpcomingSchedule
  * 단일 소스로 관리하고, 이 파일은 데모 동아리 입장 시 주입할 초기값만 제공한다.
  */
 object MockData {
+
+    /** 데모 동아리의 기수 (디자인 42 기수 변경 시트 기준). */
+    val cohorts = listOf(
+        Cohort(25, "2025학년 1기 (25기)", "25기", 12),
+        Cohort(24, "2024학년 1기 (24기)", "24기", 15),
+        Cohort(23, "2023학년 1기 (23기)", "23기", 11),
+    )
 
     /** 데모 동아리 — 가입 코드로 입장하는 대상. */
     val myClub = Club(

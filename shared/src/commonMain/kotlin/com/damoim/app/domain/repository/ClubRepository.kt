@@ -3,6 +3,7 @@ package com.damoim.app.domain.repository
 import com.damoim.app.core.result.DataResult
 import com.damoim.app.domain.model.Club
 import com.damoim.app.domain.model.ClubRole
+import com.damoim.app.domain.model.Cohort
 import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.model.ApplicantsBoard
 import com.damoim.app.domain.model.JoinRequestResult
@@ -30,6 +31,9 @@ interface ClubRepository {
 
     /** 내 동아리 정보 (화면 08 설정). */
     fun observeClub(): Flow<Club?>
+
+    /** 동아리 기수 목록 (19/42 · 69 공개 범위 선택). */
+    fun observeCohorts(): Flow<List<Cohort>>
 
     /** 가입 코드 재발급 (화면 08). 새 코드 반환. */
     suspend fun regenerateJoinCode(): DataResult<String>
