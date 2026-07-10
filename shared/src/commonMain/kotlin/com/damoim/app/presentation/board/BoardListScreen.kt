@@ -58,14 +58,12 @@ fun BoardListRoute(
     },
     onBack: () -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
-    onSearch: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
     BoardListScreen(
         state = state,
         onBack = onBack,
         onOpenPost = onOpenPost,
-        onSearch = onSearch,
         onSort = viewModel::onSort,
         onToggleOpenOnly = viewModel::onToggleOpenOnly,
     )
@@ -76,7 +74,6 @@ fun BoardListScreen(
     state: BoardListUiState = BoardListUiState(BoardCategory.FREE, isLoading = false, posts = previewFreePosts()),
     onBack: () -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
-    onSearch: () -> Unit = {},
     onSort: (BoardSort) -> Unit = {},
     onToggleOpenOnly: () -> Unit = {},
 ) {
@@ -99,7 +96,7 @@ fun BoardListScreen(
                 BoardListSkeleton()
             } else {
                 when (state.category) {
-                    BoardCategory.FREE -> FreeBody(state.displayed, state.sort, onOpenPost, onSearch, onSort)
+                    BoardCategory.FREE -> FreeBody(state.displayed, state.sort, onOpenPost, onSort)
                     BoardCategory.NOTICE -> NoticeBody(state.displayed, onOpenPost)
                     BoardCategory.RECRUIT -> RecruitBody(state.displayed, onOpenPost)
                 }
@@ -145,23 +142,10 @@ private fun ListHeader(category: BoardCategory, recruitOpenOnly: Boolean, onBack
     }
 }
 
-// ── 자유(11) ──
+// ── 자유(11) ── (검색은 게시판 홈 상단에서만 — 목록 내 검색바 제거)
 @Composable
-private fun FreeBody(posts: List<BoardPost>, sort: BoardSort, onOpenPost: (Long) -> Unit, onSearch: () -> Unit, onSort: (BoardSort) -> Unit) {
-    val colors = DamoimTheme.colors
-    // 검색바
-    Box(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.surfaceVariant)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onSearch)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SearchIcon(tint = colors.textMuted, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(10.dp))
-            Text(DamoimStrings.BOARD_SEARCH_PLACEHOLDER, style = DamoimTheme.typography.body, color = colors.textDisabled)
-        }
-    }
+private fun FreeBody(posts: List<BoardPost>, sort: BoardSort, onOpenPost: (Long) -> Unit, onSort: (BoardSort) -> Unit) {
+    Spacer(Modifier.height(8.dp))
     // 정렬 칩(실동작)
     SortChips(sort, onSort)
     // 목록
@@ -234,8 +218,9 @@ private fun FreeRow(post: BoardPost, isLast: Boolean, onClick: () -> Unit) {
                 Text(DamoimStrings.commentCountLabel(post.commentCount), style = DamoimTheme.typography.caption, color = colors.textDisabled)
             }
         }
-        if (post.hasThumbnail) {
-            PhotoPlaceholder(modifier = Modifier.size(64.dp))
+        val thumbLabel = post.attachments.filterIsInstance<com.damoim.app.domain.model.PostAttachment.Image>().firstOrNull()?.label
+        if (thumbLabel != null) {
+            com.damoim.app.presentation.component.AttachedImage(thumbLabel, Modifier.size(64.dp), cornerRadius = 12.dp)
         }
     }
     if (!isLast) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))

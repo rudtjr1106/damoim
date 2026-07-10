@@ -178,18 +178,25 @@ internal fun MiniToggle(on: Boolean, onToggle: () -> Unit) {
     ) { Box(Modifier.size(18.dp).clip(CircleShape).background(colors.surface)) }
 }
 
-// ── 71 첨부 방식 시트 ──
+// ── 71 첨부 방식 시트 — 각 항목이 실제 피커/모드로 연결된다 ──
 @Composable
-internal fun AttachSheet(onSelect: (AttachMode) -> Unit, onDismiss: () -> Unit) {
+internal fun AttachSheet(
+    onPhoto: () -> Unit,
+    onCamera: () -> Unit,
+    onDocument: () -> Unit,
+    onLink: () -> Unit,
+    onPoll: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     val colors = DamoimTheme.colors
     DamoimBottomSheet(onDismiss = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 40.dp)) {
             Text(DamoimStrings.ATTACH_SHEET_TITLE, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = colors.textPrimary, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp))
-            AttachRow(DamoimStrings.ATTACH_PHOTO, DamoimStrings.ATTACH_PHOTO_DESC, false, { ImageIcon(it, Modifier.size(20.dp)) }, showDivider = true) { onSelect(AttachMode.PHOTO) }
-            AttachRow(DamoimStrings.ATTACH_CAMERA, DamoimStrings.ATTACH_CAMERA_DESC, false, { CameraIcon(it, Modifier.size(20.dp)) }, showDivider = true) { onSelect(AttachMode.PHOTO) }
-            AttachRow(DamoimStrings.ATTACH_DOC, DamoimStrings.ATTACH_DOC_DESC, true, { PaperclipIcon(it, Modifier.size(20.dp)) }, showDivider = true) { onSelect(AttachMode.DOC) }
-            AttachRow(DamoimStrings.ATTACH_LINK, DamoimStrings.ATTACH_LINK_DESC, false, { LinkIcon(it, Modifier.size(20.dp)) }, showDivider = true) { onSelect(AttachMode.LINK) }
-            AttachRow(DamoimStrings.ATTACH_POLL, DamoimStrings.ATTACH_POLL_DESC, false, { ChartIcon(it, Modifier.size(20.dp)) }, showDivider = false) { onSelect(AttachMode.POLL) }
+            AttachRow(DamoimStrings.ATTACH_PHOTO, DamoimStrings.ATTACH_PHOTO_DESC, false, { ImageIcon(it, Modifier.size(20.dp)) }, showDivider = true, onClick = onPhoto)
+            AttachRow(DamoimStrings.ATTACH_CAMERA, DamoimStrings.ATTACH_CAMERA_DESC, false, { CameraIcon(it, Modifier.size(20.dp)) }, showDivider = true, onClick = onCamera)
+            AttachRow(DamoimStrings.ATTACH_DOC, DamoimStrings.ATTACH_DOC_DESC, true, { PaperclipIcon(it, Modifier.size(20.dp)) }, showDivider = true, onClick = onDocument)
+            AttachRow(DamoimStrings.ATTACH_LINK, DamoimStrings.ATTACH_LINK_DESC, false, { LinkIcon(it, Modifier.size(20.dp)) }, showDivider = true, onClick = onLink)
+            AttachRow(DamoimStrings.ATTACH_POLL, DamoimStrings.ATTACH_POLL_DESC, false, { ChartIcon(it, Modifier.size(20.dp)) }, showDivider = false, onClick = onPoll)
         }
     }
 }
@@ -395,59 +402,88 @@ private fun CalendarGrid(year: Int, month: Int, selected: LocalDate, today: Loca
     }
 }
 
-/** 시간 선택 — 위/아래 값을 탭하면 그 값으로 이동하는 휠 스타일 컬럼. */
+/** 시간 선택 — 드래그로 스크롤되는 스피너 휠(스냅). */
 @Composable
 private fun TimeWheel(
     isPm: Boolean, hour12: Int, minute: Int,
     onAmPm: (Boolean) -> Unit, onHour: (Int) -> Unit, onMinute: (Int) -> Unit,
 ) {
     val colors = DamoimTheme.colors
+    val hours = remember { (1..12).map { "$it" } }
+    val minutes = remember { (0..50 step 10).map { it.toString().padStart(2, '0') } }
     Box(Modifier.fillMaxWidth().height(132.dp).padding(horizontal = 24.dp)) {
+        // 중앙 선택 하이라이트
         Box(Modifier.fillMaxWidth().height(44.dp).align(Alignment.Center).clip(RoundedCornerShape(12.dp)).background(colors.surfaceVariant))
-        Row(Modifier.fillMaxWidth().height(132.dp), verticalAlignment = Alignment.CenterVertically) {
-            // 오전/오후
-            WheelColumn(
-                prev = if (isPm) DamoimStrings.PICKER_AM else DamoimStrings.PICKER_PM,
-                current = if (isPm) DamoimStrings.PICKER_PM else DamoimStrings.PICKER_AM,
-                next = "",
-                onPrev = { onAmPm(!isPm) }, onNext = {},
+        Row(Modifier.fillMaxWidth().height(132.dp)) {
+            SpinnerColumn(
+                items = listOf(DamoimStrings.PICKER_AM, DamoimStrings.PICKER_PM),
+                selectedIndex = if (isPm) 1 else 0,
+                onSelect = { onAmPm(it == 1) },
                 modifier = Modifier.weight(1f),
             )
-            // 시(1~12 순환)
-            WheelColumn(
-                prev = "${if (hour12 == 1) 12 else hour12 - 1}",
-                current = "$hour12",
-                next = "${if (hour12 == 12) 1 else hour12 + 1}",
-                onPrev = { onHour(if (hour12 == 1) 12 else hour12 - 1) },
-                onNext = { onHour(if (hour12 == 12) 1 else hour12 + 1) },
+            SpinnerColumn(
+                items = hours,
+                selectedIndex = hour12 - 1,
+                onSelect = { onHour(it + 1) },
                 modifier = Modifier.weight(1f),
             )
-            Box(Modifier.width(14.dp), contentAlignment = Alignment.Center) { Text(":", style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = colors.textPrimary) }
-            // 분(10분 단위 순환)
-            WheelColumn(
-                prev = ((minute + 50) % 60).toString().padStart(2, '0'),
-                current = minute.toString().padStart(2, '0'),
-                next = ((minute + 10) % 60).toString().padStart(2, '0'),
-                onPrev = { onMinute((minute + 50) % 60) },
-                onNext = { onMinute((minute + 10) % 60) },
+            Box(Modifier.width(14.dp).height(132.dp), contentAlignment = Alignment.Center) {
+                Text(":", style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = colors.textPrimary)
+            }
+            SpinnerColumn(
+                items = minutes,
+                selectedIndex = (minute / 10).coerceIn(0, minutes.lastIndex),
+                onSelect = { onMinute(it * 10) },
                 modifier = Modifier.weight(1f),
             )
         }
     }
 }
 
+/**
+ * 스피너 컬럼 — LazyColumn + 스냅 플링. 행 높이 44dp × 3행 뷰포트, 상하 44dp 패딩으로
+ * 스냅된 첫 항목이 중앙에 오도록 한다. 드래그를 놓으면 중앙 항목이 선택된다.
+ */
 @Composable
-private fun WheelColumn(prev: String, current: String, next: String, onPrev: () -> Unit, onNext: () -> Unit, modifier: Modifier) {
+private fun SpinnerColumn(
+    items: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = DamoimTheme.colors
-    Column(modifier.height(132.dp)) {
-        Box(Modifier.fillMaxWidth().weight(1f).clickable(enabled = prev.isNotEmpty(), interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onPrev), contentAlignment = Alignment.Center) {
-            Text(prev, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal, fontSize = 16.sp), color = colors.outlineStrong)
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex.coerceIn(0, items.lastIndex))
+    val fling = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(lazyListState = listState)
+    // 스크롤 중 중앙(=스냅 기준 첫 항목) 인덱스
+    val centeredIndex by remember {
+        androidx.compose.runtime.derivedStateOf {
+            val offsetAdjust = if (listState.firstVisibleItemScrollOffset > 22 * 3) 1 else 0 // 절반 이상 지나면 다음 항목
+            (listState.firstVisibleItemIndex + offsetAdjust).coerceIn(0, items.lastIndex)
         }
-        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            Text(current, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp), color = colors.textPrimary)
-        }
-        Box(Modifier.fillMaxWidth().weight(1f).clickable(enabled = next.isNotEmpty(), interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onNext), contentAlignment = Alignment.Center) {
-            Text(next, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal, fontSize = 16.sp), color = colors.outlineStrong)
+    }
+    // 스냅 완료 시 선택 확정
+    androidx.compose.runtime.LaunchedEffect(listState, items) {
+        androidx.compose.runtime.snapshotFlow { listState.isScrollInProgress to centeredIndex }
+            .collect { (scrolling, index) -> if (!scrolling) onSelect(index) }
+    }
+    androidx.compose.foundation.lazy.LazyColumn(
+        state = listState,
+        flingBehavior = fling,
+        modifier = modifier.height(132.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 44.dp),
+    ) {
+        items(items.size) { index ->
+            val centered = index == centeredIndex
+            Box(Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.Center) {
+                Text(
+                    items[index],
+                    style = DamoimTheme.typography.titleMedium.copy(
+                        fontWeight = if (centered) FontWeight.ExtraBold else FontWeight.Normal,
+                        fontSize = if (centered) 18.sp else 16.sp,
+                    ),
+                    color = if (centered) colors.textPrimary else colors.outlineStrong,
+                )
+            }
         }
     }
 }

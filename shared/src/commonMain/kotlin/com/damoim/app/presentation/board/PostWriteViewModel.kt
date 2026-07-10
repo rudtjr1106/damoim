@@ -24,7 +24,7 @@ sealed interface PostWriteSideEffect : UiSideEffect {
     data object Done : PostWriteSideEffect
 }
 
-/** 화면 15/34/35/39/70 게시글 작성/수정 제출. */
+/** 화면 15/34/35/39/70 게시글 작성/수정 제출 + 임시저장. */
 class PostWriteViewModel(
     private val submitPost: SubmitPostUseCase,
     private val getPostDetail: GetPostDetailUseCase,
@@ -58,5 +58,14 @@ class PostWriteViewModel(
             setState { copy(isSaving = false) }
             handleResult(result, onSuccess = { sendEffect(PostWriteSideEffect.Done) })
         }
+    }
+
+    /** 진입 시점의 임시저장 초안 조회 — 화면(Route)에서 컴포지션마다 읽는다(VM 재사용 대비). */
+    fun loadDraft(): PostDraft? = submitPost.loadDraft()
+
+    fun saveDraft(draft: PostDraft) = viewModelScope.launch {
+        handleResult(submitPost.saveDraft(draft), onSuccess = {
+            sendEffect(PostWriteSideEffect.Toast(DamoimStrings.TOAST_DRAFT_SAVED))
+        })
     }
 }

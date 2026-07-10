@@ -55,6 +55,9 @@ import com.damoim.app.domain.model.PostAttachment
 import com.damoim.app.domain.model.PostDetail
 import com.damoim.app.domain.model.RecruitInfo
 import com.damoim.app.domain.model.RecruitStatus
+import com.damoim.app.platform.PlatformBackHandler
+import com.damoim.app.platform.rememberShareText
+import com.damoim.app.presentation.component.AttachedImage
 import com.damoim.app.presentation.component.BackChevronIcon
 import com.damoim.app.presentation.component.ChartIcon
 import com.damoim.app.presentation.component.CheckIcon
@@ -80,6 +83,7 @@ private sealed interface DetailOverlay {
     data object DeleteConfirm : DetailOverlay                  // 56 삭제 확인
     data object Report : DetailOverlay                         // 82 신고 사유
     data class ImageViewer(val images: List<String>, val index: Int, val caption: String) : DetailOverlay // 57
+    data object Roster : DetailOverlay                          // 84 신청자 명단
 }
 
 /**
@@ -147,7 +151,11 @@ fun PostDetailScreen(
     val colors = DamoimTheme.colors
     val detail = state.detail
     val clipboard = LocalClipboardManager.current
+    val share = rememberShareText()
     var overlay by remember { mutableStateOf<DetailOverlay?>(null) }
+
+    // 오버레이는 시스템 뒤로가기로 닫힌다
+    PlatformBackHandler(enabled = overlay != null) { overlay = null }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().background(colors.surface).safeDrawingPadding()) {
@@ -155,7 +163,7 @@ fun PostDetailScreen(
                 PostDetailSkeleton(onBack)   // 73 로딩 스켈레톤
             } else {
                 val isRecruit = detail.post.recruit != null
-                DetailHeader(detail.post.category, showRoster = isRecruit, onBack = onBack, onRoster = { onToast(DamoimStrings.TOAST_COMING_SOON) }, onMore = { overlay = DetailOverlay.PostMenu })
+                DetailHeader(detail.post.category, showRoster = isRecruit, onBack = onBack, onRoster = { overlay = DetailOverlay.Roster }, onMore = { overlay = DetailOverlay.PostMenu })
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                     if (isRecruit) {
                         RecruitBody(detail.post, onToggleLike)
@@ -198,7 +206,10 @@ fun PostDetailScreen(
                 isLeader = state.isLeader,
                 onDismiss = { overlay = null },
                 onEdit = { overlay = null; detail?.post?.let(onEdit) },
-                onShare = { overlay = null; onToast(DamoimStrings.TOAST_COMING_SOON) },
+                onShare = {
+                    overlay = null
+                    detail?.post?.let { share("[다모임] ${it.title}\nhttps://damoim.app/post/${it.id}") }
+                },
                 onCopyLink = {
                     overlay = null
                     clipboard.setText(AnnotatedString("https://damoim.app/post/${detail?.post?.id}"))
@@ -227,6 +238,10 @@ fun PostDetailScreen(
             DetailOverlay.Report -> ReportSheet(
                 onDismiss = { overlay = null },
                 onSubmit = { overlay = null; onToast(DamoimStrings.TOAST_REPORTED) },
+            )
+            DetailOverlay.Roster -> RosterSheet(
+                recruit = detail?.post?.recruit,
+                onDismiss = { overlay = null },
             )
             is DetailOverlay.ImageViewer -> ImageViewerOverlay(
                 images = o.images, startIndex = o.index, caption = o.caption,
@@ -305,7 +320,12 @@ private fun PostBody(
             when (att) {
                 is PostAttachment.Image -> {
                     val idx = imageLabels.indexOf(att.label).coerceAtLeast(0)
-                    PhotoPlaceholder(modifier = Modifier.fillMaxWidth().height(180.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onImageTap(imageLabels, idx) }, cornerRadius = 14.dp)
+                    AttachedImage(
+                        label = att.label,
+                        modifier = Modifier.fillMaxWidth().height(180.dp)
+                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onImageTap(imageLabels, idx) },
+                        cornerRadius = 14.dp,
+                    )
                 }
                 else -> AttachmentCard(att, onFileTap)
             }
@@ -667,8 +687,7 @@ private fun CommentInputBar(
                 val canSend = input.isNotBlank() && !sending
                 Box(
                     Modifier.size(40.dp).clip(CircleShape)
-                        .background(colors.primary)
-                        .alpha(if (canSend) 1f else 0.4f)
+                        .background(if (canSend) colors.primary else colors.primary.copy(alpha = 0.4f))
                         .clickable(enabled = canSend, interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onSend),
                     contentAlignment = Alignment.Center,
                 ) { SendIcon(tint = colors.onPrimary, modifier = Modifier.size(17.dp)) }

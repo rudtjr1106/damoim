@@ -62,6 +62,7 @@ import com.damoim.app.presentation.component.TrashIcon
 import com.damoim.app.presentation.component.WarningIcon
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
+import kotlinx.coroutines.launch
 
 // ── 54 게시글 ⋯ 메뉴 (내 글: 수정/공유/링크/고정/삭제 · 남의 글: 공유/링크/신고) ──
 @Composable
@@ -205,37 +206,84 @@ private fun ReportReasonRow(reason: ReportReason, selected: Boolean, isLast: Boo
     }
 }
 
-// ── 57 이미지 전체화면 뷰어 ──
+// ── 57 이미지 전체화면 뷰어 — HorizontalPager로 좌우 슬라이드 ──
 @Composable
 internal fun ImageViewerOverlay(images: List<String>, startIndex: Int, caption: String, onClose: () -> Unit, onDownload: () -> Unit) {
     val colors = DamoimTheme.colors
-    var index by remember { mutableStateOf(startIndex.coerceIn(0, (images.size - 1).coerceAtLeast(0))) }
     val white = Color.White
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState(
+        initialPage = startIndex.coerceIn(0, (images.size - 1).coerceAtLeast(0)),
+        pageCount = { images.size.coerceAtLeast(1) },
+    )
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     Column(Modifier.fillMaxSize().background(colors.imageViewerBg).safeDrawingPadding()) {
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(32.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose), contentAlignment = Alignment.Center) { CloseIcon(white, Modifier.size(24.dp)) }
             Spacer(Modifier.weight(1f))
-            Text(DamoimStrings.imageIndex(index + 1, images.size.coerceAtLeast(1)), style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = white)
+            Text(DamoimStrings.imageIndex(pagerState.currentPage + 1, images.size.coerceAtLeast(1)), style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = white)
             Spacer(Modifier.weight(1f))
             Box(Modifier.size(32.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDownload), contentAlignment = Alignment.Center) { DownloadIcon(white, Modifier.size(22.dp)) }
         }
-        Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-            Box(Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(4.dp)).background(colors.imageViewerTile), contentAlignment = Alignment.Center) {
-                Text(images.getOrNull(index).orEmpty(), style = DamoimTheme.typography.label, color = white.copy(alpha = 0.4f))
+        androidx.compose.foundation.pager.HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        ) { page ->
+            Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                com.damoim.app.presentation.component.AttachedImage(
+                    label = images.getOrNull(page).orEmpty(),
+                    modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f),
+                    cornerRadius = 4.dp,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                )
             }
         }
         Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(caption, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Normal), color = white.copy(alpha = 0.55f))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                images.forEachIndexed { i, _ ->
+                images.forEachIndexed { i, label ->
                     Box(
-                        Modifier.size(52.dp).clip(RoundedCornerShape(8.dp)).background(colors.imageViewerTile)
-                            .then(if (i == index) Modifier.border(1.5.dp, white, RoundedCornerShape(8.dp)) else Modifier)
-                            .alpha(if (i == index) 1f else 0.45f)
-                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { index = i },
-                    )
+                        Modifier.size(52.dp).clip(RoundedCornerShape(8.dp))
+                            .then(if (i == pagerState.currentPage) Modifier.border(1.5.dp, white, RoundedCornerShape(8.dp)) else Modifier)
+                            .alpha(if (i == pagerState.currentPage) 1f else 0.45f)
+                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                                scope.launch { pagerState.animateScrollToPage(i) }
+                            },
+                    ) {
+                        com.damoim.app.presentation.component.AttachedImage(label, Modifier.size(52.dp), cornerRadius = 8.dp)
+                    }
                 }
             }
+        }
+    }
+}
+
+// ── 84 신청자 명단 시트 ──
+@Composable
+internal fun RosterSheet(recruit: com.damoim.app.domain.model.RecruitInfo?, onDismiss: () -> Unit) {
+    val colors = DamoimTheme.colors
+    DamoimBottomSheet(onDismiss = onDismiss) {
+        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(DamoimStrings.ROSTER_TITLE, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 17.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
+                if (recruit != null) {
+                    Text(DamoimStrings.recruitProgress(recruit.current, recruit.capacity), style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = colors.primaryDark)
+                }
+            }
+            val applicants = recruit?.applicants.orEmpty()
+            applicants.forEachIndexed { i, applicant ->
+                Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    InitialAvatar(applicant.initials, size = 38.dp)
+                    Text(applicant.initials, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.textPrimary, modifier = Modifier.weight(1f))
+                    Text("${i + 1}번째 신청", style = DamoimTheme.typography.caption, color = colors.textMuted)
+                }
+                if (i != applicants.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))
+            }
+            val extra = (recruit?.current ?: 0) - applicants.size
+            if (extra > 0) {
+                Text("외 ${extra}명이 신청했어요", style = DamoimTheme.typography.caption, color = colors.textMuted, modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp))
+            }
+            Spacer(Modifier.height(8.dp))
+            SheetCloseButton(onDismiss)
         }
     }
 }
