@@ -50,11 +50,12 @@ import com.damoim.app.presentation.theme.DamoimTheme
  */
 @Composable
 fun ClubSettingsRoute(
-    viewModel: ClubSettingsViewModel = viewModel { ClubSettingsViewModel(AppGraph.getClubInfoUseCase, AppGraph.regenerateJoinCodeUseCase) },
+    viewModel: ClubSettingsViewModel = viewModel { ClubSettingsViewModel(AppGraph.getClubInfoUseCase, AppGraph.regenerateJoinCodeUseCase, AppGraph.disableJoinCodeUseCase) },
     onBack: () -> Unit = {},
     onToast: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { if (it is ClubSettingsSideEffect.Toast) onToast(it.message) }
     }
@@ -68,8 +69,16 @@ fun ClubSettingsRoute(
         onRegenerate = viewModel::onRegenerate,
         onDisable = viewModel::onDisable,
         onKakaoShare = viewModel::onKakaoShare,
-        onCopyLink = viewModel::onCopyLink,
-        onCopyCode = viewModel::onCopyCode,
+        onCopyLink = {
+            // 초대 링크 실제 복사
+            clipboard.setText(androidx.compose.ui.text.AnnotatedString("https://damoim.app/join/${state.joinCode}"))
+            viewModel.onCopyLink()
+        },
+        onCopyCode = {
+            // 가입 코드 실제 복사
+            clipboard.setText(androidx.compose.ui.text.AnnotatedString(state.joinCode))
+            viewModel.onCopyCode()
+        },
     )
 }
 
@@ -166,7 +175,8 @@ private fun JoinCodeCard(code: String, onShare: () -> Unit, onRegenerate: () -> 
             Column {
                 Text(DamoimStrings.SETTINGS_CODE_CURRENT, style = DamoimTheme.typography.label, color = colors.onPrimary.copy(alpha = 0.55f))
                 Spacer(Modifier.height(4.dp))
-                Text(code, style = DamoimTheme.typography.headline.copy(fontSize = 26.sp, letterSpacing = 3.sp), color = colors.onPrimary)
+                // 비활성화 상태면 자리표시(재발급으로 새 코드 생성)
+                Text(code.ifEmpty { "──────" }, style = DamoimTheme.typography.headline.copy(fontSize = 26.sp, letterSpacing = 3.sp), color = if (code.isEmpty()) colors.onPrimary.copy(alpha = 0.35f) else colors.onPrimary)
             }
             Box(
                 modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(colors.onPrimary.copy(alpha = 0.12f))

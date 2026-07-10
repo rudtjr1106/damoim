@@ -72,7 +72,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 @Composable
 fun HomeRoute(
     role: ClubRole,
-    viewModel: HomeViewModel = viewModel(key = "home_${role.name}") { HomeViewModel(AppGraph.getHomeSummaryUseCase, role) },
+    viewModel: HomeViewModel = viewModel(key = "home_${role.name}") { HomeViewModel(AppGraph.getHomeSummaryUseCase) },
     onNavigateJoinManage: () -> Unit = {},
     onNavigateNotifications: () -> Unit = {},
     onNavigateClubSettings: () -> Unit = {},
@@ -115,10 +115,15 @@ fun HomeScreen(
             if (summary != null) {
                 HomeHeader(summary, onBellClick)
                 Column(modifier = Modifier.offset(y = (-36).dp)) {
-                    AlertCard(summary.alert, onAlertClick)
+                    // 알림 카드는 있을 때만(예: 신청 0건이면 숨김)
+                    summary.alert?.let { AlertCard(it, onAlertClick) }
                     QuickActions(summary.role, onQuickAction)
-                    ScheduleSection(summary.schedules) { onSeeAll(DamoimStrings.HOME_SECTION_SCHEDULE) }
-                    BoardSection(summary.boardPreviews) { onSeeAll(DamoimStrings.HOME_SECTION_BOARD) }
+                    if (summary.schedules.isNotEmpty()) {
+                        ScheduleSection(summary.schedules) { onSeeAll(DamoimStrings.HOME_SECTION_SCHEDULE) }
+                    }
+                    if (summary.boardPreviews.isNotEmpty()) {
+                        BoardSection(summary.boardPreviews) { onSeeAll(DamoimStrings.HOME_SECTION_BOARD) }
+                    }
                     Spacer(Modifier.height(8.dp))
                 }
             }

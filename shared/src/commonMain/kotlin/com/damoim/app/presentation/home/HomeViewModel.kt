@@ -4,7 +4,6 @@ import androidx.lifecycle.viewModelScope
 import com.damoim.app.core.mvi.BaseViewModel
 import com.damoim.app.core.mvi.UiSideEffect
 import com.damoim.app.core.mvi.UiState
-import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.usecase.GetHomeSummaryUseCase
 import kotlinx.coroutines.launch
@@ -18,19 +17,16 @@ data class HomeUiState(
 sealed interface HomeSideEffect : UiSideEffect
 
 /**
- * 화면 05/06 홈. role에 따라 동아리장/일반회원 요약을 불러온다.
+ * 화면 05/06 홈. 스토어를 구독해 회원 수·신청 대기·게시판 미리보기·알림 배지가
+ * 실시간 반영된다(승인/글 작성/읽음 처리 즉시 갱신).
  */
 class HomeViewModel(
-    private val getHomeSummary: GetHomeSummaryUseCase,
-    private val role: ClubRole,
+    getHomeSummary: GetHomeSummaryUseCase,
 ) : BaseViewModel<HomeUiState, HomeSideEffect>(HomeUiState()) {
 
-    init { load() }
-
-    private fun load() = viewModelScope.launch {
-        setState { copy(isLoading = true) }
-        val result = getHomeSummary(role)
-        setState { copy(isLoading = false) }
-        handleResult(result, onSuccess = { summary -> setState { copy(summary = summary) } })
+    init {
+        viewModelScope.launch {
+            getHomeSummary().collect { summary -> setState { copy(isLoading = false, summary = summary) } }
+        }
     }
 }

@@ -44,7 +44,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 /** 화면 37/74 알림 — Route. */
 @Composable
 fun NotificationRoute(
-    viewModel: NotificationViewModel = viewModel { NotificationViewModel(AppGraph.getNotificationsUseCase) },
+    viewModel: NotificationViewModel = viewModel { NotificationViewModel(AppGraph.getNotificationsUseCase, AppGraph.markNotificationsReadUseCase) },
     onBack: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
