@@ -22,6 +22,7 @@ import damoim.shared.generated.resources.ic_list
 import damoim.shared.generated.resources.ic_reply
 import damoim.shared.generated.resources.ic_share
 import damoim.shared.generated.resources.ic_trash
+import damoim.shared.generated.resources.ic_upload
 import damoim.shared.generated.resources.ic_chevron_left
 import damoim.shared.generated.resources.ic_chevron_right
 import damoim.shared.generated.resources.ic_close
@@ -186,3 +187,8 @@ fun TrashIcon(tint: Color, modifier: Modifier = Modifier.size(19.dp)) = VectorIc
 
 @Composable
 fun ReplyIcon(tint: Color, modifier: Modifier = Modifier.size(19.dp)) = VectorIcon(Res.drawable.ic_reply, tint, modifier)
+
+// ── D 자료실 ──
+/** 업로드(밑줄 위로 향하는 화살표) — 67 FAB · 69 드롭존. */
+@Composable
+fun UploadIcon(tint: Color, modifier: Modifier = Modifier.size(20.dp)) = VectorIcon(Res.drawable.ic_upload, tint, modifier)

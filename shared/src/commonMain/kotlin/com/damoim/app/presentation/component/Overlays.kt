@@ -151,6 +151,15 @@ fun SheetActionRow(
     }
 }
 
+/** 다이얼로그 하단 액션 버튼(취소/삭제 등). 파괴적 액션은 [bg]=error. */
+@Composable
+fun DialogButton(text: String, bg: Color, fg: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier.clip(RoundedCornerShape(14.dp)).background(bg).noRippleClick(onClick).padding(vertical = 15.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, style = DamoimTheme.typography.bodyStrong, color = fg) }
+}
+
 /** 시트 하단 '닫기' 버튼(surfaceVariant). */
 @Composable
 fun SheetCloseButton(onClick: () -> Unit, text: String = DamoimStrings.COMMON_CLOSE) {

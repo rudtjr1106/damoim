@@ -64,6 +64,7 @@ fun DamoimTextField(
     focusStrokeColor: Color = DamoimTheme.colors.primary,
     errorColor: Color = DamoimTheme.colors.error,
     cornerRadius: Dp = 16.dp,
+    borderWidth: Dp = 1.5.dp,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -96,7 +97,7 @@ fun DamoimTextField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(backgroundColor, shape)
-                    .border(1.5.dp, currentStroke, shape)
+                    .border(borderWidth, currentStroke, shape)
                     .padding(horizontal = 16.dp, vertical = 15.dp),
                 verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
             ) {

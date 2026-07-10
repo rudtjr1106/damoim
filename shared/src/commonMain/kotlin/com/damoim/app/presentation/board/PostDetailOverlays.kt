@@ -50,6 +50,7 @@ import com.damoim.app.presentation.component.CloseIcon
 import com.damoim.app.presentation.component.CopyIcon
 import com.damoim.app.presentation.component.DamoimBottomSheet
 import com.damoim.app.presentation.component.DamoimDialog
+import com.damoim.app.presentation.component.DialogButton
 import com.damoim.app.presentation.component.DownloadIcon
 import com.damoim.app.presentation.component.EditIcon
 import com.damoim.app.presentation.component.LinkIcon
@@ -155,13 +156,6 @@ internal fun DeleteConfirmDialog(commentCount: Int, onDismiss: () -> Unit, onCon
                 DialogButton(DamoimStrings.DELETE_CONFIRM, bg = colors.error, fg = colors.onPrimary, modifier = Modifier.weight(1f), onClick = onConfirm)
             }
         }
-    }
-}
-
-@Composable
-private fun DialogButton(text: String, bg: Color, fg: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(modifier.clip(RoundedCornerShape(14.dp)).background(bg).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick).padding(vertical = 15.dp), contentAlignment = Alignment.Center) {
-        Text(text, style = DamoimTheme.typography.bodyStrong, color = fg)
     }
 }
 
