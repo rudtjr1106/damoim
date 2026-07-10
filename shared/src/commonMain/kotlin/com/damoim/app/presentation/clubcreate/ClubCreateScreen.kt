@@ -15,7 +15,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -106,7 +110,11 @@ fun ClubCreateScreen(
     onSubmit: () -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
-    Column(modifier = Modifier.fillMaxSize().background(colors.surface).safeDrawingPadding()) {
+    Column(
+        modifier = Modifier.fillMaxSize().background(colors.surface)
+            // 키보드가 올라와도 하단 CTA가 따라 올라오지 않도록 IME 인셋은 제외한다
+            .windowInsetsPadding(WindowInsets.safeDrawing.exclude(WindowInsets.ime)),
+    ) {
         TitleTopBar(DamoimStrings.CREATE_TITLE, onBack)
 
         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {

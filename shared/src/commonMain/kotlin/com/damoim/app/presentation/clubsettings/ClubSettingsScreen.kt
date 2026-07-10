@@ -56,6 +56,7 @@ fun ClubSettingsRoute(
 ) {
     val state by viewModel.uiState.collectAsState()
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val share = com.damoim.app.platform.rememberShareText()
     LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { if (it is ClubSettingsSideEffect.Toast) onToast(it.message) }
     }
@@ -68,7 +69,10 @@ fun ClubSettingsRoute(
         onCloseShare = viewModel::onCloseShare,
         onRegenerate = viewModel::onRegenerate,
         onDisable = viewModel::onDisable,
-        onKakaoShare = viewModel::onKakaoShare,
+        onKakaoShare = {
+            // 시스템 공유 시트로 코드/링크 공유 (카카오톡 선택 가능)
+            share("[다모임] ${state.clubName} 가입 코드: ${state.joinCode}\nhttps://damoim.app/join/${state.joinCode}")
+        },
         onCopyLink = {
             // 초대 링크 실제 복사
             clipboard.setText(androidx.compose.ui.text.AnnotatedString("https://damoim.app/join/${state.joinCode}"))

@@ -37,6 +37,9 @@ fun AuthNavHost(
     fun back() { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) }
     fun resetTo(destination: AuthDestination) { backStack.clear(); backStack.add(destination) }
 
+    // 시스템 뒤로가기: 온보딩 스택 pop (루트=로그인에선 기본 동작)
+    com.damoim.app.platform.PlatformBackHandler(enabled = backStack.size > 1) { back() }
+
     Box(Modifier.fillMaxSize()) {
         when (val current = backStack.last()) {
             AuthDestination.Login -> LoginRoute(

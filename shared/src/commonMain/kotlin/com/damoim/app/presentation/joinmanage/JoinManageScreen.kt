@@ -51,7 +51,7 @@ fun JoinManageRoute(
     LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { if (it is JoinManageSideEffect.Toast) onToast(it.message) }
     }
-    JoinManageScreen(state = state, onBack = onBack, onDecide = viewModel::onDecide)
+    JoinManageScreen(state = state, onBack = onBack, onDecide = viewModel::onDecide, onSelectTab = viewModel::onSelectTab)
 }
 
 @Composable
@@ -59,6 +59,7 @@ fun JoinManageScreen(
     state: JoinManageUiState = JoinManageUiState(isLoading = false, pending = previewApplicants()),
     onBack: () -> Unit = {},
     onDecide: (JoinApplicant, Boolean) -> Unit = { _, _ -> },
+    onSelectTab: (JoinManageTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxSize().background(colors.surfaceInput).safeDrawingPadding()) {
@@ -69,8 +70,8 @@ fun JoinManageScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Tab(DamoimStrings.joinTabPending(state.pending.size), selected = true)
-                Tab(DamoimStrings.joinTabDone(state.doneCount), selected = false)
+                Tab(DamoimStrings.joinTabPending(state.pending.size), selected = state.tab == JoinManageTab.PENDING) { onSelectTab(JoinManageTab.PENDING) }
+                Tab(DamoimStrings.joinTabDone(state.processed.size), selected = state.tab == JoinManageTab.DONE) { onSelectTab(JoinManageTab.DONE) }
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
         }
@@ -79,20 +80,53 @@ fun JoinManageScreen(
             modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            state.pending.forEach { ApplicantCard(it, onDecide) }
+            when (state.tab) {
+                JoinManageTab.PENDING -> state.pending.forEach { ApplicantCard(it, onDecide) }
+                JoinManageTab.DONE -> state.processed.forEach { ProcessedCard(it) }
+            }
         }
     }
 }
 
 @Composable
-private fun Tab(text: String, selected: Boolean) {
+private fun Tab(text: String, selected: Boolean, onClick: () -> Unit) {
     val colors = DamoimTheme.colors
     Text(
         text,
         style = DamoimTheme.typography.bodySmall.copy(fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold),
         color = if (selected) colors.onPrimary else colors.textTertiary,
-        modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(if (selected) colors.textPrimary else colors.surfaceVariant).padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(if (selected) colors.textPrimary else colors.surfaceVariant)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     )
+}
+
+/** 처리 완료 카드 — 대기 카드와 같은 레이아웃에 승인됨/거절됨 뱃지. */
+@Composable
+private fun ProcessedCard(item: com.damoim.app.domain.model.ProcessedApplicant) {
+    val colors = DamoimTheme.colors
+    Row(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(46.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+            Text(item.applicant.initial, style = DamoimTheme.typography.titleMedium.copy(fontSize = 15.sp), color = colors.primaryDeep)
+        }
+        Spacer(Modifier.size(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(item.applicant.name, style = DamoimTheme.typography.bodyStrong, color = colors.textPrimary)
+            Spacer(Modifier.height(2.dp))
+            Text(DamoimStrings.applicantMeta(item.applicant.desiredGisu, item.decidedLabel), style = DamoimTheme.typography.caption, color = colors.textMuted)
+        }
+        Text(
+            if (item.approved) DamoimStrings.JOINMANAGE_APPROVED else DamoimStrings.JOINMANAGE_REJECTED,
+            style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold),
+            color = if (item.approved) colors.primaryDark else colors.error,
+            modifier = Modifier.clip(RoundedCornerShape(999.dp))
+                .background(if (item.approved) colors.primaryContainer else colors.errorContainer)
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
 }
 
 @Composable

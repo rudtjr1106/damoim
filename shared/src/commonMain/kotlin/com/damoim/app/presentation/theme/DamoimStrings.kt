@@ -125,6 +125,8 @@ object DamoimStrings {
     fun joinTabDone(count: Int) = "처리 완료 $count"
     const val JOINMANAGE_APPROVE = "승인"
     const val JOINMANAGE_REJECT = "거절"
+    const val JOINMANAGE_APPROVED = "승인됨"
+    const val JOINMANAGE_REJECTED = "거절됨"
     fun applicantMeta(gisu: String, date: String) = "$gisu · $date"
 
     // 37/74 알림
@@ -322,6 +324,10 @@ object DamoimStrings {
     const val TOAST_POST_UPDATED = "게시글을 수정했어요"
     const val WRITE_TITLE_REQUIRED = "제목을 입력해주세요"
     const val RECRUIT_APPLIED_BUTTON = "신청 완료"
+    const val TOAST_DRAFT_SAVED = "임시저장했어요"
+    const val TOAST_DRAFT_LOADED = "임시저장한 글을 불러왔어요"
+    const val TOAST_CAMERA_UNAVAILABLE = "카메라를 사용할 수 없어요"
+    const val ROSTER_TITLE = "신청한 부원"
     fun replyingTo(name: String) = "${name}님에게 답글 작성 중"
     const val POLL_TAP_TO_VOTE = "항목을 탭해 투표하세요"
 

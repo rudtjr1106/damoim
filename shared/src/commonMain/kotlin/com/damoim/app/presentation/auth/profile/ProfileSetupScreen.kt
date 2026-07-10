@@ -57,7 +57,7 @@ import com.preat.peekaboo.image.picker.toImageBitmap
  */
 @Composable
 fun ProfileSetupRoute(
-    viewModel: ProfileSetupViewModel = viewModel { ProfileSetupViewModel(AppGraph.updateProfileUseCase) },
+    viewModel: ProfileSetupViewModel = viewModel { ProfileSetupViewModel(AppGraph.updateProfileUseCase, AppGraph.observeMyContextUseCase) },
     onNavigateStart: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -151,6 +151,7 @@ fun ProfileSetupScreen(
             isError = state.errorMessage != null,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+            visualTransformation = com.damoim.app.presentation.component.PhoneNumberVisualTransformation,
         )
 
         state.errorMessage?.let {
@@ -201,7 +202,14 @@ private fun ProfilePhoto(
     modifier: Modifier = Modifier,
 ) {
     val colors = DamoimTheme.colors
-    Box(modifier = modifier.size(96.dp)) {
+    // 카메라 배지뿐 아니라 원형 아바타 전체를 눌러도 사진 선택이 열린다
+    Box(
+        modifier = modifier.size(96.dp).clip(CircleShape).clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onPickPhoto,
+        ),
+    ) {
         if (photo != null) {
             Image(
                 bitmap = photo,

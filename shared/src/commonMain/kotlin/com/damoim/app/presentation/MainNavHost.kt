@@ -60,6 +60,13 @@ fun MainNavHost(role: ClubRole) {
         else -> { toast = DamoimStrings.TOAST_COMING_SOON }
     }
 
+    // 시스템 뒤로가기: 스택이 있으면 pop, 게시판 탭 루트에선 홈 탭으로 (홈에선 기본 동작=앱 나가기)
+    com.damoim.app.platform.PlatformBackHandler(
+        enabled = backStack.size > 1 || backStack.last() == MainDestination.BoardHome,
+    ) {
+        if (backStack.size > 1) back() else resetTo(MainDestination.Home)
+    }
+
     Box(Modifier.fillMaxSize()) {
         when (val current = backStack.last()) {
             MainDestination.Home -> HomeRoute(
@@ -87,7 +94,6 @@ fun MainNavHost(role: ClubRole) {
                 category = current.category,
                 onBack = { back() },
                 onOpenPost = { id -> navigate(MainDestination.PostDetail(id)) },
-                onSearch = { navigate(MainDestination.Search) },
             )
 
             MainDestination.Search -> SearchRoute(
