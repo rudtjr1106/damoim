@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -202,31 +203,35 @@ private fun ProfilePhoto(
     modifier: Modifier = Modifier,
 ) {
     val colors = DamoimTheme.colors
-    // 카메라 배지뿐 아니라 원형 아바타 전체를 눌러도 사진 선택이 열린다
-    Box(
-        modifier = modifier.size(96.dp).clip(CircleShape).clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null,
-            onClick = onPickPhoto,
-        ),
-    ) {
-        if (photo != null) {
-            Image(
-                bitmap = photo,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(96.dp).clip(CircleShape),
-            )
-        } else {
-            InitialAvatar(initial = initial, modifier = Modifier.size(96.dp))
+    // 바깥 Box는 자르지 않는다 — 배지가 원 밖으로 2dp 튀어나오는 디자인이라 clip하면 잘린다.
+    // 아바타 원과 카메라 배지 둘 다 사진 선택을 연다.
+    Box(modifier) {
+        Box(
+            modifier = Modifier.size(96.dp).clip(CircleShape).clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onPickPhoto,
+            ),
+        ) {
+            if (photo != null) {
+                Image(
+                    bitmap = photo,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(96.dp).clip(CircleShape),
+                )
+            } else {
+                InitialAvatar(initial = initial, modifier = Modifier.size(96.dp))
+            }
         }
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .size(30.dp)
+                .offset(x = 2.dp, y = 2.dp)   // 디자인: right:-2px; bottom:-2px
+                .size(32.dp)
                 .clip(CircleShape)
                 .background(colors.primary)
-                .border(2.dp, colors.surface, CircleShape)
+                .border(2.5.dp, colors.surface, CircleShape)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
