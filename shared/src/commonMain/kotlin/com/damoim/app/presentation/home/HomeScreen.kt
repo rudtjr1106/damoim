@@ -67,7 +67,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 
 /**
  * 화면 05/06 홈 — Route. role별 데이터 로드 + 네비게이션 콜백.
- * 미구현 목적지(게시판·일정·회원·자료실·공지·내프로필·전체보기)는 [onComingSoon]으로 안내.
+ * 미구현 목적지(일정·회원·공지·내프로필·전체보기)는 [onComingSoon]으로 안내.
  */
 @Composable
 fun HomeRoute(
@@ -76,6 +76,7 @@ fun HomeRoute(
     onNavigateJoinManage: () -> Unit = {},
     onNavigateNotifications: () -> Unit = {},
     onNavigateClubSettings: () -> Unit = {},
+    onNavigateArchive: () -> Unit = {},
     onComingSoon: (String) -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
@@ -87,7 +88,11 @@ fun HomeRoute(
             if (state.summary?.alert?.kind == AlertKind.JOIN_REQUEST) onNavigateJoinManage()
         },
         onQuickAction = { label ->
-            if (label == DamoimStrings.QA_CODE) onNavigateClubSettings() else onComingSoon(label)
+            when (label) {
+                DamoimStrings.QA_CODE -> onNavigateClubSettings()
+                DamoimStrings.QA_ARCHIVE -> onNavigateArchive()
+                else -> onComingSoon(label)
+            }
         },
         onSeeAll = onComingSoon,
         onTabSelect = onTabSelect,

@@ -331,6 +331,75 @@ object DamoimStrings {
     fun replyingTo(name: String) = "${name}님에게 답글 작성 중"
     const val POLL_TAP_TO_VOTE = "항목을 탭해 투표하세요"
 
+    // ══════════ D 자료실 ══════════
+
+    // 67 자료실 홈
+    const val ARCHIVE_TITLE = "자료실"
+    const val ARCHIVE_STORAGE_LABEL = "저장공간"
+    fun archiveStorageTotal(total: String) = " / $total"
+    const val ARCHIVE_FILTER_ALL = "전체"
+    const val ARCHIVE_FOLDER_DOCS = "회칙·문서"
+    const val ARCHIVE_FOLDER_ACCOUNTING = "회계"
+    const val ARCHIVE_FOLDER_PRESENTATION = "발표자료"
+    const val ARCHIVE_FOLDER_PHOTOS = "활동사진"
+    fun archiveCount(count: Int) = "전체 자료 $count"
+    fun archiveFolderCount(folder: String, count: Int) = "$folder $count"
+    fun resourceMeta(uploader: String, time: String, size: String) = "$uploader · $time · $size"
+
+    // 67 빈 상태 (디자인 아카이브에 없음 — 41 게시판 빈 상태 패턴으로 신설)
+    const val ARCHIVE_EMPTY_TITLE = "아직 올라온 자료가 없어요"
+    const val ARCHIVE_EMPTY_SUBTITLE = "회칙·회계·발표자료를 올려\n부원들과 공유해보세요"
+    const val ARCHIVE_EMPTY_CTA = "첫 자료 올리기"
+    const val ARCHIVE_FOLDER_EMPTY = "이 폴더엔 아직 자료가 없어요"
+
+    // 68 자료 상세
+    const val RESOURCE_DETAIL_TITLE = "자료 상세"
+    const val RESOURCE_PREVIEW = "문서 미리보기"
+    fun resourcePreviewPages(pages: Int) = "문서 미리보기 · ${pages}쪽"
+    const val RESOURCE_INFO_UPLOADER = "올린 사람"
+    const val RESOURCE_INFO_FOLDER = "폴더"
+    const val RESOURCE_INFO_FORMAT = "형식 · 크기"
+    const val RESOURCE_INFO_DOWNLOADS = "다운로드"
+    fun resourceUploaderName(name: String, isLeader: Boolean) = if (isLeader) "$name (동아리장)" else name
+    fun resourceFormatValue(ext: String, size: String) = "$ext · $size"
+    fun resourceDownloadCount(count: Int) = "${count}회"
+    const val RESOURCE_DOWNLOAD = "다운로드"
+    fun resourceShareText(title: String) = "[다모임] 자료실 · $title"
+    const val RESOURCE_DELETE_TITLE = "자료를 삭제할까요?"
+    const val RESOURCE_DELETE_MESSAGE = "삭제한 자료는 되돌릴 수 없어요."
+
+    // 69 자료 올리기
+    const val RESOURCE_UPLOAD_TITLE = "자료 올리기"
+    const val RESOURCE_UPLOAD_SUBMIT = "올리기"
+    const val RESOURCE_UPLOAD_ADD_FILE = "파일 추가"
+    const val RESOURCE_UPLOAD_HINT = "PDF · 한글(hwp) · 오피스(ppt·xls·doc) · 압축(zip)\n한 파일당 최대 100MB"
+    fun resourceUploadReady(size: String) = "$size · 업로드 준비 완료"
+    const val RESOURCE_FIELD_FOLDER = "폴더"
+    const val RESOURCE_FIELD_TITLE = "제목"
+    const val RESOURCE_FIELD_DESC = "설명"
+    const val RESOURCE_FIELD_OPTIONAL = "(선택)"
+    const val RESOURCE_FIELD_VISIBILITY = "공개 범위"
+    const val RESOURCE_TITLE_PLACEHOLDER = "자료 제목을 입력하세요"
+    const val RESOURCE_DESC_PLACEHOLDER = "자료에 대한 간단한 설명을 남겨주세요"
+    const val RESOURCE_VISIBILITY_ALL = "전체 회원"
+    const val RESOURCE_VISIBILITY_COHORT = "특정 기수만"
+    const val RESOURCE_FOLDER_SHEET_TITLE = "폴더 선택"
+    /** 일반 회원은 활동사진 폴더에만 올릴 수 있다. */
+    const val RESOURCE_FOLDER_MEMBER_NOTE = "회칙·문서, 회계, 발표자료 폴더는 운영진만 올릴 수 있어요"
+
+    // 69 기수 선택 시트 (디자인 아카이브에 없음 — 42 기수 변경 시트 패턴으로 신설)
+    const val RESOURCE_COHORT_SHEET_TITLE = "공개할 기수 선택"
+    const val RESOURCE_COHORT_SHEET_DESC = "선택한 기수의 부원만 이 자료를 볼 수 있어요"
+    const val RESOURCE_COHORT_CONFIRM = "선택 완료"
+    const val RESOURCE_COHORT_EMPTY = "등록된 기수가 없어요"
+    fun resourceCohortMembers(count: Int) = "${count}명"
+    fun resourceCohortSummary(labels: String) = "$labels 부원만 볼 수 있어요"
+    const val RESOURCE_INFO_VISIBILITY = "공개 범위"
+
+    // D 그룹 토스트
+    const val TOAST_RESOURCE_UPLOADED = "자료를 올렸어요"
+    const val TOAST_RESOURCE_DELETED = "자료를 삭제했어요"
+
     // 프리뷰용 더미 사용자명
     const val PREVIEW_USER_NAME = "서연"
 }

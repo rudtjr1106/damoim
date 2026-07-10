@@ -23,6 +23,9 @@ import com.damoim.app.presentation.component.MainTab
 import com.damoim.app.presentation.home.HomeRoute
 import com.damoim.app.presentation.joinmanage.JoinManageRoute
 import com.damoim.app.presentation.notification.NotificationRoute
+import com.damoim.app.presentation.resource.ArchiveRoute
+import com.damoim.app.presentation.resource.ResourceDetailRoute
+import com.damoim.app.presentation.resource.ResourceUploadRoute
 import com.damoim.app.presentation.theme.DamoimStrings
 
 /** 메인(로그인 이후) 플로우 목적지. */
@@ -35,6 +38,10 @@ private sealed interface MainDestination {
     data class PostDetail(val postId: Long) : MainDestination          // 14/36/79/84
     data class PostWrite(val category: BoardCategory, val editPostId: Long? = null) : MainDestination // 15/34/35/39/70 (+수정)
     data object Search : MainDestination                               // 85/40/76
+    // D 자료실(푸시 — 하단 탭바는 '홈' 활성 유지)
+    data object Archive : MainDestination                              // 67
+    data class ResourceDetail(val resourceId: Long) : MainDestination  // 68
+    data object ResourceUpload : MainDestination                       // 69
     // B 서브
     data object ClubSettings : MainDestination
     data object JoinManage : MainDestination
@@ -74,6 +81,7 @@ fun MainNavHost(role: ClubRole) {
                 onNavigateJoinManage = { navigate(MainDestination.JoinManage) },
                 onNavigateNotifications = { navigate(MainDestination.Notification) },
                 onNavigateClubSettings = { navigate(MainDestination.ClubSettings) },
+                onNavigateArchive = { navigate(MainDestination.Archive) },
                 onComingSoon = { label ->
                     // 홈 퀵액션 '게시판' → 게시판 탭으로, 그 외는 준비중 토스트
                     if (label == DamoimStrings.QA_BOARD) resetTo(MainDestination.BoardHome)
@@ -116,6 +124,28 @@ fun MainNavHost(role: ClubRole) {
                 onDone = { edited ->
                     back()
                     toast = if (edited) DamoimStrings.TOAST_POST_UPDATED else DamoimStrings.TOAST_POST_SUBMITTED
+                },
+                onToast = { toast = it },
+            )
+
+            MainDestination.Archive -> ArchiveRoute(
+                onBack = { back() },
+                onOpenResource = { id -> navigate(MainDestination.ResourceDetail(id)) },
+                onUpload = { navigate(MainDestination.ResourceUpload) },
+                onTabSelect = { tab -> onTab(tab) },
+            )
+
+            is MainDestination.ResourceDetail -> ResourceDetailRoute(
+                resourceId = current.resourceId,
+                onBack = { back() },
+                onToast = { toast = it },
+            )
+
+            MainDestination.ResourceUpload -> ResourceUploadRoute(
+                onCancel = { back() },
+                onUploaded = {
+                    back()
+                    toast = DamoimStrings.TOAST_RESOURCE_UPLOADED
                 },
                 onToast = { toast = it },
             )
