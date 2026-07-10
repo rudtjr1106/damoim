@@ -36,6 +36,8 @@ kotlin {
     
     sourceSets {
         androidMain.dependencies {
+            // 카메라/문서 피커(ActivityResult)·시스템 백 처리용
+            implementation(libs.androidx.activity.compose)
             implementation(libs.compose.uiToolingPreview)
             // @Preview 렌더링에 필요한 ComposeViewAdapter(androidx ui-tooling)를 android 컴파일+런타임
             // 클래스패스에 올린다. 이 KMP android 라이브러리 플러그인은 debug/release 변형 구분이 없어
