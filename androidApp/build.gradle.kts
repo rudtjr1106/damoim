@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -16,9 +17,18 @@ dependencies {
     implementation(projects.shared)
 
     implementation(libs.androidx.activity.compose)
+    // 카카오 로그인 (키는 local.properties의 kakao.native.app.key)
+    implementation(libs.kakao.user)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
+}
+
+// 카카오 네이티브 앱 키 — local.properties에 `kakao.native.app.key=...` 로 넣으면 실제 로그인 활성화
+val kakaoNativeAppKey: String = Properties().run {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+    getProperty("kakao.native.app.key", "")
 }
 
 android {
@@ -31,6 +41,11 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
+    }
+    buildFeatures {
+        buildConfig = true
     }
     packaging {
         resources {

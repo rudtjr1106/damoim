@@ -1,0 +1,26 @@
+package com.damoim.app.core.social
+
+/**
+ * 소셜 로그인 브릿지. 플랫폼 앱 모듈(androidApp 등)이 실제 SDK 구현을 [SocialLogin.provider]에
+ * 주입한다 — 카카오 SDK 의존성이 shared에 들어오지 않도록 분리.
+ *
+ * provider가 없거나 미설정(키 없음)이면 Mock 로그인으로 폴백한다.
+ */
+data class SocialUser(
+    val id: Long,
+    val nickname: String,
+    val email: String?,
+    val profileImageUrl: String?,
+)
+
+interface SocialLoginProvider {
+    /** 네이티브 앱 키가 주입되어 실제 로그인이 가능한 상태인지. */
+    val isConfigured: Boolean
+
+    /** 로그인 수행. 취소/실패 시 null. */
+    suspend fun login(): SocialUser?
+}
+
+object SocialLogin {
+    var provider: SocialLoginProvider? = null
+}

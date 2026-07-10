@@ -25,6 +25,8 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // 카카오 SDK (v2)
+        maven("https://devrepo.kakao.com/nexus/content/groups/public/")
     }
 }
 
