@@ -87,6 +87,15 @@ class MockBoardRepository : BoardRepository {
         return DataResult.Success(Unit)
     }
 
+    override suspend fun saveDraft(draft: PostDraft): DataResult<Unit> {
+        MockStore.saveDraft(draft)
+        return DataResult.Success(Unit)
+    }
+
+    override fun loadDraft(): PostDraft? = MockStore.loadDraft()
+
+    override fun clearDraft() = MockStore.clearDraft()
+
     private companion object {
         const val WRITE_DELAY_MS = 350L
     }

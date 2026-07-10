@@ -10,3 +10,16 @@ data class JoinApplicant(
     val timeAgo: String,             // "방금 전"
     val message: String? = null,     // 신청 메시지 (없을 수 있음)
 )
+
+/** 처리 완료된 신청 (09 '처리 완료' 탭). */
+data class ProcessedApplicant(
+    val applicant: JoinApplicant,
+    val approved: Boolean,           // true=승인됨, false=거절됨
+    val decidedLabel: String,        // "방금 전" / "6.01 처리"
+)
+
+/** 가입 신청 관리 화면 데이터 — 대기 + 처리 완료. */
+data class ApplicantsBoard(
+    val pending: List<JoinApplicant>,
+    val processed: List<ProcessedApplicant>,
+)

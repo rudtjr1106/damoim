@@ -54,8 +54,21 @@ object MockStore {
     /** 카카오 로그인(모의). 프로필 미설정이면 needsProfileSetup=true 유지. */
     fun login(): AuthUser = _user.value
 
+    /** 실제 소셜(카카오) 로그인 결과 반영 — 닉네임/이메일/사진을 프리필하고 프로필 설정 단계로. */
+    fun loginWithSocial(social: com.damoim.app.core.social.SocialUser): AuthUser {
+        _user.update {
+            it.copy(
+                id = if (social.id != 0L) social.id else it.id,
+                nickname = social.nickname.ifBlank { it.nickname },
+                email = social.email ?: it.email,
+                profileImageUrl = social.profileImageUrl ?: it.profileImageUrl,
+            )
+        }
+        return _user.value
+    }
+
     fun updateProfile(nickname: String, contact: String, profileImageUrl: String?): AuthUser {
-        _user.update { it.copy(nickname = nickname, contact = contact, profileImageUrl = profileImageUrl, needsProfileSetup = false) }
+        _user.update { it.copy(nickname = nickname, contact = contact, profileImageUrl = profileImageUrl ?: it.profileImageUrl, needsProfileSetup = false) }
         return _user.value
     }
 
@@ -88,7 +101,7 @@ object MockStore {
         _posts.value = emptyList()
         _comments.value = emptyMap()
         _pending.value = emptyList()
-        _processedCount.value = 0
+        _processed.value = emptyList()
         _notifications.value = listOf(
             AppNotification(nextId++, com.damoim.app.domain.model.NotificationType.NOTICE, "$name 동아리가 만들어졌어요. 가입 코드를 공유해 부원을 초대해보세요!", "방금 전", isUnread = true),
         )
@@ -110,16 +123,17 @@ object MockStore {
     // ══════════ 가입 신청자(09) ══════════
 
     private val _pending = MutableStateFlow<List<JoinApplicant>>(emptyList())
-    private val _processedCount = MutableStateFlow(0)
+    private val _processed = MutableStateFlow<List<com.damoim.app.domain.model.ProcessedApplicant>>(emptyList())
 
-    /** (대기 목록, 처리 완료 수) */
-    fun applicantsFlow(): Flow<Pair<List<JoinApplicant>, Int>> =
-        combine(_pending, _processedCount) { p, d -> p to d }
+    fun applicantsFlow(): Flow<com.damoim.app.domain.model.ApplicantsBoard> =
+        combine(_pending, _processed) { p, d -> com.damoim.app.domain.model.ApplicantsBoard(p, d) }
 
     fun decideApplicant(applicantId: Long, approve: Boolean) {
         val target = _pending.value.firstOrNull { it.id == applicantId } ?: return
         _pending.update { list -> list.filterNot { it.id == applicantId } }
-        _processedCount.update { it + 1 }
+        _processed.update { list ->
+            listOf(com.damoim.app.domain.model.ProcessedApplicant(target, approved = approve, decidedLabel = "방금 전")) + list
+        }
         if (approve) {
             _session.update { it?.copy(club = it.club.copy(memberCount = it.club.memberCount + 1)) }
             _notifications.update { list ->
@@ -410,8 +424,16 @@ object MockStore {
         _posts.value = seeded.map { it.copy(commentCount = comments[it.id].orEmpty().size) }
         _comments.value = comments
         _pending.value = MockData.applicants
-        _processedCount.value = 12
+        _processed.value = MockData.processedApplicants
         _notifications.value = MockData.notifications
         orderCounter = 1_000_000L + seeded.size + 1
     }
+
+    // ══════════ 작성 임시저장(15) ══════════
+
+    private var savedDraft: PostDraft? = null
+
+    fun saveDraft(draft: PostDraft) { savedDraft = draft }
+    fun loadDraft(): PostDraft? = savedDraft
+    fun clearDraft() { savedDraft = null }
 }

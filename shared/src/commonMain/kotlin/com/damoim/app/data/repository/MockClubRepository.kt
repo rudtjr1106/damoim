@@ -7,7 +7,7 @@ import com.damoim.app.data.mock.MockStore
 import com.damoim.app.domain.model.Club
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.HomeSummary
-import com.damoim.app.domain.model.JoinApplicant
+import com.damoim.app.domain.model.ApplicantsBoard
 import com.damoim.app.domain.model.JoinRequestResult
 import com.damoim.app.domain.repository.ClubRepository
 import kotlinx.coroutines.delay
@@ -49,7 +49,7 @@ class MockClubRepository : ClubRepository {
         return DataResult.Success(Unit)
     }
 
-    override fun observeApplicants(): Flow<Pair<List<JoinApplicant>, Int>> = MockStore.applicantsFlow()
+    override fun observeApplicants(): Flow<ApplicantsBoard> = MockStore.applicantsFlow()
 
     override suspend fun decideApplicant(applicantId: Long, approve: Boolean): DataResult<Unit> {
         delay(300L)

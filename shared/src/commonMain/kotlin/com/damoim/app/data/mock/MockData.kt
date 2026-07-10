@@ -58,6 +58,26 @@ object MockData {
         JoinApplicant(3, "이민아", "민아", "25기 희망", "6.01 신청", "2일 전"),
     )
 
+    // ── 09 처리 완료 시드 (12건: 승인 10 · 거절 2) ──
+    internal val processedApplicants: List<com.damoim.app.domain.model.ProcessedApplicant> = run {
+        val entries = listOf(
+            Triple("정우성", "우성", true), Triple("한소희", "소희", true), Triple("이도현", "도현", true),
+            Triple("김세정", "세정", true), Triple("박보검", "보검", false), Triple("최수빈", "수빈", true),
+            Triple("장원영", "원영", true), Triple("서강준", "강준", true), Triple("문가영", "가영", false),
+            Triple("남주혁", "주혁", true), Triple("김태리", "태리", true), Triple("이준호", "준호", true),
+        )
+        entries.mapIndexed { i, (name, initial, approved) ->
+            com.damoim.app.domain.model.ProcessedApplicant(
+                applicant = JoinApplicant(
+                    id = 100L + i, name = name, initial = initial,
+                    desiredGisu = "25기 희망", appliedDate = "5.${28 - i} 신청", timeAgo = "",
+                ),
+                approved = approved,
+                decidedLabel = "5.${29 - i} 처리",
+            )
+        }
+    }
+
     // ── 37 알림 시드 ──
     internal val notifications = listOf(
         AppNotification(1, NotificationType.JOIN_APPROVED, "가입 신청이 승인되었어요. 코딩하는 사람들에 오신 것을 환영합니다! 🎉", "방금 전", isUnread = true),

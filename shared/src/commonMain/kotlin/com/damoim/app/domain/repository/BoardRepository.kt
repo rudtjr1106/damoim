@@ -60,6 +60,11 @@ interface BoardRepository {
 
     /** 최근 검색어 전체 삭제(85). */
     suspend fun clearRecentSearches(): DataResult<Unit>
+
+    /** 작성 임시저장(15) — 저장/불러오기/삭제. 등록 성공 시 자동 삭제된다. */
+    suspend fun saveDraft(draft: PostDraft): DataResult<Unit>
+    fun loadDraft(): PostDraft?
+    fun clearDraft()
 }
 
 /** 게시판 홈 데이터: 고정 공지(필독) + 최근 글 리스트. */

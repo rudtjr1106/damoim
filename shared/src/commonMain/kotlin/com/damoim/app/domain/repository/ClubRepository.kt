@@ -4,7 +4,7 @@ import com.damoim.app.core.result.DataResult
 import com.damoim.app.domain.model.Club
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.HomeSummary
-import com.damoim.app.domain.model.JoinApplicant
+import com.damoim.app.domain.model.ApplicantsBoard
 import com.damoim.app.domain.model.JoinRequestResult
 import kotlinx.coroutines.flow.Flow
 
@@ -37,8 +37,8 @@ interface ClubRepository {
     /** 가입 코드 비활성화 (화면 08). */
     suspend fun disableJoinCode(): DataResult<Unit>
 
-    /** 가입 신청 (대기 목록, 처리 완료 수) (화면 09). */
-    fun observeApplicants(): Flow<Pair<List<JoinApplicant>, Int>>
+    /** 가입 신청 관리 데이터 — 대기 + 처리 완료 (화면 09). */
+    fun observeApplicants(): Flow<ApplicantsBoard>
 
     /** 신청 승인/거절 (화면 09). 승인 시 회원 수가 즉시 반영된다. */
     suspend fun decideApplicant(applicantId: Long, approve: Boolean): DataResult<Unit>
