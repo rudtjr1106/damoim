@@ -1,12 +1,10 @@
 package com.damoim.app.domain.usecase
 
-import com.damoim.app.core.result.DataResult
-import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.repository.ClubRepository
+import kotlinx.coroutines.flow.Flow
 
-/** 홈 요약 조회 (화면 05/06). */
+/** 홈 요약 관찰 (화면 05/06). 신청 승인·글 작성 등이 실시간 반영된다. */
 class GetHomeSummaryUseCase(private val clubRepository: ClubRepository) {
-    suspend operator fun invoke(role: ClubRole): DataResult<HomeSummary> =
-        clubRepository.getHomeSummary(role)
+    operator fun invoke(): Flow<HomeSummary?> = clubRepository.observeHomeSummary()
 }

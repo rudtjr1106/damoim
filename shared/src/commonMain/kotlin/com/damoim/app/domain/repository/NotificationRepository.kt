@@ -2,8 +2,13 @@ package com.damoim.app.domain.repository
 
 import com.damoim.app.core.result.DataResult
 import com.damoim.app.domain.model.AppNotification
+import kotlinx.coroutines.flow.Flow
 
-/** 알림 레포지토리 (화면 37/74). 구현체는 data 계층, 현재 Mock. */
+/** 알림 레포지토리 (화면 37/74). 읽음 처리가 벨 배지 등에 실시간 반영된다. */
 interface NotificationRepository {
-    suspend fun getNotifications(): DataResult<List<AppNotification>>
+
+    fun observeNotifications(): Flow<List<AppNotification>>
+
+    /** 모두 읽음 처리(37). */
+    suspend fun markAllRead(): DataResult<Unit>
 }

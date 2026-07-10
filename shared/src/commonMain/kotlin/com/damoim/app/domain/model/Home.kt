@@ -6,7 +6,7 @@ data class HomeSummary(
     val clubName: String,
     val memberName: String,          // 일반회원 인사말용 ("안녕하세요, 서연님")
     val stats: List<HomeStat>,       // 헤더 통계 3개
-    val alert: HomeAlert,            // 헤더 아래 겹치는 알림 카드
+    val alert: HomeAlert?,           // 헤더 아래 겹치는 알림 카드 (없으면 숨김 — 예: 신청 0건)
     val schedules: List<UpcomingSchedule>,
     val boardPreviews: List<BoardPreview>,
     val hasUnreadNotification: Boolean,
