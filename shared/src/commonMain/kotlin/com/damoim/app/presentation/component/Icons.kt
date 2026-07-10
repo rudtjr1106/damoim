@@ -15,21 +15,36 @@ import damoim.shared.generated.resources.ic_calendar
 import damoim.shared.generated.resources.ic_camera
 import damoim.shared.generated.resources.ic_chart
 import damoim.shared.generated.resources.ic_check
+import damoim.shared.generated.resources.ic_chevron_down
+import damoim.shared.generated.resources.ic_clock
+import damoim.shared.generated.resources.ic_edit
+import damoim.shared.generated.resources.ic_list
+import damoim.shared.generated.resources.ic_reply
+import damoim.shared.generated.resources.ic_share
+import damoim.shared.generated.resources.ic_trash
 import damoim.shared.generated.resources.ic_chevron_left
 import damoim.shared.generated.resources.ic_chevron_right
 import damoim.shared.generated.resources.ic_close
+import damoim.shared.generated.resources.ic_comment
 import damoim.shared.generated.resources.ic_copy
 import damoim.shared.generated.resources.ic_crown
+import damoim.shared.generated.resources.ic_download
 import damoim.shared.generated.resources.ic_folder
+import damoim.shared.generated.resources.ic_heart
 import damoim.shared.generated.resources.ic_home
+import damoim.shared.generated.resources.ic_image
 import damoim.shared.generated.resources.ic_info
 import damoim.shared.generated.resources.ic_kakao
 import damoim.shared.generated.resources.ic_link
 import damoim.shared.generated.resources.ic_lock
 import damoim.shared.generated.resources.ic_megaphone
+import damoim.shared.generated.resources.ic_more
+import damoim.shared.generated.resources.ic_paperclip
 import damoim.shared.generated.resources.ic_people
 import damoim.shared.generated.resources.ic_person_plus
 import damoim.shared.generated.resources.ic_plus
+import damoim.shared.generated.resources.ic_search
+import damoim.shared.generated.resources.ic_send
 import damoim.shared.generated.resources.ic_settings
 import damoim.shared.generated.resources.ic_user_single
 import damoim.shared.generated.resources.ic_warning
@@ -122,3 +137,52 @@ fun HomeIcon(tint: Color, modifier: Modifier = Modifier.size(21.dp)) = VectorIco
 
 @Composable
 fun SettingsIcon(tint: Color, modifier: Modifier = Modifier.size(21.dp)) = VectorIcon(Res.drawable.ic_settings, tint, modifier)
+
+// ── C 게시판 ──
+@Composable
+fun SearchIcon(tint: Color, modifier: Modifier = Modifier.size(22.dp)) = VectorIcon(Res.drawable.ic_search, tint, modifier)
+
+@Composable
+fun HeartIcon(tint: Color, modifier: Modifier = Modifier.size(16.dp)) = VectorIcon(Res.drawable.ic_heart, tint, modifier)
+
+@Composable
+fun CommentIcon(tint: Color, modifier: Modifier = Modifier.size(16.dp)) = VectorIcon(Res.drawable.ic_comment, tint, modifier)
+
+/** 케밥(수평 3점) 메뉴 — 채워진 아이콘. */
+@Composable
+fun MoreIcon(tint: Color, modifier: Modifier = Modifier.size(20.dp)) = VectorIcon(Res.drawable.ic_more, tint, modifier)
+
+@Composable
+fun SendIcon(tint: Color, modifier: Modifier = Modifier.size(17.dp)) = VectorIcon(Res.drawable.ic_send, tint, modifier)
+
+@Composable
+fun ChevronDownIcon(tint: Color, modifier: Modifier = Modifier.size(12.dp)) = VectorIcon(Res.drawable.ic_chevron_down, tint, modifier)
+
+@Composable
+fun DownloadIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp)) = VectorIcon(Res.drawable.ic_download, tint, modifier)
+
+/** 클립(파일 첨부) — ic_link(체인)와 다른 단일 클립 글리프. */
+@Composable
+fun PaperclipIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp)) = VectorIcon(Res.drawable.ic_paperclip, tint, modifier)
+
+@Composable
+fun ImageIcon(tint: Color, modifier: Modifier = Modifier.size(22.dp)) = VectorIcon(Res.drawable.ic_image, tint, modifier)
+
+@Composable
+fun ClockIcon(tint: Color, modifier: Modifier = Modifier.size(17.dp)) = VectorIcon(Res.drawable.ic_clock, tint, modifier)
+
+/** 신청자/명단 리스트(불균형 3선). */
+@Composable
+fun ListIcon(tint: Color, modifier: Modifier = Modifier.size(20.dp)) = VectorIcon(Res.drawable.ic_list, tint, modifier)
+
+@Composable
+fun EditIcon(tint: Color, modifier: Modifier = Modifier.size(19.dp)) = VectorIcon(Res.drawable.ic_edit, tint, modifier)
+
+@Composable
+fun ShareIcon(tint: Color, modifier: Modifier = Modifier.size(19.dp)) = VectorIcon(Res.drawable.ic_share, tint, modifier)
+
+@Composable
+fun TrashIcon(tint: Color, modifier: Modifier = Modifier.size(19.dp)) = VectorIcon(Res.drawable.ic_trash, tint, modifier)
+
+@Composable
+fun ReplyIcon(tint: Color, modifier: Modifier = Modifier.size(19.dp)) = VectorIcon(Res.drawable.ic_reply, tint, modifier)

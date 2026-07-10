@@ -47,6 +47,14 @@ data class DamoimColors(
     val toastSurface: Color = Color(0xFF22273A),
     val toastError: Color = Color(0xFF3A2226),
 
+    // C 게시판 전용
+    val skeletonBase: Color = Color(0xFFE9EDF4),      // 로딩 스켈레톤 셔머 베이스(72/73)
+    val calSunday: Color = Color(0xFFE5766F),         // 달력 일요일/마감 강조(86)
+    val calSaturday: Color = Color(0xFF7C93CF),       // 달력 토요일(86)
+    val calOtherMonth: Color = Color(0xFFCBD2DE),     // 달력 인접월 날짜(86)
+    val imageViewerBg: Color = Color(0xFF0C0E14),     // 이미지 전체화면 뷰어 배경(57)
+    val imageViewerTile: Color = Color(0xFF1A1E2A),   // 뷰어 썸네일/플레이스홀더(57)
+
     // On-colors
     val onPrimary: Color = Color(0xFFFFFFFF),
     val onSurface: Color = Color(0xFF181C26),

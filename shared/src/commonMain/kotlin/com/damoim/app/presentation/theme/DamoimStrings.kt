@@ -145,6 +145,186 @@ object DamoimStrings {
     const val TOAST_CREATE_CLUB_TODO = "동아리 생성은 다음 단계(B 홈/동아리 관리)에서 구현돼요"
     const val TOAST_HOME_TODO = "홈 화면은 다음 단계(B 홈/동아리 관리)에서 구현돼요"
 
+    // ── C. 게시판 ──
+    // 10 게시판 홈 / 카테고리 필터
+    const val BOARD_TITLE = "게시판"
+    const val BOARD_FILTER_ALL = "전체"
+    const val BOARD_PINNED = "필독"
+    // (BOARD_NOTICE/BOARD_FREE/BOARD_RECRUIT 는 위 B 섹션에 이미 정의됨)
+
+    // 11/12/13 목록
+    const val BOARD_LIST_FREE = "자유 게시판"
+    const val BOARD_LIST_NOTICE = "공지 게시판"
+    const val BOARD_LIST_RECRUIT = "모집 게시판"
+    const val BOARD_SEARCH_PLACEHOLDER = "제목, 내용, 작성자 검색"
+    const val BOARD_SORT_RECENT = "최신순"
+    const val BOARD_SORT_POPULAR = "인기순"
+    const val BOARD_SORT_COMMENTS = "댓글순"
+    const val BOARD_SORT_PERIOD = "기간"
+    const val BOARD_RECRUIT_ONLY = "모집중만"
+    const val RECRUIT_OPEN = "모집중"
+    const val RECRUIT_CLOSED = "마감"
+    fun recruitProgress(current: Int, capacity: Int) = "$current/${capacity}명"
+    fun boardAuthorGisu(name: String, gisu: String) = "$name · $gisu"
+
+    // 게시글 메타
+    fun viewCountLabel(n: Int) = "조회 $n"
+    fun readRateLabel(n: Int) = "확인율 $n%"
+    fun commentCountLabel(n: Int) = "댓글 $n"
+    fun likeCountLabel(n: Int) = "좋아요 $n"
+
+    // 14/36 상세
+    fun commentSectionHeader(n: Int) = "댓글 $n"
+    const val BOARD_AUTHOR_BADGE = "작성자"
+    const val BOARD_REPLY = "답글 달기"
+    const val BOARD_COMMENT_HINT = "댓글을 입력하세요"
+    // 36 투표 상세
+    const val POLL_LABEL = "투표"
+    const val POLL_MULTI_OFF = "복수 선택 불가"
+    const val POLL_MULTI_ON = "복수 선택"
+    const val POLL_ANON = "익명 투표"
+    fun pollMeta(anon: Boolean, multi: Boolean): String {
+        val a = if (anon) POLL_ANON else "공개 투표"
+        val m = if (multi) POLL_MULTI_ON else POLL_MULTI_OFF
+        return "$a · $m"
+    }
+    fun pollParticipation(count: Int, myVote: String?): String =
+        if (myVote != null) "${count}명 참여 · 내 투표: $myVote" else "${count}명 참여"
+    const val POLL_REVOTE = "다시 투표"
+
+    // 15/34/35/39 작성
+    const val WRITE_TITLE = "글쓰기"
+    const val WRITE_SUBMIT = "등록"
+    const val WRITE_NOTICE_LOCK = "공지는 운영진만"
+    const val WRITE_TITLE_PLACEHOLDER = "제목을 입력하세요"
+    const val WRITE_BODY_PLACEHOLDER = "내용을 입력하세요"
+    const val WRITE_TEMP_SAVE = "임시저장"
+    fun imageCount(current: Int, max: Int) = "$current/$max"
+
+    // 41 게시판 빈 상태
+    const val BOARD_EMPTY_TITLE = "아직 게시글이 없어요"
+    const val BOARD_EMPTY_SUBTITLE = "첫 번째 글을 남겨 동아리 게시판을\n시작해보세요"
+    const val BOARD_EMPTY_CTA = "첫 글 작성하기"
+
+    // 40 검색 / 76 무결과
+    const val SEARCH_TAB_ALL = "전체"
+    const val SEARCH_SECTION_POST = "게시글"
+    const val SEARCH_SECTION_SCHEDULE = "일정"
+    const val SEARCH_SECTION_FILE = "파일"
+    fun searchNoResultTitle(query: String) = "'$query' 검색 결과가 없어요"
+    const val SEARCH_NO_RESULT_SUBTITLE = "단어의 철자를 확인하거나\n다른 키워드로 검색해보세요"
+
+    // 79 없는 콘텐츠 오류
+    const val POST_ERROR_TITLE = "삭제되었거나 없는 게시글이에요"
+    const val POST_ERROR_SUBTITLE = "작성자가 글을 삭제했거나\n접근 권한이 변경되었을 수 있어요"
+    const val POST_ERROR_BACK = "게시판으로 돌아가기"
+
+    // 84 모집 글 상세
+    const val RECRUIT_STATUS = "모집 현황"
+    fun recruitDeadlineBadge(dday: String) = "마감 $dday"
+    fun recruitAppliedSuffix(capacity: Int) = "/ ${capacity}명 신청"
+    fun recruitRemaining(n: Int) = "${n}자리 남음"
+    const val RECRUIT_AUTO_CLOSE = "선착순 마감 · 정원이 차면 자동 종료돼요"
+    const val RECRUIT_INFO_DEADLINE = "모집 마감"
+    const val RECRUIT_INFO_TARGET = "모집 대상"
+    const val RECRUIT_INFO_METHOD = "모집 방식"
+    fun recruitApplicantSummary(name: String, others: Int) = "$name 외 ${others}명이 신청했어요"
+    const val RECRUIT_APPLY = "신청하기"
+
+    // 85 검색 시작
+    const val SEARCH_PLACEHOLDER = "게시글, 일정, 파일 검색"
+    const val SEARCH_RECENT = "최근 검색어"
+    const val SEARCH_CLEAR_ALL = "전체 삭제"
+    const val SEARCH_RECOMMENDED = "추천 검색어"
+
+    // 86 날짜·시간 선택기
+    const val PICKER_TITLE = "마감일 설정"
+    const val PICKER_TIME = "시간"
+    const val PICKER_AM = "오전"
+    const val PICKER_PM = "오후"
+    val PICKER_WEEKDAYS = listOf("일", "월", "화", "수", "목", "금", "토")
+    fun pickerMonth(year: Int, month: Int) = "${year}년 ${month}월"
+    val PICKER_PRESETS = listOf("오늘 자정", "내일 오후 6시", "1주일 뒤")
+
+    // 52/53 카테고리 선택 시트
+    const val CATEGORY_SHEET_TITLE = "게시판 선택"
+    const val CATEGORY_SHEET_SUBTITLE = "글을 올릴 게시판을 골라주세요"
+    const val CATEGORY_DESC_FREE = "일상 소통, 후기, 질문 무엇이든"
+    const val CATEGORY_DESC_RECRUIT = "스터디·프로젝트 팀원, 신입 부원 모집"
+    const val CATEGORY_DESC_NOTICE = "전체 회원에게 전달하는 소식"
+    const val CATEGORY_MEMBER_HINT = "운영진 권한이 있으면 공지 게시판이 활성화되고, 필독 지정 옵션이 추가로 표시돼요"
+    const val ADMIN_BADGE = "운영진"
+    const val CATEGORY_PIN = "필독 지정"
+    const val CATEGORY_PIN_DESC = "게시판 상단에 고정되고 확인율이 집계돼요"
+    const val CATEGORY_PUSH = "푸시 알림 발송"
+    const val CATEGORY_PUSH_DESC = "등록 즉시 전체 회원에게 알림"
+    const val CATEGORY_CONFIRM = "선택 완료"
+
+    // 71 첨부 방식 시트
+    const val ATTACH_SHEET_TITLE = "첨부하기"
+    const val ATTACH_PHOTO = "사진·동영상"
+    const val ATTACH_PHOTO_DESC = "갤러리에서 선택"
+    const val ATTACH_CAMERA = "카메라"
+    const val ATTACH_CAMERA_DESC = "바로 촬영해서 첨부"
+    const val ATTACH_DOC = "문서 파일"
+    const val ATTACH_DOC_DESC = "PDF·문서 등 첨부"
+    const val ATTACH_LINK = "링크"
+    const val ATTACH_LINK_DESC = "URL 붙여넣기"
+    const val ATTACH_POLL = "투표"
+    const val ATTACH_POLL_DESC = "선택지를 만들어 의견 모으기"
+
+    // 54 게시글 ⋯ 메뉴
+    const val MENU_EDIT = "수정하기"
+    const val MENU_SHARE = "공유하기"
+    const val MENU_COPY_LINK = "링크 복사"
+    const val MENU_PIN = "상단 고정"
+    const val MENU_DELETE = "삭제하기"
+    const val POST_MENU_NOTE = "다른 회원의 글에는 공유하기 · 링크 복사 · 신고하기만 표시돼요"
+
+    // 55 댓글 메뉴
+    const val CMENU_REPLY = "답글 달기"
+    const val CMENU_COPY = "내용 복사"
+    const val CMENU_REPORT = "신고하기"
+    const val COMMENT_MENU_NOTE = "내 댓글에는 수정하기 · 삭제하기가 대신 표시돼요"
+
+    // 56 삭제 확인
+    const val DELETE_TITLE = "게시글을 삭제할까요?"
+    fun deleteMessage(comments: Int) = "댓글 ${comments}개와 첨부 파일도 함께 삭제되며\n되돌릴 수 없어요."
+    const val DELETE_CONFIRM = "삭제"
+
+    // 57 이미지 뷰어
+    fun imageIndex(current: Int, total: Int) = "$current / $total"
+
+    // 82 신고 사유 시트
+    const val REPORT_TITLE = "신고 사유를 선택해주세요"
+    const val REPORT_SUBTITLE = "신고 내용은 운영진이 확인하며, 작성자에게 알려지지 않아요"
+    const val REPORT_SUBMIT = "신고하기"
+    fun reportReasonLabel(reason: com.damoim.app.domain.model.ReportReason): String = when (reason) {
+        com.damoim.app.domain.model.ReportReason.SPAM -> "스팸·광고성 홍보"
+        com.damoim.app.domain.model.ReportReason.ABUSE -> "욕설·비방·혐오 표현"
+        com.damoim.app.domain.model.ReportReason.SEXUAL -> "음란·선정성 콘텐츠"
+        com.damoim.app.domain.model.ReportReason.FRAUD -> "사기·사칭"
+        com.damoim.app.domain.model.ReportReason.PRIVACY -> "개인정보 노출"
+        com.damoim.app.domain.model.ReportReason.ETC -> "기타"
+    }
+
+    // C 그룹 토스트(58 피드백)
+    const val TOAST_POST_LINK_COPIED = "링크가 복사되었어요"
+    const val TOAST_REPORTED = "신고가 접수되었어요"
+    const val TOAST_FILE_DOWNLOADED = "파일을 다운로드했어요"
+    const val TOAST_POST_DELETED = "게시글을 삭제했어요"
+    const val TOAST_POST_PINNED = "게시글을 상단에 고정했어요"
+    const val TOAST_POST_UNPINNED = "상단 고정을 해제했어요"
+    const val TOAST_COMMENT_COPIED = "댓글을 복사했어요"
+    const val TOAST_RECRUIT_APPLIED = "모집 신청이 접수되었어요"
+    const val TOAST_RECRUIT_FULL = "이미 신청했거나 모집이 마감되었어요"
+    const val TOAST_POST_SUBMITTED = "게시글이 등록되었어요"
+    const val TOAST_POST_UPDATED = "게시글을 수정했어요"
+    const val WRITE_TITLE_REQUIRED = "제목을 입력해주세요"
+    const val RECRUIT_APPLIED_BUTTON = "신청 완료"
+    fun replyingTo(name: String) = "${name}님에게 답글 작성 중"
+    const val POLL_TAP_TO_VOTE = "항목을 탭해 투표하세요"
+
     // 프리뷰용 더미 사용자명
     const val PREVIEW_USER_NAME = "서연"
 }
