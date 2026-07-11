@@ -2,11 +2,15 @@ package com.damoim.app.domain.repository
 
 import com.damoim.app.core.result.DataResult
 import com.damoim.app.domain.model.Club
+import com.damoim.app.domain.model.ClubMembership
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.Cohort
 import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.model.ApplicantsBoard
 import com.damoim.app.domain.model.JoinRequestResult
+import com.damoim.app.domain.model.Member
+import com.damoim.app.domain.model.MemberDetail
+import com.damoim.app.domain.model.MemberRole
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -46,4 +50,39 @@ interface ClubRepository {
 
     /** 신청 승인/거절 (화면 09). 승인 시 회원 수가 즉시 반영된다. */
     suspend fun decideApplicant(applicantId: Long, approve: Boolean): DataResult<Unit>
+
+    // ── E. 회원·기수 관리 ──
+
+    /** 회원 명부 (16/17). */
+    fun observeMembers(): Flow<List<Member>>
+
+    /** 회원 상세 (18). */
+    fun observeMember(memberId: Long): Flow<MemberDetail?>
+
+    /** 내 명부 정보 (20 내 프로필의 기수·역할 뱃지). */
+    fun observeMyMember(): Flow<Member?>
+
+    /** 내가 속한 동아리들 (33 동아리 전환). */
+    fun observeJoinedClubs(): Flow<List<ClubMembership>>
+
+    /** 42 기수 변경 — 옛/새 기수 회원 수가 함께 이동한다. */
+    suspend fun changeMemberCohort(memberId: Long, cohortId: Long): DataResult<Unit>
+
+    /** 18 역할 변경 (운영진 ↔ 일반). */
+    suspend fun changeMemberRole(memberId: Long, role: MemberRole): DataResult<Unit>
+
+    /** 43 내보내기 — 명부에서 제거하고 기수·동아리 회원 수 감소. */
+    suspend fun removeMember(memberId: Long): DataResult<Unit>
+
+    /** 44 새 기수 추가. */
+    suspend fun addCohort(shortLabel: String, displayName: String): DataResult<Cohort>
+
+    /** 19 기수 이름 변경. */
+    suspend fun renameCohort(cohortId: Long, shortLabel: String, displayName: String): DataResult<Unit>
+
+    /** 33 동아리 전환 (즉시 데이터 스왑). */
+    fun switchClub(clubId: Long)
+
+    /** 60 탈퇴 / 로그아웃 / 33 새 참여 — 세션 종료(→ Auth). */
+    fun leaveClub()
 }

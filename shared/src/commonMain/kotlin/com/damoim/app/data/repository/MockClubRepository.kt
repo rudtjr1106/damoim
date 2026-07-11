@@ -5,11 +5,15 @@ import com.damoim.app.core.result.DataResult
 import com.damoim.app.data.mock.MockData
 import com.damoim.app.data.mock.MockStore
 import com.damoim.app.domain.model.Club
+import com.damoim.app.domain.model.ClubMembership
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.Cohort
 import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.model.ApplicantsBoard
 import com.damoim.app.domain.model.JoinRequestResult
+import com.damoim.app.domain.model.Member
+import com.damoim.app.domain.model.MemberDetail
+import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.domain.repository.ClubRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -60,7 +64,51 @@ class MockClubRepository : ClubRepository {
         return DataResult.Success(Unit)
     }
 
+    // ── E. 회원·기수 관리 ──
+
+    override fun observeMembers(): Flow<List<Member>> = MockStore.membersFlow()
+
+    override fun observeMember(memberId: Long): Flow<MemberDetail?> = MockStore.memberDetailFlow(memberId)
+
+    override fun observeMyMember(): Flow<Member?> = MockStore.myMemberFlow()
+
+    override fun observeJoinedClubs(): Flow<List<ClubMembership>> = MockStore.joinedClubsFlow()
+
+    override suspend fun changeMemberCohort(memberId: Long, cohortId: Long): DataResult<Unit> {
+        delay(WRITE_DELAY_MS)
+        MockStore.changeMemberCohort(memberId, cohortId)
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun changeMemberRole(memberId: Long, role: MemberRole): DataResult<Unit> {
+        delay(WRITE_DELAY_MS)
+        MockStore.changeMemberRole(memberId, role)
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun removeMember(memberId: Long): DataResult<Unit> {
+        delay(WRITE_DELAY_MS)
+        MockStore.removeMember(memberId)
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun addCohort(shortLabel: String, displayName: String): DataResult<Cohort> {
+        delay(WRITE_DELAY_MS)
+        return DataResult.Success(MockStore.addCohort(shortLabel, displayName))
+    }
+
+    override suspend fun renameCohort(cohortId: Long, shortLabel: String, displayName: String): DataResult<Unit> {
+        delay(WRITE_DELAY_MS)
+        MockStore.renameCohort(cohortId, shortLabel, displayName)
+        return DataResult.Success(Unit)
+    }
+
+    override fun switchClub(clubId: Long) = MockStore.switchClub(clubId)
+
+    override fun leaveClub() = MockStore.leaveClub()
+
     private companion object {
         const val NETWORK_DELAY_MS = 500L
+        const val WRITE_DELAY_MS = 300L
     }
 }

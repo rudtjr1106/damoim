@@ -16,3 +16,6 @@ data class Club(
     val joinCode: String = "",
     val emblemColor: Long = 0xFF2F6DD3,
 )
+
+/** 내가 속한 동아리 + 그 동아리에서의 역할 (33 동아리 전환 시트). */
+data class ClubMembership(val club: Club, val role: ClubRole)

@@ -10,10 +10,18 @@ import com.damoim.app.domain.repository.BoardRepository
 import com.damoim.app.domain.repository.ClubRepository
 import com.damoim.app.domain.repository.NotificationRepository
 import com.damoim.app.domain.repository.ResourceRepository
+import com.damoim.app.domain.usecase.ClubSessionUseCase
+import com.damoim.app.domain.usecase.CohortActionUseCase
 import com.damoim.app.domain.usecase.CreateClubUseCase
 import com.damoim.app.domain.usecase.DecideApplicantUseCase
+import com.damoim.app.domain.usecase.GetJoinedClubsUseCase
+import com.damoim.app.domain.usecase.GetMemberDetailUseCase
+import com.damoim.app.domain.usecase.GetMembersUseCase
+import com.damoim.app.domain.usecase.GetMyMemberUseCase
+import com.damoim.app.domain.usecase.MemberActionUseCase
 import com.damoim.app.domain.usecase.DisableJoinCodeUseCase
 import com.damoim.app.domain.usecase.EnterClubUseCase
+import com.damoim.app.domain.usecase.GetAuthUserUseCase
 import com.damoim.app.domain.usecase.GetBoardHomeUseCase
 import com.damoim.app.domain.usecase.GetBoardPostsUseCase
 import com.damoim.app.domain.usecase.GetClubInfoUseCase
@@ -54,6 +62,7 @@ object AppGraph {
     // A. 인증·가입
     val loginWithKakaoUseCase get() = LoginWithKakaoUseCase(authRepository)
     val updateProfileUseCase get() = UpdateProfileUseCase(authRepository)
+    val getAuthUserUseCase get() = GetAuthUserUseCase(authRepository)
     val submitJoinCodeUseCase get() = SubmitJoinCodeUseCase(clubRepository)
     val enterClubUseCase get() = EnterClubUseCase(clubRepository)
 
@@ -68,6 +77,15 @@ object AppGraph {
     val decideApplicantUseCase get() = DecideApplicantUseCase(clubRepository)
     val getNotificationsUseCase get() = GetNotificationsUseCase(notificationRepository)
     val markNotificationsReadUseCase get() = MarkNotificationsReadUseCase(notificationRepository)
+
+    // E. 회원·기수 관리
+    val getMembersUseCase get() = GetMembersUseCase(clubRepository)
+    val getMemberDetailUseCase get() = GetMemberDetailUseCase(clubRepository)
+    val getMyMemberUseCase get() = GetMyMemberUseCase(clubRepository)
+    val getJoinedClubsUseCase get() = GetJoinedClubsUseCase(clubRepository)
+    val memberActionUseCase get() = MemberActionUseCase(clubRepository)
+    val cohortActionUseCase get() = CohortActionUseCase(clubRepository)
+    val clubSessionUseCase get() = ClubSessionUseCase(clubRepository)
 
     // C. 게시판
     val getBoardHomeUseCase get() = GetBoardHomeUseCase(boardRepository)

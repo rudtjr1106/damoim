@@ -14,6 +14,10 @@ import com.damoim.app.domain.model.HomeStat
 import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.model.BoardPreview
 import com.damoim.app.domain.model.JoinApplicant
+import com.damoim.app.domain.model.Member
+import com.damoim.app.domain.model.MemberDetail
+import com.damoim.app.domain.model.MemberRole
+import com.damoim.app.domain.model.MemberStatus
 import com.damoim.app.domain.model.Poll
 import com.damoim.app.domain.model.PollOption
 import com.damoim.app.domain.model.PostAttachment
@@ -89,11 +93,78 @@ object MockStore {
 
     val role: ClubRole? get() = _session.value?.role
 
+    /** 33 동아리 전환 시트용 — 내가 속한 동아리들(현재 + 예시). */
+    private val _joinedClubs = MutableStateFlow<List<com.damoim.app.domain.model.ClubMembership>>(emptyList())
+    fun joinedClubsFlow(): Flow<List<com.damoim.app.domain.model.ClubMembership>> = _joinedClubs.asStateFlow()
+
+    /**
+     * 동아리별 가변 상태 스냅샷. 전환 시 현재 동아리를 이 번들로 보관했다가 되돌린다
+     * → 전역 flow 구조를 바꾸지 않고 value만 통째로 교체해 전 화면이 자동 갱신된다.
+     * (서버 도입 시 = activeClubId 기준 데이터 재조회로 교체)
+     */
+    private data class ClubBundle(
+        val session: ClubSession,
+        val posts: List<BoardPost>,
+        val comments: Map<Long, List<Comment>>,
+        val pending: List<JoinApplicant>,
+        val processed: List<com.damoim.app.domain.model.ProcessedApplicant>,
+        val notifications: List<AppNotification>,
+        val resources: List<ResourceFile>,
+        val cohorts: List<Cohort>,
+        val members: List<Member>,
+        val draft: PostDraft?,
+    )
+
+    private val bundles = mutableMapOf<Long, ClubBundle>()
+
+    private fun snapshotCurrent(): ClubBundle? {
+        val s = _session.value ?: return null
+        return ClubBundle(s, _posts.value, _comments.value, _pending.value, _processed.value, _notifications.value, _resources.value, _cohorts.value, _members.value, savedDraft)
+    }
+
+    private fun applyBundle(b: ClubBundle) {
+        _session.value = b.session
+        _posts.value = b.posts
+        _comments.value = b.comments
+        _pending.value = b.pending
+        _processed.value = b.processed
+        _notifications.value = b.notifications
+        _resources.value = b.resources
+        _cohorts.value = b.cohorts
+        _members.value = b.members
+        savedDraft = b.draft   // 임시저장 글은 동아리별로 격리 — 전환 시 다른 동아리로 새지 않는다
+    }
+
     /** 코드 가입 완료(04 확인) 후 데모 동아리 입장. 이미 세션이 있으면(생성 경로) 무시. */
     fun enterClub(role: ClubRole) {
         if (_session.value != null) return
         _session.value = ClubSession(MockData.myClub, role)
         seedDemoClub()
+    }
+
+    /** 33 동아리 전환 — 현재 동아리를 번들로 보관하고 대상 동아리 데이터로 갈아탄다. */
+    fun switchClub(clubId: Long) {
+        val cur = _session.value ?: return
+        if (cur.club.id == clubId) return
+        snapshotCurrent()?.let { bundles[cur.club.id] = it }
+        val target = bundles[clubId] ?: return
+        applyBundle(target)
+    }
+
+    /** 60 탈퇴 / 33 새 참여·생성 / 로그아웃 — 세션과 모든 동아리 데이터를 비운다(→ Auth로 복귀). */
+    fun leaveClub() {
+        _session.value = null
+        bundles.clear()
+        _joinedClubs.value = emptyList()
+        _posts.value = emptyList()
+        _comments.value = emptyMap()
+        _pending.value = emptyList()
+        _processed.value = emptyList()
+        _notifications.value = emptyList()
+        _resources.value = emptyList()
+        _cohorts.value = emptyList()
+        _members.value = emptyList()
+        savedDraft = null
     }
 
     /** 동아리 생성(07). 새 동아리는 게시판/신청자/알림이 빈 상태에서 시작한다. */
@@ -109,10 +180,38 @@ object MockStore {
         _processed.value = emptyList()
         _resources.value = emptyList()
         _cohorts.value = listOf(Cohort(1, "1기", "1기", 1))   // 새 동아리는 1기부터 시작
+        _members.value = listOf(selfMember(cohortId = 1L, role = MemberRole.LEADER))   // 나 혼자 리더
         _notifications.value = listOf(
             AppNotification(nextId++, com.damoim.app.domain.model.NotificationType.NOTICE, "$name 동아리가 만들어졌어요. 가입 코드를 공유해 부원을 초대해보세요!", "방금 전", isUnread = true),
         )
+        seedSecondaryClubs(ClubSession(club, ClubRole.LEADER))
         return club
+    }
+
+    /** 본인(isMe) 명부 행. 이름·이메일은 membersFlow에서 항상 현재 프로필로 덮인다. */
+    private fun selfMember(cohortId: Long, role: MemberRole): Member {
+        val meName = myName
+        return Member(501, meName, initialsOf(meName), cohortId, role, email = _user.value.email.orEmpty(), joinedLabel = "2024.09.15", isMe = true)
+    }
+
+    /** 33 전환용 부가 동아리 시드 — 현재 동아리 + 예시(한강 러너스). */
+    private fun seedSecondaryClubs(current: ClubSession) {
+        bundles.clear()
+        _joinedClubs.value = listOf(
+            com.damoim.app.domain.model.ClubMembership(current.club, current.role),
+            com.damoim.app.domain.model.ClubMembership(MockData.runnersClub, ClubRole.MEMBER),
+        )
+        // 한강 러너스: 나는 일반 회원, 게시판·자료실은 빈 상태(신규 동아리처럼)에서 시작
+        val runnerMe = Member(501, myName, initialsOf(myName), 31, MemberRole.MEMBER, email = _user.value.email.orEmpty(), joinedLabel = "2024.06.01", isMe = true)
+        bundles[MockData.runnersClub.id] = ClubBundle(
+            session = ClubSession(MockData.runnersClub, ClubRole.MEMBER),
+            posts = emptyList(), comments = emptyMap(),
+            pending = emptyList(), processed = emptyList(),
+            notifications = emptyList(), resources = emptyList(),
+            cohorts = MockData.runnersCohorts,
+            members = listOf(runnerMe) + MockData.runnersMembersExceptMe(),
+            draft = null,
+        )
     }
 
     fun regenerateJoinCode(): String {
@@ -143,6 +242,10 @@ object MockStore {
         }
         if (approve) {
             _session.update { it?.copy(club = it.club.copy(memberCount = it.club.memberCount + 1)) }
+            // 승인된 신청자를 명부(17)에 추가 — 모집중 기수(가장 최근=최상단)에 배정하고 그 기수 +1
+            val targetCohort = _cohorts.value.firstOrNull()?.id ?: 25L
+            _members.update { it + Member(nextId++, target.name, target.initial, targetCohort, MemberRole.MEMBER, email = "${target.initial}@kakao.com", joinedLabel = "방금 가입") }
+            _cohorts.update { list -> list.map { if (it.id == targetCohort) it.copy(memberCount = it.memberCount + 1) else it } }
             _notifications.update { list ->
                 listOf(
                     AppNotification(nextId++, com.damoim.app.domain.model.NotificationType.JOIN_APPROVED, "${target.name}님이 동아리에 합류했어요 🎉", "방금 전", isUnread = true),
@@ -156,11 +259,82 @@ object MockStore {
     private val _notifications = MutableStateFlow<List<AppNotification>>(emptyList())
     val notifications: StateFlow<List<AppNotification>> = _notifications.asStateFlow()
 
-    // ══════════ 기수(19/42 · 69 공개 범위) ══════════
+    // ══════════ 기수(19/42/44 · 69 공개 범위) ══════════
 
     private val _cohorts = MutableStateFlow<List<Cohort>>(emptyList())
 
     fun cohortsFlow(): Flow<List<Cohort>> = _cohorts.asStateFlow()
+
+    /** 44 새 기수 추가. 새 기수는 0명에서 시작한다. 생성된 Cohort를 반환. */
+    fun addCohort(shortLabel: String, displayName: String): Cohort {
+        val cohort = Cohort(nextId++, displayName, shortLabel, memberCount = 0)
+        _cohorts.update { listOf(cohort) + it }
+        return cohort
+    }
+
+    /** 기수 이름 변경(19 연필). */
+    fun renameCohort(cohortId: Long, shortLabel: String, displayName: String) =
+        _cohorts.update { list -> list.map { if (it.id == cohortId) it.copy(label = displayName, short = shortLabel) else it } }
+
+    // ══════════ 회원 명부(16/17/18/42/43) ══════════
+
+    private val _members = MutableStateFlow<List<Member>>(emptyList())
+
+    /** 명부. 본인(isMe) 행의 이름·이메일·이니셜은 항상 현재 프로필(_user)에서 덮어써 프로필 수정이 즉시 반영된다. */
+    fun membersFlow(): Flow<List<Member>> = combine(_members, _user) { members, user ->
+        members.map { m ->
+            if (!m.isMe) m
+            else {
+                val name = user.nickname.ifBlank { m.name }
+                m.copy(name = name, initials = initialsOf(name), email = user.email ?: m.email)
+            }
+        }
+    }
+
+    fun memberDetailFlow(memberId: Long): Flow<MemberDetail?> =
+        combine(membersFlow(), _cohorts) { members, cohorts ->
+            members.firstOrNull { it.id == memberId }?.let { m ->
+                MemberDetail(
+                    member = m,
+                    cohortLabel = cohorts.firstOrNull { it.id == m.cohortId }?.label ?: "",
+                    postCount = if (m.isMe) 14 else (m.id % 20).toInt(),
+                    eventCount = if (m.isMe) 8 else (m.id % 9).toInt(),
+                    lastActiveLabel = if (m.status == MemberStatus.DORMANT) "3주 전" else "1시간 전",
+                )
+            }
+        }
+
+    /** 자기 자신의 명부 역할(20 내 프로필 뱃지). */
+    fun myMemberFlow(): Flow<Member?> = membersFlow().map { list -> list.firstOrNull { it.isMe } }
+
+    /** 42 기수 변경 — 옛 기수 -1, 새 기수 +1로 카운트를 함께 옮긴다. */
+    fun changeMemberCohort(memberId: Long, cohortId: Long) {
+        val member = _members.value.firstOrNull { it.id == memberId } ?: return
+        val old = member.cohortId
+        if (old == cohortId) return
+        _members.update { list -> list.map { if (it.id == memberId) it.copy(cohortId = cohortId) else it } }
+        _cohorts.update { list ->
+            list.map {
+                when (it.id) {
+                    old -> it.copy(memberCount = (it.memberCount - 1).coerceAtLeast(0))
+                    cohortId -> it.copy(memberCount = it.memberCount + 1)
+                    else -> it
+                }
+            }
+        }
+    }
+
+    /** 18 역할 변경. */
+    fun changeMemberRole(memberId: Long, role: MemberRole) =
+        _members.update { list -> list.map { if (it.id == memberId) it.copy(role = role) else it } }
+
+    /** 43 내보내기 — 명부에서 제거하고 기수·동아리 회원 수를 함께 감소시킨다. */
+    fun removeMember(memberId: Long) {
+        val member = _members.value.firstOrNull { it.id == memberId } ?: return
+        _members.update { list -> list.filterNot { it.id == memberId } }
+        _cohorts.update { list -> list.map { if (it.id == member.cohortId) it.copy(memberCount = (it.memberCount - 1).coerceAtLeast(0)) else it } }
+        _session.update { it?.copy(club = it.club.copy(memberCount = (it.club.memberCount - 1).coerceAtLeast(0))) }
+    }
 
     fun markAllNotificationsRead() =
         _notifications.update { list -> list.map { it.copy(isUnread = false) } }
@@ -445,9 +619,18 @@ object MockStore {
 
     // ══════════ 홈 요약(05/06) ══════════
 
-    fun homeSummaryFlow(): Flow<HomeSummary?> =
-        combine(_session, _posts, _pending, _notifications, _user) { session, posts, pending, notifications, user ->
-            session ?: return@combine null
+    private data class HomeBase(
+        val session: ClubSession?, val posts: List<BoardPost>, val pending: List<JoinApplicant>,
+        val notifications: List<AppNotification>, val user: AuthUser,
+    )
+
+    fun homeSummaryFlow(): Flow<HomeSummary?> {
+        // combine은 5개까지라 base 5종을 먼저 묶고, 회원 기수(내 기수 파생)를 위해 _members/_cohorts를 더한다
+        val base = combine(_session, _posts, _pending, _notifications, _user) { s, p, pend, n, u -> HomeBase(s, p, pend, n, u) }
+        return combine(base, _members, _cohorts) { b, members, cohorts ->
+            val session = b.session ?: return@combine null
+            val posts = b.posts; val pending = b.pending; val notifications = b.notifications; val user = b.user
+            val myCohortShort = cohorts.firstOrNull { it.id == members.firstOrNull { m -> m.isMe }?.cohortId }?.short ?: "내 기수"
             val isDemo = session.club.id == MockData.myClub.id
             val schedules = if (isDemo) MockData.schedules else emptyList()
             val previews = posts
@@ -472,7 +655,7 @@ object MockStore {
                         HomeStat("${schedules.size}", "이번 주"),
                     )
                     ClubRole.MEMBER -> listOf(
-                        HomeStat("24기", "내 기수"),
+                        HomeStat(myCohortShort, "내 기수"),
                         HomeStat("${schedules.size}", "이번 주 일정"),
                         HomeStat("${posts.size}", "새 글"),
                     )
@@ -483,6 +666,7 @@ object MockStore {
                 hasUnreadNotification = notifications.any { it.isUnread },
             )
         }
+    }
 
     // ══════════ 시드(데모 동아리) ══════════
 
@@ -497,6 +681,11 @@ object MockStore {
         _notifications.value = MockData.notifications
         _resources.value = MockResourceData.seedResources()
         _cohorts.value = MockData.cohorts
+        // 본인은 세션 역할 기반: LEADER면 리더 슬롯을 차지(김민준 생략), MEMBER면 24기 일반 + 김민준 리더 포함
+        val meLeader = _session.value?.role == ClubRole.LEADER
+        val me = selfMember(cohortId = if (meLeader) 23L else 24L, role = if (meLeader) MemberRole.LEADER else MemberRole.MEMBER)
+        _members.value = listOf(me) + MockData.demoMembersExceptMe(includeLeader = !meLeader)
+        _session.value?.let { seedSecondaryClubs(it) }
         orderCounter = 1_000_000L + seeded.size + 1
     }
 

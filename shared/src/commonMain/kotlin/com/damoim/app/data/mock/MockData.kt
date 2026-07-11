@@ -3,6 +3,9 @@ package com.damoim.app.data.mock
 import com.damoim.app.domain.model.AppNotification
 import com.damoim.app.domain.model.Club
 import com.damoim.app.domain.model.Cohort
+import com.damoim.app.domain.model.Member
+import com.damoim.app.domain.model.MemberRole
+import com.damoim.app.domain.model.MemberStatus
 import com.damoim.app.domain.model.JoinApplicant
 import com.damoim.app.domain.model.JoinRequestResult
 import com.damoim.app.domain.model.JoinStatus
@@ -40,6 +43,44 @@ object MockData {
         description = "학기말 정기공연을 목표로 모이는 직장인 밴드 동아리",
         memberCount = 15,
         emblemColor = 0xFF68B7ED,
+    )
+
+    /** 동아리 전환(33)용 두 번째 동아리 — 나는 여기서 일반 회원. 전환하면 이 동아리 데이터로 갈아탄다. */
+    val runnersClub = Club(
+        id = 30L,
+        name = "한강 러너스",
+        category = "운동 · 러닝",
+        description = "주말마다 한강을 달리는 러닝 크루",
+        memberCount = 24,
+        joinCode = "RUN7KM",
+        emblemColor = 0xFF1F9D55,
+    )
+
+    /** 한강 러너스 기수. */
+    val runnersCohorts = listOf(
+        Cohort(31, "2025 시즌", "25시즌", 14),
+        Cohort(32, "2024 시즌", "24시즌", 10),
+    )
+
+    /**
+     * 데모 동아리 회원 명부(16/17/18) — 본인(isMe) 제외 고정 5명.
+     * 본인은 세션 역할에 따라 [MockStore]가 붙인다(LEADER면 리더 슬롯을 본인이 차지).
+     */
+    fun demoMembersExceptMe(includeLeader: Boolean): List<Member> = listOfNotNull(
+        if (includeLeader)
+            Member(502, "김민준", "민준", 23, MemberRole.LEADER, email = "minjun@kakao.com", joinedLabel = "2022.03.02")
+        else null,
+        Member(503, "최유진", "유진", 23, MemberRole.STAFF, email = "yujin@kakao.com", joinedLabel = "2022.03.05"),
+        Member(504, "박준혁", "준혁", 25, MemberRole.MEMBER, MemberStatus.DORMANT, "junhyuk@kakao.com", "2025.03.10"),
+        Member(505, "정하늘", "하늘", 25, MemberRole.MEMBER, email = "haneul@kakao.com", joinedLabel = "2025.03.12"),
+        Member(506, "강도윤", "도윤", 25, MemberRole.STAFF, email = "doyun@kakao.com", joinedLabel = "2024.09.15"),
+    )
+
+    /** 한강 러너스 회원 명부(본인 제외) — 나는 일반 회원, 리더는 따로. */
+    fun runnersMembersExceptMe(): List<Member> = listOf(
+        Member(602, "오세훈", "세훈", 31, MemberRole.LEADER, email = "sehun@kakao.com", joinedLabel = "2024.01.06"),
+        Member(603, "임지연", "지연", 31, MemberRole.STAFF, email = "jiyeon@kakao.com", joinedLabel = "2024.02.11"),
+        Member(604, "한도훈", "도훈", 32, MemberRole.MEMBER, email = "dohoon@kakao.com", joinedLabel = "2024.05.20"),
     )
 
     // ── 03 가입 코드 결과 ──
