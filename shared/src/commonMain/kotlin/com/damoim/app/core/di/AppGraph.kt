@@ -6,13 +6,19 @@ import com.damoim.app.data.repository.MockClubRepository
 import com.damoim.app.data.repository.MockNotificationRepository
 import com.damoim.app.data.repository.MockResourceRepository
 import com.damoim.app.data.repository.MockScheduleRepository
+import com.damoim.app.data.repository.MockSettingsRepository
 import com.damoim.app.domain.repository.AuthRepository
 import com.damoim.app.domain.repository.BoardRepository
 import com.damoim.app.domain.repository.ClubRepository
 import com.damoim.app.domain.repository.NotificationRepository
 import com.damoim.app.domain.repository.ResourceRepository
 import com.damoim.app.domain.repository.ScheduleRepository
+import com.damoim.app.domain.repository.SettingsRepository
+import com.damoim.app.domain.usecase.AdminPermissionUseCase
+import com.damoim.app.domain.usecase.BlockedUserUseCase
 import com.damoim.app.domain.usecase.ClubSessionUseCase
+import com.damoim.app.domain.usecase.NotifSettingsUseCase
+import com.damoim.app.domain.usecase.SubscriptionUseCase
 import com.damoim.app.domain.usecase.EventApplicationUseCase
 import com.damoim.app.domain.usecase.GetMyApplicationsUseCase
 import com.damoim.app.domain.usecase.GetScheduleDetailUseCase
@@ -67,6 +73,7 @@ object AppGraph {
     private val boardRepository: BoardRepository by lazy { MockBoardRepository() }
     private val resourceRepository: ResourceRepository by lazy { MockResourceRepository() }
     private val scheduleRepository: ScheduleRepository by lazy { MockScheduleRepository() }
+    private val settingsRepository: SettingsRepository by lazy { MockSettingsRepository() }
 
     // A. 인증·가입
     val loginWithKakaoUseCase get() = LoginWithKakaoUseCase(authRepository)
@@ -120,6 +127,12 @@ object AppGraph {
     val submitScheduleUseCase get() = SubmitScheduleUseCase(scheduleRepository)
     val scheduleActionUseCase get() = ScheduleActionUseCase(scheduleRepository)
     val eventApplicationUseCase get() = EventApplicationUseCase(scheduleRepository)
+
+    // G. 설정·구독·권한
+    val subscriptionUseCase get() = SubscriptionUseCase(settingsRepository)
+    val adminPermissionUseCase get() = AdminPermissionUseCase(settingsRepository)
+    val blockedUserUseCase get() = BlockedUserUseCase(settingsRepository)
+    val notifSettingsUseCase get() = NotifSettingsUseCase(settingsRepository)
 
     // 공통 컨텍스트
     val observeMyContextUseCase get() = ObserveMyContextUseCase(authRepository, clubRepository)

@@ -166,6 +166,38 @@ fun SheetActionRow(
     }
 }
 
+/** 공용 확인 다이얼로그(경고 아이콘 + 제목 + 설명 + 취소/확정). 파괴적이면 [destructive]. */
+@Composable
+fun DamoimConfirmDialog(
+    title: String,
+    desc: String,
+    confirm: String,
+    destructive: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val colors = DamoimTheme.colors
+    val accent = if (destructive) colors.error else colors.primary
+    DamoimDialog(onDismiss = onDismiss) {
+        androidx.compose.foundation.layout.Column(
+            Modifier.fillMaxWidth().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+        ) {
+            Box(Modifier.size(52.dp).clip(RoundedCornerShape(999.dp)).background(if (destructive) colors.errorContainer else colors.primaryContainer), contentAlignment = Alignment.Center) {
+                WarningIcon(accent, Modifier.size(26.dp))
+            }
+            androidx.compose.foundation.layout.Spacer(Modifier.height(4.dp))
+            Text(title, style = DamoimTheme.typography.titleMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold), color = colors.textPrimary)
+            Text(desc, style = DamoimTheme.typography.bodySmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Normal), color = colors.textMuted, modifier = Modifier.padding(bottom = 8.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
+                DialogButton(DamoimStrings.COMMON_CANCEL, colors.surfaceVariant, colors.textTertiary, Modifier.weight(1f), onDismiss)
+                DialogButton(confirm, accent, colors.onPrimary, Modifier.weight(1f), onConfirm)
+            }
+        }
+    }
+}
+
 /** 다이얼로그 하단 액션 버튼(취소/삭제 등). 파괴적 액션은 [bg]=error. */
 @Composable
 fun DialogButton(text: String, bg: Color, fg: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {

@@ -677,6 +677,142 @@ object DamoimStrings {
     const val TOAST_CALENDAR_ADDED = "내 일정에 추가했어요"
     const val TOAST_CALENDAR_REMOVED = "내 일정에서 뺐어요"
 
+    // ══════════ G 설정·구독·권한 (26~30 · 49/50 · 64~66 · 83) ══════════
+
+    // 26 설정 홈
+    const val SETTINGS_HOME_TITLE = "설정"
+    const val SETTINGS_SEC_CLUB = "동아리 관리"
+    const val SETTINGS_SEC_SUBSCRIPTION = "구독"
+    const val SETTINGS_SEC_ETC = "기타"
+    const val SETTINGS_CLUB_INFO = "동아리 정보 설정"
+    const val SETTINGS_JOIN_CODE = "가입 코드 관리"
+    const val SETTINGS_ADMIN_PERM = "운영진 권한 관리"
+    const val SETTINGS_PLAN_INFO = "구독 플랜 안내"
+    const val SETTINGS_PAYMENT_HISTORY = "결제 내역"
+    const val SETTINGS_NOTIF = "알림 설정"
+    const val SETTINGS_INQUIRY = "문의하기"
+    const val SETTINGS_BLOCKED = "차단한 사용자"
+    const val SETTINGS_LOGOUT = "로그아웃"
+    fun settingsClubMeta(count: Int, plan: String) = "회원 ${count}명 · $plan"
+    const val SETTINGS_OVERLIMIT_TITLE = "무료 플랜 인원 초과"
+    fun settingsOverLimit(used: Int, limit: Int) = "무료 플랜 인원 초과 (${used}/${limit}명)"
+    const val SETTINGS_OVERLIMIT_BODY = "30명 이상은 유료 플랜이 필요해요. 7일 안에 업그레이드하지 않으면 신규 가입이 제한됩니다."
+    const val SETTINGS_UPGRADE = "플랜 업그레이드"
+
+    // 27 구독 플랜
+    const val PLAN_TITLE = "구독 플랜"
+    const val PLAN_HEADING = "동아리 규모에 맞는\n플랜을 선택하세요"
+    fun planSubtitle(count: Int) = "현재 회원 ${count}명 — 스탠다드 플랜을 추천해요"
+    const val PLAN_CURRENT_BADGE = "현재 플랜"
+    const val PLAN_RECOMMEND_BADGE = "추천"
+    const val PLAN_PER_MONTH = "/ 월"
+    fun planStartCta(name: String) = "$name 시작하기"
+
+    // 29 구독 관리
+    const val SUB_MANAGE_TITLE = "구독 관리"
+    const val SUB_MONTHLY_FEE = "월 요금"
+    const val SUB_NEXT_BILLING = "다음 결제일"
+    const val SUB_USAGE = "회원 사용량"
+    const val SUB_CHANGE_PLAN = "플랜 변경"
+    const val SUB_CHANGE_PLAN_SUB = "다른 플랜으로 변경"
+    const val SUB_PAYMENT_METHOD = "결제 수단 · 영수증"
+    const val SUB_PAYMENT_METHOD_SUB = "App Store에서 관리"
+    const val SUB_CANCEL = "구독 해지"
+    const val SUB_CANCEL_SUB = "App Store 구독"
+    const val SUB_PAYMENT_HISTORY = "결제 내역"
+    const val SUB_ACTIVE_BADGE = "이용 중"
+    const val SUB_CANCEL_DIALOG_TITLE = "구독을 해지할까요?"
+    const val SUB_CANCEL_DIALOG_DESC = "무료 플랜으로 전환되고, 다음 결제일부터 청구되지 않아요."
+    const val SUB_CANCEL_CONFIRM = "해지하기"
+
+    // 결제(인앱)
+    fun billingCheckout(price: String) = "$price · 결제하기"
+
+    // 49 결제 완료 / 50 결제 실패
+    const val PAY_DONE_TITLE = "결제가 완료되었어요"
+    const val PAY_DONE_DESC = "이제 회원 100명까지 함께할 수 있어요.\n신규 가입 제한이 해제되었습니다."
+    const val PAY_DONE_CTA = "확인"
+    const val PAY_FAIL_TITLE = "결제에 실패했어요"
+    const val PAY_FAIL_DESC = "결제가 완료되지 않았어요. 카드 한도·네트워크를 확인하고 다시 시도해주세요."
+    const val PAY_FAIL_RETRY = "다시 시도"
+    const val PAY_FAIL_LATER = "나중에 하기"
+
+    // 30 운영진 권한 관리
+    const val ADMIN_TITLE = "운영진 권한 관리"
+    const val ADMIN_ADD = "운영진 추가"
+    const val ADMIN_INFO = "동아리장 권한(구독 관리, 동아리 삭제)은 위임할 수 없어요"
+    const val ADMIN_ADD_SHEET_TITLE = "운영진 추가"
+    const val ADMIN_ADD_SHEET_SUB = "일반 회원을 운영진으로 지정해요"
+    const val ADMIN_ADD_EMPTY = "지정할 수 있는 일반 회원이 없어요"
+    const val ADMIN_DEFAULT_TITLE = "운영진"
+
+    // 64 운영진 ⋯ 메뉴
+    const val ADMIN_MENU_TITLE = "직함 변경"
+    const val ADMIN_MENU_DETAIL = "회원 상세 보기"
+    const val ADMIN_MENU_REMOVE = "운영진에서 해제"
+    const val ADMIN_TITLE_DIALOG = "직함 변경"
+    const val ADMIN_TITLE_PLACEHOLDER = "직함을 입력하세요 (예: 부회장)"
+    const val ADMIN_TITLE_SAVE = "저장"
+    const val ADMIN_REMOVE_TITLE = "운영진에서 해제할까요?"
+    fun adminRemoveDesc(name: String) = "${name}님의 위임 권한이 모두 회수돼요."
+    const val ADMIN_REMOVE_CONFIRM = "해제하기"
+
+    // 65 알림 설정
+    const val NOTIF_TITLE = "알림 설정"
+    const val NOTIF_SEC_ACTIVITY = "활동 알림"
+    const val NOTIF_SEC_ADMIN = "운영 알림"
+    const val NOTIF_SEC_DND = "방해 금지"
+    const val NOTIF_PUSH = "푸시 알림"
+    const val NOTIF_PUSH_SUB = "앱 전체 알림 받기"
+    const val NOTIF_NEW_POST = "새 글"
+    const val NOTIF_COMMENT = "댓글·답글"
+    const val NOTIF_SCHEDULE = "일정 리마인드"
+    const val NOTIF_REMINDER_TIMING = "리마인드 시점"
+    const val NOTIF_JOIN = "가입 신청"
+    const val NOTIF_EVENT = "이벤트 신청"
+    const val NOTIF_DND = "방해 금지 시간"
+    const val NOTIF_DND_SUB = "이 시간에는 알림을 받지 않아요"
+    const val NOTIF_REMINDER_SHEET_TITLE = "리마인드 시점"
+    val NOTIF_REMINDER_OPTIONS = listOf("1시간 전", "1일 전", "1일 전 · 1시간 전", "3일 전 · 1일 전")
+    const val NOTIF_DND_SHEET_TITLE = "방해 금지 시간"
+    val NOTIF_DND_OPTIONS = listOf("22:00 ~ 07:00", "23:00 ~ 08:00", "00:00 ~ 09:00")
+
+    // 66 문의하기
+    const val INQUIRY_TITLE = "문의하기"
+    const val INQUIRY_TYPE = "문의 유형"
+    val INQUIRY_TYPES = listOf("이용 문의", "버그 신고", "결제·환불", "기타")
+    const val INQUIRY_SUBJECT = "제목"
+    const val INQUIRY_SUBJECT_PLACEHOLDER = "제목을 입력하세요"
+    const val INQUIRY_CONTENT = "내용"
+    const val INQUIRY_CONTENT_PLACEHOLDER = "문의 내용을 자세히 적어주세요"
+    const val INQUIRY_ATTACH = "스크린샷 첨부 (선택)"
+    const val INQUIRY_ATTACH_HINT = "탭해서 이미지 추가"
+    const val INQUIRY_HELP = "도움말 센터"
+    const val INQUIRY_HELP_HINT = "자주 묻는 질문을 먼저 확인해보세요"
+    const val INQUIRY_SEND = "보내기"
+    const val INQUIRY_EMAIL = "rudtjr1206@naver.com"
+    const val INQUIRY_SUBJECT_PREFIX = "[다모임 문의]"
+    const val TOAST_INQUIRY_ATTACH = "메일 앱에서 스크린샷을 첨부할 수 있어요"
+
+    // 83 차단한 사용자
+    const val BLOCKED_TITLE = "차단한 사용자"
+    const val BLOCKED_DESC = "차단한 사용자의 게시글·댓글이 보이지 않고, 서로의 프로필에 접근할 수 없어요"
+    fun blockedCount(n: Int) = "차단 ${n}명"
+    const val BLOCKED_UNBLOCK = "차단 해제"
+    const val BLOCKED_EMPTY_TITLE = "차단한 사용자가 없어요"
+    const val BLOCKED_EMPTY_SUB = "차단하면 여기에서 관리할 수 있어요"
+
+    // G 토스트
+    const val TOAST_SUBSCRIBED = "구독이 시작됐어요"
+    const val TOAST_SUB_CANCELED = "구독을 해지했어요"
+    const val TOAST_EXTERNAL_STORE = "스토어 구독 설정에서 관리해요"
+    const val TOAST_ADMIN_ADDED = "운영진으로 지정했어요"
+    const val TOAST_ADMIN_REMOVED = "운영진에서 해제했어요"
+    const val TOAST_ADMIN_TITLE_CHANGED = "직함을 변경했어요"
+    const val TOAST_UNBLOCKED = "차단을 해제했어요"
+    const val TOAST_INQUIRY_SENT = "문의가 접수되었어요"
+    const val TOAST_NOTIF_SAVED = "알림 설정을 저장했어요"
+
     // 프리뷰용 더미 사용자명
     const val PREVIEW_USER_NAME = "서연"
 }

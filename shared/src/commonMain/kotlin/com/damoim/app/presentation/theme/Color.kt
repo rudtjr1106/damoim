@@ -45,6 +45,11 @@ data class DamoimColors(
     val warn: Color = Color(0xFFE8833A),              // 마감 임박 통계(47) 오렌지
     val warnContainer: Color = Color(0xFFFFF3E9),     // 마감 통계 배경(옅은 피치)
     val onWarnContainer: Color = Color(0xFF9A5522),   // 마감 통계 라벨(브라운)
+    val errorSurface: Color = Color(0xFFFFF5F5),      // 경고/실패 카드 배경(26·50)
+    val errorBorder: Color = Color(0xFFFFD6D6),       // 경고/실패 카드 테두리
+    val errorStrong: Color = Color(0xFFC73A3F),       // 경고/실패 제목(진한 빨강)
+    val errorMuted: Color = Color(0xFFA05A5D),        // 경고/실패 본문(뮤트 레드)
+    val errorOutlineSoft: Color = Color(0xFFE0A2A4),  // 구독 해지 외부링크(29)
     val kakao: Color = Color(0xFFFEE500),
     val onKakao: Color = Color(0xFF191919),
     val toastSurface: Color = Color(0xFF22273A),

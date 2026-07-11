@@ -41,6 +41,13 @@ import com.damoim.app.domain.model.Schedule
 import com.damoim.app.domain.model.ScheduleAccent
 import com.damoim.app.domain.model.ScheduleDraft
 import com.damoim.app.domain.model.ScheduleType
+import com.damoim.app.domain.model.AdminMember
+import com.damoim.app.domain.model.BlockedUser
+import com.damoim.app.domain.model.NotifSettings
+import com.damoim.app.domain.model.PaymentRecord
+import com.damoim.app.domain.model.PermissionType
+import com.damoim.app.domain.model.PlanTier
+import com.damoim.app.domain.model.SubscriptionState
 import com.damoim.app.domain.repository.BoardHomeData
 import com.damoim.app.domain.repository.SearchFileHit
 import com.damoim.app.domain.repository.SearchResults
@@ -55,8 +62,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 
 /**
@@ -190,6 +199,9 @@ object MockStore {
         _schedules.value = emptyList()
         _myApplications.value = emptyList()
         scheduleDraft = null
+        _subscription.value = MockSettingsData.freeState(0)
+        _admins.value = emptyList()
+        _blocked.value = emptyList()
     }
 
     /** 동아리 생성(07). 새 동아리는 게시판/신청자/알림이 빈 상태에서 시작한다. */
@@ -207,6 +219,10 @@ object MockStore {
         _schedules.value = emptyList()
         _myApplications.value = emptyList()
         scheduleDraft = null
+        _subscription.value = MockSettingsData.freeState(1)
+        _admins.value = emptyList()
+        _blocked.value = emptyList()
+        _notifSettings.value = NotifSettings()
         _cohorts.value = listOf(Cohort(1, "1기", "1기", 1))   // 새 동아리는 1기부터 시작
         _members.value = listOf(selfMember(cohortId = 1L, role = MemberRole.LEADER))   // 나 혼자 리더
         _notifications.value = listOf(
@@ -899,6 +915,78 @@ object MockStore {
     fun saveScheduleDraft(draft: ScheduleDraft) { scheduleDraft = draft }
     fun clearScheduleDraft() { scheduleDraft = null }
 
+    // ══════════ 설정·구독·권한·차단(G 그룹 · 26~30 · 49/50 · 64~66 · 83) ══════════
+
+    private val _subscription = MutableStateFlow(MockSettingsData.freeState(38))
+    private val _admins = MutableStateFlow<List<AdminMember>>(emptyList())
+    private val _blocked = MutableStateFlow<List<BlockedUser>>(emptyList())
+    private val _notifSettings = MutableStateFlow(NotifSettings())
+
+    /** 구독 상태 — 회원 사용량은 현재 동아리 회원 수로 실시간 반영. */
+    fun subscriptionFlow(): Flow<SubscriptionState> = combine(_subscription, _session) { sub, session ->
+        sub.copy(memberUsed = session?.club?.memberCount ?: sub.memberUsed)
+    }
+
+    fun subscriptionPlans() = MockSettingsData.plans
+
+    private fun ymd(daysAhead: Int): String {
+        val d = today().plus(DatePeriod(days = daysAhead))
+        return "${d.year}.${d.monthNumber.toString().padStart(2, '0')}.${d.dayOfMonth.toString().padStart(2, '0')}"
+    }
+
+    /** 27 구독 시작(인앱결제 성공) — 활성 구독 + 결제 내역 생성. */
+    fun subscribe(tier: PlanTier) {
+        val used = _session.value?.club?.memberCount ?: 38
+        val plan = MockSettingsData.planOf(tier)
+        _subscription.value = MockSettingsData.activeState(
+            tier, used, ymd(30),
+            payments = listOf(PaymentRecord("${plan.name} 월간", ymd(0), plan.priceLabel)),
+        )
+    }
+
+    /** 29 구독 해지 — 무료 전환. */
+    fun cancelSubscription() {
+        _subscription.value = MockSettingsData.freeState(_session.value?.club?.memberCount ?: 38)
+    }
+
+    // 운영진 권한(30·64)
+    fun adminsFlow(): Flow<List<AdminMember>> = _admins.asStateFlow()
+
+    /** 30 운영진 추가용 — 아직 운영진 아닌 일반 회원. */
+    fun assignableMembersFlow(): Flow<List<Member>> = combine(membersFlow(), _admins) { members, admins ->
+        val adminIds = admins.map { it.userId }.toSet()
+        members.filter { !it.isMe && it.role == MemberRole.MEMBER && it.id !in adminIds }
+    }
+
+    fun togglePermission(userId: Long, type: PermissionType) = _admins.update { list ->
+        list.map { a -> if (a.userId != userId) a else a.copy(permissions = if (type in a.permissions) a.permissions - type else a.permissions + type) }
+    }
+
+    fun addAdmin(memberId: Long, title: String) {
+        val m = _members.value.firstOrNull { it.id == memberId } ?: return
+        _members.update { list -> list.map { if (it.id == memberId) it.copy(role = MemberRole.STAFF) else it } }
+        _admins.update { it + AdminMember(m.id, m.name, m.initials, cohortLabelOf(m.cohortId), title, setOf(PermissionType.NOTICE_WRITE)) }
+    }
+
+    fun removeAdmin(userId: Long) {
+        _admins.update { list -> list.filterNot { it.userId == userId } }
+        _members.update { list -> list.map { if (it.id == userId) it.copy(role = MemberRole.MEMBER) else it } }
+    }
+
+    fun changeAdminTitle(userId: Long, title: String) = _admins.update { list ->
+        list.map { if (it.userId == userId) it.copy(title = title) else it }
+    }
+
+    private fun cohortLabelOf(cohortId: Long): String = _cohorts.value.firstOrNull { it.id == cohortId }?.short ?: ""
+
+    // 차단(83)
+    fun blockedFlow(): Flow<List<BlockedUser>> = _blocked.asStateFlow()
+    fun unblock(id: Long) = _blocked.update { list -> list.filterNot { it.id == id } }
+
+    // 알림 설정(65)
+    fun notifSettingsFlow(): Flow<NotifSettings> = _notifSettings.asStateFlow()
+    fun updateNotifSettings(s: NotifSettings) { _notifSettings.value = s }
+
     // ══════════ 시드(데모 동아리) ══════════
 
     private fun seedDemoClub() {
@@ -920,6 +1008,10 @@ object MockStore {
         val me = selfMember(cohortId = if (meLeader) 23L else 24L, role = if (meLeader) MemberRole.LEADER else MemberRole.MEMBER)
         _members.value = listOf(me) + MockData.demoMembersExceptMe(includeLeader = !meLeader)
         _session.value?.let { seedSecondaryClubs(it) }
+        _subscription.value = MockSettingsData.freeState(_session.value?.club?.memberCount ?: 38)
+        _admins.value = MockSettingsData.seedAdmins()
+        _blocked.value = MockSettingsData.seedBlocked()
+        _notifSettings.value = NotifSettings()
         orderCounter = 1_000_000L + seeded.size + 1
     }
 

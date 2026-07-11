@@ -3,6 +3,7 @@ package com.damoim.app.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
+import platform.Foundation.NSURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
@@ -31,6 +32,22 @@ actual fun rememberShareText(): (String) -> Unit = remember {
             val controller = UIActivityViewController(activityItems = listOf(text), applicationActivities = null)
             UIApplication.sharedApplication.keyWindow?.rootViewController?.presentViewController(controller, animated = true, completion = null)
         }
+    }
+}
+
+@Composable
+actual fun rememberSubscriptionBilling(): (String, (BillingResult) -> Unit) -> Unit = remember {
+    // iOS StoreKit 연동은 추후 — 데모는 성공 처리
+    { _, onResult -> onResult(BillingResult.SUCCESS) }
+}
+
+@Composable
+actual fun rememberEmailComposer(): (String, String, String) -> Unit = remember {
+    { address, _, _ ->
+        runCatching {
+            NSURL(string = "mailto:$address").let { UIApplication.sharedApplication.openURL(it) }
+        }
+        Unit
     }
 }
 

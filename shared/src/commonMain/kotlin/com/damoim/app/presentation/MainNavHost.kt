@@ -39,6 +39,14 @@ import com.damoim.app.presentation.schedule.detail.EventDetailRoute
 import com.damoim.app.presentation.schedule.home.ScheduleHomeRoute
 import com.damoim.app.presentation.schedule.myapplications.MyApplicationsRoute
 import com.damoim.app.presentation.schedule.register.ScheduleRegisterRoute
+import com.damoim.app.presentation.settings.admin.AdminRoute
+import com.damoim.app.presentation.settings.blocked.BlockedRoute
+import com.damoim.app.presentation.settings.home.SettingsHomeRoute
+import com.damoim.app.presentation.settings.inquiry.InquiryRoute
+import com.damoim.app.presentation.settings.notification.NotifSettingsRoute
+import com.damoim.app.presentation.settings.plan.PlanRoute
+import com.damoim.app.presentation.settings.result.PaymentResultScreen
+import com.damoim.app.presentation.settings.subscription.SubscriptionRoute
 import com.damoim.app.presentation.theme.DamoimStrings
 
 /** 메인(로그인 이후) 플로우 목적지. */
@@ -68,6 +76,15 @@ private sealed interface MainDestination {
     data class EventDetail(val scheduleId: Long) : MainDestination     // 24 (+62/25/63 오버레이)
     data class Applicants(val scheduleId: Long) : MainDestination      // 47
     data object MyApplications : MainDestination                       // 48/75
+    // G 설정·구독·권한
+    data object SettingsHome : MainDestination                         // 26 (설정 탭 루트)
+    data object Plan : MainDestination                                 // 27
+    data object SubscriptionManage : MainDestination                   // 29
+    data class PaymentResult(val success: Boolean) : MainDestination   // 49/50
+    data object Admin : MainDestination                               // 30 (+64/다이얼로그)
+    data object NotifSettings : MainDestination                        // 65
+    data object Inquiry : MainDestination                             // 66
+    data object Blocked : MainDestination                            // 83
     // B 서브
     data object ClubSettings : MainDestination
     data object JoinManage : MainDestination
@@ -98,11 +115,12 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
         MainTab.BOARD -> resetTo(MainDestination.BoardHome)
         MainTab.MEMBERS -> resetTo(if (role == ClubRole.LEADER) MainDestination.MemberManage else MainDestination.MyProfile)
         MainTab.SCHEDULE -> resetTo(MainDestination.ScheduleHome)
+        MainTab.SETTINGS -> resetTo(MainDestination.SettingsHome)
         else -> { toast = DamoimStrings.TOAST_COMING_SOON }
     }
 
     // 시스템 뒤로가기: 스택이 있으면 pop, 탭 루트(게시판/회원)에선 홈 탭으로 (홈에선 기본 동작=앱 나가기)
-    val atTabRoot = backStack.last() == MainDestination.BoardHome || backStack.last() == MainDestination.MemberManage || backStack.last() == MainDestination.MyProfile || backStack.last() == MainDestination.ScheduleHome
+    val atTabRoot = backStack.last() == MainDestination.BoardHome || backStack.last() == MainDestination.MemberManage || backStack.last() == MainDestination.MyProfile || backStack.last() == MainDestination.ScheduleHome || backStack.last() == MainDestination.SettingsHome
     com.damoim.app.platform.PlatformBackHandler(
         enabled = backStack.size > 1 || atTabRoot,
     ) {
@@ -269,6 +287,59 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
             MainDestination.MyApplications -> MyApplicationsRoute(
                 onBack = { back() },
                 onOpenEvent = { navigate(MainDestination.EventDetail(it)) },
+                onToast = { toast = it },
+            )
+
+            MainDestination.SettingsHome -> SettingsHomeRoute(
+                onOpenClubSettings = { navigate(MainDestination.ClubSettings) },
+                onOpenAdmin = { navigate(MainDestination.Admin) },
+                onOpenPlan = { navigate(MainDestination.Plan) },
+                onOpenSubscription = { navigate(MainDestination.SubscriptionManage) },
+                onOpenNotif = { navigate(MainDestination.NotifSettings) },
+                onOpenInquiry = { navigate(MainDestination.Inquiry) },
+                onOpenBlocked = { navigate(MainDestination.Blocked) },
+                onTabSelect = { tab -> onTab(tab) },
+            )
+
+            MainDestination.Plan -> PlanRoute(
+                onBack = { back() },
+                onPaySuccess = { navigate(MainDestination.PaymentResult(success = true)) },
+                onPayFail = { navigate(MainDestination.PaymentResult(success = false)) },
+            )
+
+            is MainDestination.PaymentResult -> PaymentResultScreen(
+                success = current.success,
+                onDone = {
+                    if (current.success) { resetTo(MainDestination.SettingsHome); navigate(MainDestination.SubscriptionManage) }
+                    else resetTo(MainDestination.SettingsHome)
+                },
+                onRetry = { back() },   // 결과 화면 pop → 27 구독플랜으로 복귀
+            )
+
+            MainDestination.SubscriptionManage -> SubscriptionRoute(
+                onBack = { back() },
+                onChangePlan = { navigate(MainDestination.Plan) },
+                onToast = { toast = it },
+            )
+
+            MainDestination.Admin -> AdminRoute(
+                onBack = { back() },
+                onOpenMember = { id -> navigate(MainDestination.MemberDetail(id)) },
+                onToast = { toast = it },
+            )
+
+            MainDestination.NotifSettings -> NotifSettingsRoute(
+                isLeaderOrStaff = role == ClubRole.LEADER,
+                onBack = { back() },
+            )
+
+            MainDestination.Inquiry -> InquiryRoute(
+                onBack = { back() },
+                onToast = { toast = it },
+            )
+
+            MainDestination.Blocked -> BlockedRoute(
+                onBack = { back() },
                 onToast = { toast = it },
             )
 

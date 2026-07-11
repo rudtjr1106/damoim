@@ -34,6 +34,20 @@ expect fun rememberDocumentPickerLauncher(onResult: (PickedDocument?) -> Unit): 
 @Composable
 expect fun rememberShareText(): (String) -> Unit
 
+/** 인앱 결제 결과(G 그룹 구독). */
+enum class BillingResult { SUCCESS, FAILURE, CANCELLED }
+
+/**
+ * 구독 인앱 결제 런처. 반환 람다를 호출하면(가격 라벨 전달) 네이티브 인앱 결제 UI가 뜨고
+ * 결과를 [onResult]로 돌려준다. 데모는 모의 결제(성공/실패/취소 선택), 배포 시 Play Billing/StoreKit으로 교체.
+ */
+@Composable
+expect fun rememberSubscriptionBilling(): (priceLabel: String, onResult: (BillingResult) -> Unit) -> Unit
+
+/** 이메일 작성기 열기(수신자·제목·본문). Android=ACTION_SENDTO(mailto), iOS=mailto URL. */
+@Composable
+expect fun rememberEmailComposer(): (address: String, subject: String, body: String) -> Unit
+
 /** 시스템 뒤로가기 처리. [enabled]일 때 뒤로가기를 가로채 [onBack]을 실행한다(iOS는 no-op). */
 @Composable
 expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)
