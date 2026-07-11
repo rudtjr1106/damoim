@@ -25,8 +25,9 @@ data class HomeAlert(
 
 enum class AlertKind { JOIN_REQUEST, SCHEDULE }
 
-/** 다가오는 일정 카드 (캐러셀). primary=true면 진한 네이비 카드. */
+/** 다가오는 일정 카드 (캐러셀). primary=true면 진한 네이비 카드. [id]로 상세(24) 진입. */
 data class UpcomingSchedule(
+    val id: Long,                    // 일정 id (탭 → 24 상세)
     val dday: String,                // "D-3"
     val date: String,                // "6.07 토"
     val title: String,

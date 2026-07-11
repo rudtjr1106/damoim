@@ -40,8 +40,8 @@ import com.damoim.app.domain.model.MyApplication
 import com.damoim.app.presentation.component.BackChevronIcon
 import com.damoim.app.presentation.component.CalendarIcon
 import com.damoim.app.presentation.component.noRippleClick
-import com.damoim.app.presentation.schedule.detail.ApplyFormSheet
-import com.damoim.app.presentation.schedule.detail.EventConfirmDialog
+import com.damoim.app.presentation.schedule.ApplyFormSheet
+import com.damoim.app.presentation.schedule.EventConfirmDialog
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 

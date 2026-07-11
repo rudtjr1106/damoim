@@ -17,6 +17,9 @@ data class Schedule(
     val startHour: Int = 0,            // 수정 프리필용 원본 시각
     val startMinute: Int = 0,
     val endLabel: String? = null,      // 종료 표시(이벤트)
+    val endDate: LocalDate? = null,    // 수정 프리필용 구조화 종료일(있을 때)
+    val endHour: Int = 0,
+    val endMinute: Int = 0,
     val location: String = "",
     val memo: String = "",
     val accent: ScheduleAccent = ScheduleAccent.PRIMARY,   // 좌측 컬러바

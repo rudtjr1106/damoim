@@ -123,10 +123,11 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
                         DamoimStrings.QA_BOARD -> resetTo(MainDestination.BoardHome)
                         DamoimStrings.QA_MEMBERS -> navigate(MainDestination.MemberManage)
                         DamoimStrings.QA_PROFILE -> navigate(MainDestination.MyProfile)
-                        DamoimStrings.QA_SCHEDULE -> resetTo(MainDestination.ScheduleHome)
+                        DamoimStrings.QA_SCHEDULE, DamoimStrings.HOME_SECTION_SCHEDULE -> resetTo(MainDestination.ScheduleHome)
                         else -> toast = DamoimStrings.TOAST_COMING_SOON
                     }
                 },
+                onOpenSchedule = { navigate(MainDestination.EventDetail(it)) },
                 onTabSelect = { tab -> onTab(tab) },
             )
 

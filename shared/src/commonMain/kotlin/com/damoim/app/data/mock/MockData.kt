@@ -10,7 +10,6 @@ import com.damoim.app.domain.model.JoinApplicant
 import com.damoim.app.domain.model.JoinRequestResult
 import com.damoim.app.domain.model.JoinStatus
 import com.damoim.app.domain.model.NotificationType
-import com.damoim.app.domain.model.UpcomingSchedule
 
 /**
  * 정적 시드 데이터 모음. 가변 상태(현재 사용자·세션·게시글·신청자·알림)는 [MockStore]가
@@ -93,12 +92,6 @@ object MockData {
         "EXPIRE" -> null
         else -> JoinRequestResult(club = myClub, status = JoinStatus.PENDING)
     }
-
-    // ── 데모 일정 (F 그룹 구현 전까지 정적) ──
-    internal val schedules = listOf(
-        UpcomingSchedule("D-3", "6.07 토", "정기 월례회의", "오전 10:00 · 동아리방", primary = true),
-        UpcomingSchedule("D-10", "6.14 토", "신입 환영 MT", "1박 2일 · 가평", primary = false),
-    )
 
     // ── 09 가입 신청자 시드 ──
     internal val applicants = listOf(

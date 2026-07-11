@@ -62,6 +62,7 @@ import com.damoim.app.presentation.component.MegaphoneIcon
 import com.damoim.app.presentation.component.PeopleIcon
 import com.damoim.app.presentation.component.PersonPlusIcon
 import com.damoim.app.presentation.component.UserSingleIcon
+import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
@@ -78,6 +79,7 @@ fun HomeRoute(
     onNavigateClubSettings: () -> Unit = {},
     onNavigateArchive: () -> Unit = {},
     onComingSoon: (String) -> Unit = {},
+    onOpenSchedule: (Long) -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -85,8 +87,13 @@ fun HomeRoute(
         state = state,
         onBellClick = onNavigateNotifications,
         onAlertClick = {
-            if (state.summary?.alert?.kind == AlertKind.JOIN_REQUEST) onNavigateJoinManage()
+            when (state.summary?.alert?.kind) {
+                AlertKind.JOIN_REQUEST -> onNavigateJoinManage()
+                AlertKind.SCHEDULE -> onComingSoon(DamoimStrings.HOME_SECTION_SCHEDULE)
+                null -> {}
+            }
         },
+        onOpenSchedule = onOpenSchedule,
         onQuickAction = { label ->
             when (label) {
                 DamoimStrings.QA_CODE -> onNavigateClubSettings()
@@ -109,6 +116,7 @@ fun HomeScreen(
     onAlertClick: () -> Unit = {},
     onQuickAction: (String) -> Unit = {},
     onSeeAll: (String) -> Unit = {},
+    onOpenSchedule: (Long) -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
@@ -124,7 +132,7 @@ fun HomeScreen(
                     summary.alert?.let { AlertCard(it, onAlertClick) }
                     QuickActions(summary.role, onQuickAction)
                     if (summary.schedules.isNotEmpty()) {
-                        ScheduleSection(summary.schedules) { onSeeAll(DamoimStrings.HOME_SECTION_SCHEDULE) }
+                        ScheduleSection(summary.schedules, onOpenSchedule) { onSeeAll(DamoimStrings.HOME_SECTION_SCHEDULE) }
                     }
                     if (summary.boardPreviews.isNotEmpty()) {
                         BoardSection(summary.boardPreviews) { onSeeAll(DamoimStrings.HOME_SECTION_BOARD) }
@@ -288,25 +296,25 @@ private fun quickActionsFor(role: ClubRole): List<QuickAction> {
 }
 
 @Composable
-private fun ScheduleSection(schedules: List<UpcomingSchedule>, onSeeAll: () -> Unit) {
+private fun ScheduleSection(schedules: List<UpcomingSchedule>, onOpen: (Long) -> Unit, onSeeAll: () -> Unit) {
     SectionHeader(DamoimStrings.HOME_SECTION_SCHEDULE, onSeeAll, Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp))
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        schedules.forEach { ScheduleCard(it) }
+        schedules.forEach { s -> ScheduleCard(s) { onOpen(s.id) } }
     }
 }
 
 @Composable
-private fun ScheduleCard(s: UpcomingSchedule) {
+private fun ScheduleCard(s: UpcomingSchedule, onClick: () -> Unit) {
     val colors = DamoimTheme.colors
     val onDark = s.primary
     val bg = if (onDark) colors.onDarkNavy else colors.primaryContainer
     val titleColor = if (onDark) colors.onPrimary else colors.textPrimary
     val subColor = if (onDark) colors.onPrimary.copy(alpha = 0.6f) else colors.textMuted
     Column(
-        modifier = Modifier.width(210.dp).clip(RoundedCornerShape(18.dp)).background(bg).padding(16.dp),
+        modifier = Modifier.width(210.dp).clip(RoundedCornerShape(18.dp)).background(bg).noRippleClick(onClick).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(22.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -388,8 +396,8 @@ internal fun previewSummary(role: ClubRole) = HomeSummary(
         HomeAlert("가입 신청 3건이 기다려요", "탭해서 승인/거절 처리", AlertKind.JOIN_REQUEST)
     else HomeAlert("정기 월례회의가 3일 남았어요", "6.07 토 오전 10:00 · 동아리방", AlertKind.SCHEDULE, "D-3"),
     schedules = listOf(
-        UpcomingSchedule("D-3", "6.07 토", "정기 월례회의", "오전 10:00 · 동아리방", true),
-        UpcomingSchedule("D-10", "6.14 토", "신입 환영 MT", "1박 2일 · 가평", false),
+        UpcomingSchedule(1, "D-3", "6.07 토", "정기 월례회의", "오전 10:00 · 동아리방", true),
+        UpcomingSchedule(2, "D-10", "6.14 토", "신입 환영 MT", "1박 2일 · 가평", false),
     ),
     boardPreviews = buildList {
         add(BoardPreview(BoardCategory.NOTICE, "신입 회원 환영 OT 일정 안내", 5))

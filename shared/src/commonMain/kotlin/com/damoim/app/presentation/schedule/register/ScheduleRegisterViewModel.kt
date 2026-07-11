@@ -73,7 +73,8 @@ class ScheduleRegisterViewModel(
     private fun prefill(s: Schedule) = setState {
         copy(
             title = s.title, hasStart = true, startDate = s.date, startHour = s.startHour, startMinute = s.startMinute,
-            hasEnd = s.endLabel != null, location = s.location, memo = s.memo,
+            hasEnd = s.endDate != null, endDate = s.endDate, endHour = s.endHour, endMinute = s.endMinute,
+            location = s.location, memo = s.memo,
             isEvent = s.event != null, capacity = s.event?.capacity?.toString() ?: "",
             hasDeadline = s.event != null, deadlineDate = s.event?.deadlineDate,
             form = s.event?.form.orEmpty(),

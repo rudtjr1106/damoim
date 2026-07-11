@@ -13,6 +13,7 @@ import com.damoim.app.domain.model.AlertKind
 import com.damoim.app.domain.model.HomeStat
 import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.model.BoardPreview
+import com.damoim.app.domain.model.UpcomingSchedule
 import com.damoim.app.domain.model.JoinApplicant
 import com.damoim.app.domain.model.Member
 import com.damoim.app.domain.model.MemberDetail
@@ -655,12 +656,13 @@ object MockStore {
     fun homeSummaryFlow(): Flow<HomeSummary?> {
         // combine은 5개까지라 base 5종을 먼저 묶고, 회원 기수(내 기수 파생)를 위해 _members/_cohorts를 더한다
         val base = combine(_session, _posts, _pending, _notifications, _user) { s, p, pend, n, u -> HomeBase(s, p, pend, n, u) }
-        return combine(base, _members, _cohorts) { b, members, cohorts ->
+        return combine(base, _members, _cohorts, _schedules) { b, members, cohorts, allSchedules ->
             val session = b.session ?: return@combine null
             val posts = b.posts; val pending = b.pending; val notifications = b.notifications; val user = b.user
             val myCohortShort = cohorts.firstOrNull { it.id == members.firstOrNull { m -> m.isMe }?.cohortId }?.short ?: "내 기수"
-            val isDemo = session.club.id == MockData.myClub.id
-            val schedules = if (isDemo) MockData.schedules else emptyList()
+            val nowDay = today()
+            val schedules = upcomingSchedules(allSchedules, nowDay)   // 홈 캐러셀 = 실제 일정 스토어에서 파생
+            val thisWeekCount = allSchedules.count { it.date >= nowDay && it.date.toEpochDays() - nowDay.toEpochDays() in 0..6 }
             val previews = posts
                 .sortedWith(compareByDescending<BoardPost> { it.isPinned }.thenByDescending { it.createdAt })
                 .take(3)
@@ -670,7 +672,7 @@ object MockStore {
                     if (pending.isNotEmpty()) HomeAlert("가입 신청 ${pending.size}건이 기다려요", "탭해서 승인/거절 처리", AlertKind.JOIN_REQUEST)
                     else null
                 ClubRole.MEMBER ->
-                    schedules.firstOrNull()?.let { HomeAlert("${it.title}가 3일 남았어요", "${it.date} ${it.subtitle}", AlertKind.SCHEDULE, badge = it.dday) }
+                    schedules.firstOrNull()?.let { HomeAlert("${it.title} 일정이 다가와요", "${it.date} ${it.subtitle}", AlertKind.SCHEDULE, badge = it.dday) }
             }
             HomeSummary(
                 role = session.role,
@@ -680,11 +682,11 @@ object MockStore {
                     ClubRole.LEADER -> listOf(
                         HomeStat("${session.club.memberCount}", "회원"),
                         HomeStat("${pending.size}", "신청 대기"),
-                        HomeStat("${schedules.size}", "이번 주"),
+                        HomeStat("$thisWeekCount", "이번 주"),
                     )
                     ClubRole.MEMBER -> listOf(
                         HomeStat(myCohortShort, "내 기수"),
-                        HomeStat("${schedules.size}", "이번 주 일정"),
+                        HomeStat("$thisWeekCount", "이번 주 일정"),
                         HomeStat("${posts.size}", "새 글"),
                     )
                 },
@@ -729,6 +731,19 @@ object MockStore {
         }
     }
 
+    /** 홈 캐러셀(05/06)용 — 다가오는 일정 상위 3개를 [UpcomingSchedule]로 파생. 첫 카드=진한 네이비. */
+    private fun upcomingSchedules(list: List<Schedule>, today: LocalDate): List<UpcomingSchedule> =
+        list.filter { it.date >= today }.sortedBy { it.date.toEpochDays() }.take(3).mapIndexed { i, s ->
+            UpcomingSchedule(
+                id = s.id,
+                dday = ddayOf(s.date),
+                date = "${s.date.monthNumber}.${s.date.dayOfMonth.toString().padStart(2, '0')} ${MockScheduleData.weekday(s.date)}",
+                title = s.title,
+                subtitle = s.event?.meta?.takeIf { it.isNotBlank() } ?: buildString { append(s.timeLabel); if (s.location.isNotBlank()) append(" · ${s.location}") },
+                primary = i == 0,
+            )
+        }
+
     /** 23 등록. 생성된 일정 id 반환. */
     fun createSchedule(draft: ScheduleDraft): Long {
         val id = nextId++
@@ -771,6 +786,9 @@ object MockStore {
             startHour = draft.startHour,
             startMinute = draft.startMinute,
             endLabel = if (draft.hasEnd && draft.endDate != null) "~${MockScheduleData.shortDate(draft.endDate)}" else null,
+            endDate = if (draft.hasEnd) draft.endDate else null,
+            endHour = draft.endHour,
+            endMinute = draft.endMinute,
             location = draft.location,
             memo = draft.memo,
             accent = existing?.accent ?: ScheduleAccent.PRIMARY,
