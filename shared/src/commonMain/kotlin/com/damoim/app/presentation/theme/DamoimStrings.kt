@@ -400,6 +400,136 @@ object DamoimStrings {
     const val TOAST_RESOURCE_UPLOADED = "자료를 올렸어요"
     const val TOAST_RESOURCE_DELETED = "자료를 삭제했어요"
 
+    // ══════════ E. 회원·기수 관리 ══════════
+
+    // 공통 역할·상태 라벨
+    const val ROLE_LEADER = "동아리장"
+    const val ROLE_STAFF = "운영진"
+    const val ROLE_MEMBER = "일반 회원"
+    const val MEMBER_STATUS_ACTIVE = "활동"
+    const val MEMBER_STATUS_DORMANT = "휴면"
+    fun memberCountLabel(n: Int) = "${n}명"
+
+    // 16 회원 관리 허브
+    const val MEMBER_HUB_TITLE = "회원 관리"
+    const val MEMBER_STAT_TOTAL = "전체 회원"
+    const val MEMBER_STAT_STAFF = "운영진"
+    const val MEMBER_STAT_COHORT = "기수"
+    const val MEMBER_HUB_LIST = "회원 목록"
+    fun memberHubListSub(count: Int) = "전체 ${count}명 · 검색과 필터"
+    const val MEMBER_HUB_JOIN = "가입 신청"
+    fun memberHubJoinSub(n: Int) = if (n > 0) "${n}건의 신청이 기다려요" else "새 신청이 없어요"
+    const val MEMBER_HUB_COHORT = "기수 관리"
+    fun memberHubCohortSub(range: String) = "$range · 기수 추가/배정"
+    const val MEMBER_HUB_PROFILE = "내 프로필"
+    fun memberHubProfileSub(name: String, cohort: String, role: String) = "$name · $cohort · $role"
+
+    // 17 회원 목록 + 77 빈 상태
+    const val MEMBER_LIST_TITLE = "회원 목록"
+    const val MEMBER_SEARCH_HINT = "이름으로 검색"
+    const val MEMBER_FILTER_ALL = "전체"
+    const val MEMBER_EMPTY_TITLE = "아직 회원이 없어요"
+    const val MEMBER_EMPTY_SUBTITLE = "가입 코드를 공유해\n부원을 초대해보세요"
+    const val MEMBER_EMPTY_CTA = "가입 코드 공유"
+    fun memberSearchEmpty(query: String) = "'$query' 검색 결과가 없어요"
+
+    // 18 회원 상세
+    const val MEMBER_DETAIL_TITLE = "회원 상세"
+    const val MEMBER_INFO_JOINED = "가입일"
+    const val MEMBER_INFO_POSTS = "작성 글"
+    const val MEMBER_INFO_EVENTS = "이벤트 참여"
+    const val MEMBER_INFO_LAST_ACTIVE = "최근 활동"
+    fun memberInfoPosts(n: Int) = "${n}개"
+    fun memberInfoEvents(n: Int) = "${n}회"
+    const val MEMBER_LEADER_ACTIONS = "동아리장 관리"
+    const val MEMBER_CHANGE_COHORT = "기수 변경"
+    const val MEMBER_CHANGE_ROLE = "역할 변경"
+    const val MEMBER_REMOVE = "동아리에서 내보내기"
+
+    // 42 기수 변경 시트
+    fun cohortChangeTitle(name: String) = "${name}님의 기수 변경"
+    fun cohortChangeCurrent(label: String) = "현재: $label"
+    const val COHORT_CHANGE_CONFIRM = "변경하기"
+
+    // 18 역할 변경 시트 (신설)
+    fun roleChangeTitle(name: String) = "${name}님의 역할 변경"
+    const val ROLE_CHANGE_STAFF_DESC = "게시글·회원·기수를 관리할 수 있어요"
+    const val ROLE_CHANGE_MEMBER_DESC = "일반 회원 권한이에요"
+    const val ROLE_CHANGE_CONFIRM = "변경하기"
+
+    // 43 내보내기 확인
+    fun memberRemoveTitle(name: String) = "${name}님을 내보낼까요?"
+    const val MEMBER_REMOVE_BODY = "내보낸 회원은 다시 가입 신청을 해야 참여할 수 있어요."
+    const val MEMBER_REMOVE_CONFIRM = "내보내기"
+    const val MEMBER_REMOVE_BLOCK_REJOIN = "같은 카카오 계정의 재가입 차단"
+
+    // 19 기수 관리
+    const val COHORT_MANAGE_TITLE = "기수 관리"
+    const val COHORT_ADD = "새 기수 추가"
+    const val COHORT_RECRUITING = "모집중"
+    const val COHORT_INFO = "새 가입자는 가장 최근 기수로 자동 배정돼요. 기수 이름은 언제든 바꿀 수 있어요."
+
+    // 44 새 기수 추가 시트
+    const val COHORT_ADD_TITLE = "새 기수 추가"
+    const val COHORT_FIELD_SHORT = "기수 번호"
+    const val COHORT_FIELD_SHORT_HINT = "예: 26기"
+    const val COHORT_FIELD_NAME = "표시 이름"
+    const val COHORT_FIELD_NAME_HINT = "예: 2026학년 1기 (26기)"
+    const val COHORT_FIELD_START = "활동 시작"
+    const val COHORT_FIELD_START_HINT = "예: 2026년 3월"
+    const val COHORT_DEFAULT_ASSIGN = "신규 가입자 기본 배정"
+    const val COHORT_DEFAULT_ASSIGN_SUB = "새로 승인되는 회원을 이 기수로 배정해요"
+    const val COHORT_ADD_CONFIRM = "추가하기"
+
+    // 19 기수 이름 변경 시트 (신설)
+    const val COHORT_RENAME_TITLE = "기수 이름 변경"
+    const val COHORT_RENAME_CONFIRM = "저장하기"
+
+    // 20 내 프로필
+    const val MY_PROFILE_TITLE = "내 프로필"
+    const val PROFILE_INFO_EMAIL = "이메일"
+    const val PROFILE_INFO_COHORT = "내 기수"
+    const val PROFILE_INFO_LINKED = "연동 계정"
+    const val PROFILE_LINKED_KAKAO = "카카오"
+    const val PROFILE_ROW_EDIT = "프로필 수정"
+    const val PROFILE_ROW_NOTIFICATION = "알림 설정"
+    const val PROFILE_ROW_SWITCH = "동아리 전환"
+    const val PROFILE_ROW_LOGOUT = "로그아웃"
+    const val PROFILE_ROW_LEAVE = "동아리 탈퇴"
+    const val APP_VERSION = "다모임 v1.0.0"
+
+    // 33 동아리 전환 시트
+    const val CLUB_SWITCH_TITLE = "동아리 전환"
+    const val CLUB_SWITCH_JOIN = "코드로 참여"
+    const val CLUB_SWITCH_CREATE = "새로 만들기"
+
+    // 45 프로필 수정
+    const val PROFILE_EDIT_TITLE = "프로필 수정"
+    const val PROFILE_EDIT_SAVE = "저장"
+    const val PROFILE_EMAIL_LOCKED = "카카오 계정 이메일은 변경할 수 없어요"
+    const val PROFILE_CONTACT_HELPER = "동아리장과 운영진에게만 공개돼요"
+    const val PROFILE_BIO_LABEL = "한 줄 소개"
+    const val PROFILE_BIO_PLACEHOLDER = "나를 소개하는 한 마디"
+
+    // 60 동아리 탈퇴 확인
+    fun clubLeaveTitle(club: String) = "${club}에서\n탈퇴할까요?"
+    const val CLUB_LEAVE_BODY = "탈퇴하면 내 활동 기록과 권한이 모두 사라져요."
+    const val CLUB_LEAVE_NOTE = "다시 참여하려면 가입 코드가 필요해요."
+    const val CLUB_LEAVE_CONFIRM = "탈퇴하기"
+
+    // 로그아웃 확인
+    const val LOGOUT_TITLE = "로그아웃할까요?"
+    const val LOGOUT_BODY = "다시 로그인하면 이어서 활동할 수 있어요."
+    const val LOGOUT_CONFIRM = "로그아웃"
+
+    // E 그룹 토스트
+    const val TOAST_MEMBER_COHORT_CHANGED = "기수를 변경했어요"
+    const val TOAST_MEMBER_ROLE_CHANGED = "역할을 변경했어요"
+    const val TOAST_MEMBER_REMOVED = "회원을 내보냈어요"
+    const val TOAST_COHORT_ADDED = "새 기수를 추가했어요"
+    const val TOAST_COHORT_RENAMED = "기수 이름을 변경했어요"
+    const val TOAST_PROFILE_UPDATED = "프로필을 수정했어요"
+
     // 프리뷰용 더미 사용자명
     const val PREVIEW_USER_NAME = "서연"
 }

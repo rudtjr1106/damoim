@@ -3,6 +3,7 @@ package com.damoim.app.presentation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -10,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
+import com.damoim.app.core.di.AppGraph
 import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.presentation.board.BoardHomeRoute
@@ -22,7 +24,13 @@ import com.damoim.app.presentation.component.DamoimToastHost
 import com.damoim.app.presentation.component.MainTab
 import com.damoim.app.presentation.home.HomeRoute
 import com.damoim.app.presentation.joinmanage.JoinManageRoute
+import com.damoim.app.presentation.member.CohortManageRoute
+import com.damoim.app.presentation.member.MemberDetailRoute
+import com.damoim.app.presentation.member.MemberListRoute
+import com.damoim.app.presentation.member.MemberManageRoute
 import com.damoim.app.presentation.notification.NotificationRoute
+import com.damoim.app.presentation.profile.MyProfileRoute
+import com.damoim.app.presentation.profile.ProfileEditRoute
 import com.damoim.app.presentation.resource.ArchiveRoute
 import com.damoim.app.presentation.resource.ResourceDetailRoute
 import com.damoim.app.presentation.resource.ResourceUploadRoute
@@ -42,6 +50,13 @@ private sealed interface MainDestination {
     data object Archive : MainDestination                              // 67
     data class ResourceDetail(val resourceId: Long) : MainDestination  // 68
     data object ResourceUpload : MainDestination                       // 69
+    // E 회원·기수 관리
+    data object MemberManage : MainDestination                         // 16 (회원 탭 루트)
+    data class MemberList(val cohortId: Long? = null) : MainDestination // 17/77
+    data class MemberDetail(val memberId: Long) : MainDestination      // 18
+    data object CohortManage : MainDestination                         // 19
+    data object MyProfile : MainDestination                            // 20
+    data object ProfileEdit : MainDestination                          // 45
     // B 서브
     data object ClubSettings : MainDestination
     data object JoinManage : MainDestination
@@ -53,7 +68,13 @@ private sealed interface MainDestination {
  * 하단 탭 중 홈·게시판만 실제 화면이 있고 일정·회원·설정은 토스트로 안내한다.
  */
 @Composable
-fun MainNavHost(role: ClubRole) {
+fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
+    // 역할은 세션에서 관찰 — 동아리 전환(33)으로 세션이 바뀌면 자동 반영된다
+    val ctx by AppGraph.observeMyContextUseCase().collectAsState(
+        initial = com.damoim.app.domain.usecase.ObserveMyContextUseCase.MyContext(0, "", initialRole),
+    )
+    val role = ctx.role ?: initialRole
+
     val backStack: SnapshotStateList<MainDestination> =
         remember { mutableStateListOf<MainDestination>(MainDestination.Home) }
     var toast by remember { mutableStateOf<String?>(null) }
@@ -64,12 +85,14 @@ fun MainNavHost(role: ClubRole) {
     fun onTab(tab: MainTab) = when (tab) {
         MainTab.HOME -> resetTo(MainDestination.Home)
         MainTab.BOARD -> resetTo(MainDestination.BoardHome)
+        MainTab.MEMBERS -> resetTo(if (role == ClubRole.LEADER) MainDestination.MemberManage else MainDestination.MyProfile)
         else -> { toast = DamoimStrings.TOAST_COMING_SOON }
     }
 
-    // 시스템 뒤로가기: 스택이 있으면 pop, 게시판 탭 루트에선 홈 탭으로 (홈에선 기본 동작=앱 나가기)
+    // 시스템 뒤로가기: 스택이 있으면 pop, 탭 루트(게시판/회원)에선 홈 탭으로 (홈에선 기본 동작=앱 나가기)
+    val atTabRoot = backStack.last() == MainDestination.BoardHome || backStack.last() == MainDestination.MemberManage || backStack.last() == MainDestination.MyProfile
     com.damoim.app.platform.PlatformBackHandler(
-        enabled = backStack.size > 1 || backStack.last() == MainDestination.BoardHome,
+        enabled = backStack.size > 1 || atTabRoot,
     ) {
         if (backStack.size > 1) back() else resetTo(MainDestination.Home)
     }
@@ -83,9 +106,13 @@ fun MainNavHost(role: ClubRole) {
                 onNavigateClubSettings = { navigate(MainDestination.ClubSettings) },
                 onNavigateArchive = { navigate(MainDestination.Archive) },
                 onComingSoon = { label ->
-                    // 홈 퀵액션 '게시판' → 게시판 탭으로, 그 외는 준비중 토스트
-                    if (label == DamoimStrings.QA_BOARD) resetTo(MainDestination.BoardHome)
-                    else toast = DamoimStrings.TOAST_COMING_SOON
+                    // 홈 퀵액션: 게시판→탭, 회원 관리(리더)→16, 내 프로필(회원)→20, 그 외 준비중
+                    when (label) {
+                        DamoimStrings.QA_BOARD -> resetTo(MainDestination.BoardHome)
+                        DamoimStrings.QA_MEMBERS -> navigate(MainDestination.MemberManage)
+                        DamoimStrings.QA_PROFILE -> navigate(MainDestination.MyProfile)
+                        else -> toast = DamoimStrings.TOAST_COMING_SOON
+                    }
                 },
                 onTabSelect = { tab -> onTab(tab) },
             )
@@ -148,6 +175,48 @@ fun MainNavHost(role: ClubRole) {
                     toast = DamoimStrings.TOAST_RESOURCE_UPLOADED
                 },
                 onToast = { toast = it },
+            )
+
+            MainDestination.MemberManage -> MemberManageRoute(
+                onOpenList = { navigate(MainDestination.MemberList()) },
+                onOpenJoinManage = { navigate(MainDestination.JoinManage) },
+                onOpenCohorts = { navigate(MainDestination.CohortManage) },
+                onOpenProfile = { navigate(MainDestination.MyProfile) },
+                onTabSelect = { tab -> onTab(tab) },
+            )
+
+            is MainDestination.MemberList -> MemberListRoute(
+                initialCohortId = current.cohortId,
+                onBack = { back() },
+                onOpenMember = { id -> navigate(MainDestination.MemberDetail(id)) },
+                onShareCode = { navigate(MainDestination.ClubSettings) },
+            )
+
+            is MainDestination.MemberDetail -> MemberDetailRoute(
+                memberId = current.memberId,
+                onBack = { back() },
+                onToast = { toast = it },
+            )
+
+            MainDestination.CohortManage -> CohortManageRoute(
+                onBack = { back() },
+                onToast = { toast = it },
+            )
+
+            MainDestination.MyProfile -> MyProfileRoute(
+                onBack = { back() },
+                onEditProfile = { navigate(MainDestination.ProfileEdit) },
+                onExitToAuth = onExitToAuth,
+                onSwitched = { resetTo(MainDestination.Home) },   // 동아리 전환 → 새 동아리 홈으로
+                onComingSoon = { toast = DamoimStrings.TOAST_COMING_SOON },
+            )
+
+            MainDestination.ProfileEdit -> ProfileEditRoute(
+                onCancel = { back() },
+                onSaved = {
+                    back()
+                    toast = DamoimStrings.TOAST_PROFILE_UPDATED
+                },
             )
 
             MainDestination.ClubSettings -> ClubSettingsRoute(

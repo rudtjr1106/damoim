@@ -31,6 +31,9 @@ fun RootNavHost() {
                 flow = AppFlow.Main(role)
             },
         )
-        is AppFlow.Main -> MainNavHost(role = current.role)
+        is AppFlow.Main -> MainNavHost(
+            initialRole = current.role,
+            onExitToAuth = { flow = AppFlow.Auth },   // 로그아웃/탈퇴/새 참여 → 로그인으로
+        )
     }
 }
