@@ -34,11 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,6 +57,7 @@ import com.damoim.app.presentation.component.CloseIcon
 import com.damoim.app.presentation.component.DamoimTextField
 import com.damoim.app.presentation.component.PrimaryButton
 import com.damoim.app.presentation.component.UploadIcon
+import com.damoim.app.presentation.component.dashedBorder
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
@@ -336,15 +333,6 @@ private fun DropZone(onClick: () -> Unit) {
     }
 }
 
-/** 점선 테두리(69 드롭존). Compose에 dashed border modifier가 없어 직접 그린다. */
-private fun Modifier.dashedBorder(color: Color, width: Dp, cornerRadius: Dp): Modifier = drawBehind {
-    val stroke = width.toPx()
-    drawRoundRect(
-        color = color,
-        style = Stroke(width = stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(stroke * 4, stroke * 3))),
-        cornerRadius = CornerRadius(cornerRadius.toPx()),
-    )
-}
 
 /** 라벨 + 입력 한 묶음. 디자인은 묶음 안 간격 8px, 묶음 사이 20px. */
 @Composable

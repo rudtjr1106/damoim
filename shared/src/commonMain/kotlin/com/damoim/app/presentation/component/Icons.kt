@@ -42,7 +42,9 @@ import damoim.shared.generated.resources.ic_megaphone
 import damoim.shared.generated.resources.ic_more
 import damoim.shared.generated.resources.ic_paperclip
 import damoim.shared.generated.resources.ic_people
+import damoim.shared.generated.resources.ic_person_minus
 import damoim.shared.generated.resources.ic_person_plus
+import damoim.shared.generated.resources.ic_door_exit
 import damoim.shared.generated.resources.ic_plus
 import damoim.shared.generated.resources.ic_search
 import damoim.shared.generated.resources.ic_send
@@ -192,3 +194,12 @@ fun ReplyIcon(tint: Color, modifier: Modifier = Modifier.size(19.dp)) = VectorIc
 /** 업로드(밑줄 위로 향하는 화살표) — 67 FAB · 69 드롭존. */
 @Composable
 fun UploadIcon(tint: Color, modifier: Modifier = Modifier.size(20.dp)) = VectorIcon(Res.drawable.ic_upload, tint, modifier)
+
+// ── E 회원·기수 ──
+/** 회원 내보내기(사람 - ) — 18/43. */
+@Composable
+fun PersonMinusIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp)) = VectorIcon(Res.drawable.ic_person_minus, tint, modifier)
+
+/** 문 나가기(로그아웃/전환/탈퇴) — 20 동아리 전환 · 60 탈퇴. */
+@Composable
+fun DoorExitIcon(tint: Color, modifier: Modifier = Modifier.size(18.dp)) = VectorIcon(Res.drawable.ic_door_exit, tint, modifier)

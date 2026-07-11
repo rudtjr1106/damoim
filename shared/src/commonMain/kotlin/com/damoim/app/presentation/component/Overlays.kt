@@ -35,8 +35,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.damoim.app.presentation.theme.DamoimStrings
@@ -45,6 +50,16 @@ import com.damoim.app.presentation.theme.DamoimTheme
 /** 클릭 소비용(리플 없음) modifier. */
 internal fun Modifier.noRippleClick(onClick: () -> Unit): Modifier = composed {
     clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
+}
+
+/** 점선 테두리(드롭존·대시 버튼·타일). Compose에 dashed border modifier가 없어 직접 그린다. */
+fun Modifier.dashedBorder(color: Color, width: Dp, cornerRadius: Dp): Modifier = drawBehind {
+    val stroke = width.toPx()
+    drawRoundRect(
+        color = color,
+        style = Stroke(width = stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(stroke * 4, stroke * 3))),
+        cornerRadius = CornerRadius(cornerRadius.toPx()),
+    )
 }
 
 /**
