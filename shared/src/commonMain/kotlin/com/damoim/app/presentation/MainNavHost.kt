@@ -34,6 +34,11 @@ import com.damoim.app.presentation.profile.myprofile.MyProfileRoute
 import com.damoim.app.presentation.resource.archive.ArchiveRoute
 import com.damoim.app.presentation.resource.detail.ResourceDetailRoute
 import com.damoim.app.presentation.resource.upload.ResourceUploadRoute
+import com.damoim.app.presentation.schedule.applicants.ApplicantsRoute
+import com.damoim.app.presentation.schedule.detail.EventDetailRoute
+import com.damoim.app.presentation.schedule.home.ScheduleHomeRoute
+import com.damoim.app.presentation.schedule.myapplications.MyApplicationsRoute
+import com.damoim.app.presentation.schedule.register.ScheduleRegisterRoute
 import com.damoim.app.presentation.theme.DamoimStrings
 
 /** 메인(로그인 이후) 플로우 목적지. */
@@ -57,6 +62,12 @@ private sealed interface MainDestination {
     data object CohortManage : MainDestination                         // 19
     data object MyProfile : MainDestination                            // 20
     data object ProfileEdit : MainDestination                          // 45
+    // F 일정·이벤트
+    data object ScheduleHome : MainDestination                         // 21/22 (일정 탭 루트)
+    data class ScheduleRegister(val editId: Long? = null) : MainDestination // 23 (+46/51 오버레이)
+    data class EventDetail(val scheduleId: Long) : MainDestination     // 24 (+62/25/63 오버레이)
+    data class Applicants(val scheduleId: Long) : MainDestination      // 47
+    data object MyApplications : MainDestination                       // 48/75
     // B 서브
     data object ClubSettings : MainDestination
     data object JoinManage : MainDestination
@@ -86,11 +97,12 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
         MainTab.HOME -> resetTo(MainDestination.Home)
         MainTab.BOARD -> resetTo(MainDestination.BoardHome)
         MainTab.MEMBERS -> resetTo(if (role == ClubRole.LEADER) MainDestination.MemberManage else MainDestination.MyProfile)
+        MainTab.SCHEDULE -> resetTo(MainDestination.ScheduleHome)
         else -> { toast = DamoimStrings.TOAST_COMING_SOON }
     }
 
     // 시스템 뒤로가기: 스택이 있으면 pop, 탭 루트(게시판/회원)에선 홈 탭으로 (홈에선 기본 동작=앱 나가기)
-    val atTabRoot = backStack.last() == MainDestination.BoardHome || backStack.last() == MainDestination.MemberManage || backStack.last() == MainDestination.MyProfile
+    val atTabRoot = backStack.last() == MainDestination.BoardHome || backStack.last() == MainDestination.MemberManage || backStack.last() == MainDestination.MyProfile || backStack.last() == MainDestination.ScheduleHome
     com.damoim.app.platform.PlatformBackHandler(
         enabled = backStack.size > 1 || atTabRoot,
     ) {
@@ -111,6 +123,7 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
                         DamoimStrings.QA_BOARD -> resetTo(MainDestination.BoardHome)
                         DamoimStrings.QA_MEMBERS -> navigate(MainDestination.MemberManage)
                         DamoimStrings.QA_PROFILE -> navigate(MainDestination.MyProfile)
+                        DamoimStrings.QA_SCHEDULE -> resetTo(MainDestination.ScheduleHome)
                         else -> toast = DamoimStrings.TOAST_COMING_SOON
                     }
                 },
@@ -217,6 +230,45 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
                     back()
                     toast = DamoimStrings.TOAST_PROFILE_UPDATED
                 },
+            )
+
+            MainDestination.ScheduleHome -> ScheduleHomeRoute(
+                isLeader = role == ClubRole.LEADER,
+                onOpenSchedule = { navigate(MainDestination.EventDetail(it)) },
+                onRegister = { navigate(MainDestination.ScheduleRegister()) },
+                onOpenMyApps = { navigate(MainDestination.MyApplications) },
+                onTabSelect = { tab -> onTab(tab) },
+                onToast = { toast = it },
+            )
+
+            is MainDestination.ScheduleRegister -> ScheduleRegisterRoute(
+                editId = current.editId,
+                onCancel = { back() },
+                onDone = { edited ->
+                    back()
+                    toast = if (edited) DamoimStrings.TOAST_SCHEDULE_UPDATED else DamoimStrings.TOAST_SCHEDULE_CREATED
+                },
+            )
+
+            is MainDestination.EventDetail -> EventDetailRoute(
+                scheduleId = current.scheduleId,
+                isLeader = role == ClubRole.LEADER,
+                onBack = { back() },
+                onEdit = { navigate(MainDestination.ScheduleRegister(editId = it)) },
+                onApplicants = { navigate(MainDestination.Applicants(it)) },
+                onToast = { toast = it },
+            )
+
+            is MainDestination.Applicants -> ApplicantsRoute(
+                scheduleId = current.scheduleId,
+                onBack = { back() },
+                onToast = { toast = it },
+            )
+
+            MainDestination.MyApplications -> MyApplicationsRoute(
+                onBack = { back() },
+                onOpenEvent = { navigate(MainDestination.EventDetail(it)) },
+                onToast = { toast = it },
             )
 
             MainDestination.ClubSettings -> ClubSettingsRoute(

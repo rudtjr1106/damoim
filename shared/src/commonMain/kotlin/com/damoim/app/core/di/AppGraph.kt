@@ -5,12 +5,20 @@ import com.damoim.app.data.repository.MockBoardRepository
 import com.damoim.app.data.repository.MockClubRepository
 import com.damoim.app.data.repository.MockNotificationRepository
 import com.damoim.app.data.repository.MockResourceRepository
+import com.damoim.app.data.repository.MockScheduleRepository
 import com.damoim.app.domain.repository.AuthRepository
 import com.damoim.app.domain.repository.BoardRepository
 import com.damoim.app.domain.repository.ClubRepository
 import com.damoim.app.domain.repository.NotificationRepository
 import com.damoim.app.domain.repository.ResourceRepository
+import com.damoim.app.domain.repository.ScheduleRepository
 import com.damoim.app.domain.usecase.ClubSessionUseCase
+import com.damoim.app.domain.usecase.EventApplicationUseCase
+import com.damoim.app.domain.usecase.GetMyApplicationsUseCase
+import com.damoim.app.domain.usecase.GetScheduleDetailUseCase
+import com.damoim.app.domain.usecase.GetSchedulesUseCase
+import com.damoim.app.domain.usecase.ScheduleActionUseCase
+import com.damoim.app.domain.usecase.SubmitScheduleUseCase
 import com.damoim.app.domain.usecase.CohortActionUseCase
 import com.damoim.app.domain.usecase.CreateClubUseCase
 import com.damoim.app.domain.usecase.DecideApplicantUseCase
@@ -58,6 +66,7 @@ object AppGraph {
     private val notificationRepository: NotificationRepository by lazy { MockNotificationRepository() }
     private val boardRepository: BoardRepository by lazy { MockBoardRepository() }
     private val resourceRepository: ResourceRepository by lazy { MockResourceRepository() }
+    private val scheduleRepository: ScheduleRepository by lazy { MockScheduleRepository() }
 
     // A. 인증·가입
     val loginWithKakaoUseCase get() = LoginWithKakaoUseCase(authRepository)
@@ -103,6 +112,14 @@ object AppGraph {
     val getStorageUsageUseCase get() = GetStorageUsageUseCase(resourceRepository)
     val uploadResourceUseCase get() = UploadResourceUseCase(resourceRepository)
     val resourceActionUseCase get() = ResourceActionUseCase(resourceRepository)
+
+    // F. 일정·이벤트
+    val getSchedulesUseCase get() = GetSchedulesUseCase(scheduleRepository)
+    val getScheduleDetailUseCase get() = GetScheduleDetailUseCase(scheduleRepository)
+    val getMyApplicationsUseCase get() = GetMyApplicationsUseCase(scheduleRepository)
+    val submitScheduleUseCase get() = SubmitScheduleUseCase(scheduleRepository)
+    val scheduleActionUseCase get() = ScheduleActionUseCase(scheduleRepository)
+    val eventApplicationUseCase get() = EventApplicationUseCase(scheduleRepository)
 
     // 공통 컨텍스트
     val observeMyContextUseCase get() = ObserveMyContextUseCase(authRepository, clubRepository)

@@ -42,6 +42,9 @@ data class DamoimColors(
     val error: Color = Color(0xFFE5484D),
     val errorSoft: Color = Color(0xFFFF8A8E),
     val errorContainer: Color = Color(0xFFFFF2F2),
+    val warn: Color = Color(0xFFE8833A),              // 마감 임박 통계(47) 오렌지
+    val warnContainer: Color = Color(0xFFFFF3E9),     // 마감 통계 배경(옅은 피치)
+    val onWarnContainer: Color = Color(0xFF9A5522),   // 마감 통계 라벨(브라운)
     val kakao: Color = Color(0xFFFEE500),
     val onKakao: Color = Color(0xFF191919),
     val toastSurface: Color = Color(0xFF22273A),

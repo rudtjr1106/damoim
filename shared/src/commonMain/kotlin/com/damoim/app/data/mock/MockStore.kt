@@ -29,6 +29,17 @@ import com.damoim.app.domain.model.RecruitStatus
 import com.damoim.app.domain.model.ResourceDraft
 import com.damoim.app.domain.model.ResourceFile
 import com.damoim.app.domain.model.ResourceFolder
+import com.damoim.app.domain.model.ApplicantStatus
+import com.damoim.app.domain.model.ApplicationStatus
+import com.damoim.app.domain.model.EventApplicant
+import com.damoim.app.domain.model.EventInfo
+import com.damoim.app.domain.model.EventStatus
+import com.damoim.app.domain.model.MyApplication
+import com.damoim.app.domain.model.QuestionAnswer
+import com.damoim.app.domain.model.Schedule
+import com.damoim.app.domain.model.ScheduleAccent
+import com.damoim.app.domain.model.ScheduleDraft
+import com.damoim.app.domain.model.ScheduleType
 import com.damoim.app.domain.repository.BoardHomeData
 import com.damoim.app.domain.repository.SearchFileHit
 import com.damoim.app.domain.repository.SearchResults
@@ -42,6 +53,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlin.time.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 /**
  * 앱 전역 인메모리 상태 저장소(단일 소스). 서버·DB 도입 전까지 모든 상호작용
@@ -113,13 +128,16 @@ object MockStore {
         val cohorts: List<Cohort>,
         val members: List<Member>,
         val draft: PostDraft?,
+        val schedules: List<Schedule>,
+        val myApplications: List<MyApplication>,
+        val scheduleDraft: ScheduleDraft?,
     )
 
     private val bundles = mutableMapOf<Long, ClubBundle>()
 
     private fun snapshotCurrent(): ClubBundle? {
         val s = _session.value ?: return null
-        return ClubBundle(s, _posts.value, _comments.value, _pending.value, _processed.value, _notifications.value, _resources.value, _cohorts.value, _members.value, savedDraft)
+        return ClubBundle(s, _posts.value, _comments.value, _pending.value, _processed.value, _notifications.value, _resources.value, _cohorts.value, _members.value, savedDraft, _schedules.value, _myApplications.value, scheduleDraft)
     }
 
     private fun applyBundle(b: ClubBundle) {
@@ -133,6 +151,9 @@ object MockStore {
         _cohorts.value = b.cohorts
         _members.value = b.members
         savedDraft = b.draft   // 임시저장 글은 동아리별로 격리 — 전환 시 다른 동아리로 새지 않는다
+        _schedules.value = b.schedules
+        _myApplications.value = b.myApplications
+        scheduleDraft = b.scheduleDraft
     }
 
     /** 코드 가입 완료(04 확인) 후 데모 동아리 입장. 이미 세션이 있으면(생성 경로) 무시. */
@@ -165,6 +186,9 @@ object MockStore {
         _cohorts.value = emptyList()
         _members.value = emptyList()
         savedDraft = null
+        _schedules.value = emptyList()
+        _myApplications.value = emptyList()
+        scheduleDraft = null
     }
 
     /** 동아리 생성(07). 새 동아리는 게시판/신청자/알림이 빈 상태에서 시작한다. */
@@ -179,6 +203,9 @@ object MockStore {
         _pending.value = emptyList()
         _processed.value = emptyList()
         _resources.value = emptyList()
+        _schedules.value = emptyList()
+        _myApplications.value = emptyList()
+        scheduleDraft = null
         _cohorts.value = listOf(Cohort(1, "1기", "1기", 1))   // 새 동아리는 1기부터 시작
         _members.value = listOf(selfMember(cohortId = 1L, role = MemberRole.LEADER))   // 나 혼자 리더
         _notifications.value = listOf(
@@ -211,6 +238,7 @@ object MockStore {
             cohorts = MockData.runnersCohorts,
             members = listOf(runnerMe) + MockData.runnersMembersExceptMe(),
             draft = null,
+            schedules = emptyList(), myApplications = emptyList(), scheduleDraft = null,
         )
     }
 
@@ -668,6 +696,191 @@ object MockStore {
         }
     }
 
+    // ══════════ 일정/이벤트(F 그룹 · 21~25 · 46~48 · 61~63) ══════════
+
+    private val _schedules = MutableStateFlow<List<Schedule>>(emptyList())
+    private val _myApplications = MutableStateFlow<List<MyApplication>>(emptyList())
+    private var scheduleDraft: ScheduleDraft? = null
+
+    private fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
+    /** 일정 목록(날짜·정렬 보조 순). 21 캘린더·22 목록 공용. */
+    fun schedulesFlow(): Flow<List<Schedule>> = _schedules.map { list ->
+        list.sortedWith(compareBy({ it.date }, { it.createdAt }))
+    }
+
+    fun scheduleDetailFlow(scheduleId: Long): Flow<Schedule?> =
+        _schedules.map { list -> list.firstOrNull { it.id == scheduleId } }
+
+    fun myApplicationsFlow(): Flow<List<MyApplication>> = _myApplications.asStateFlow()
+
+    private fun timeLabel(hour24: Int, minute: Int): String {
+        val ampm = if (hour24 < 12) "오전" else "오후"
+        val h12 = (hour24 % 12).let { if (it == 0) 12 else it }
+        return "$ampm $h12:${minute.toString().padStart(2, '0')}"
+    }
+
+    private fun ddayOf(target: LocalDate): String {
+        val diff = target.toEpochDays() - today().toEpochDays()
+        return when {
+            diff > 0 -> "D-$diff"
+            diff == 0L -> "D-DAY"
+            else -> "종료"
+        }
+    }
+
+    /** 23 등록. 생성된 일정 id 반환. */
+    fun createSchedule(draft: ScheduleDraft): Long {
+        val id = nextId++
+        _schedules.update { it + buildSchedule(id, draft, existing = null) }
+        scheduleDraft = null
+        return id
+    }
+
+    /** 23 수정(62 '이벤트 수정' 경유). */
+    fun updateSchedule(draft: ScheduleDraft): Long {
+        val id = draft.editId ?: return createSchedule(draft)
+        _schedules.update { list -> list.map { if (it.id == id) buildSchedule(id, draft, existing = it) else it } }
+        scheduleDraft = null
+        return id
+    }
+
+    private fun buildSchedule(id: Long, draft: ScheduleDraft, existing: Schedule?): Schedule {
+        val start = draft.startDate ?: today()
+        val event = if (draft.isEvent) {
+            val deadline = draft.deadlineDate ?: start
+            EventInfo(
+                capacity = draft.capacity.toIntOrNull() ?: 0,
+                appliedCount = existing?.event?.appliedCount ?: 0,
+                deadlineDate = deadline,
+                deadlineLabel = "${MockScheduleData.shortDate(deadline)} ${timeLabel(draft.deadlineHour, draft.deadlineMinute)}",
+                status = existing?.event?.status ?: EventStatus.OPEN,
+                dday = ddayOf(start),
+                meta = draft.location.ifBlank { "이벤트" },
+                form = draft.form,
+                applicants = existing?.event?.applicants ?: emptyList(),
+                appliedByMe = existing?.event?.appliedByMe ?: false,
+            )
+        } else null
+        return Schedule(
+            id = id,
+            type = if (draft.isEvent) ScheduleType.EVENT else ScheduleType.SCHEDULE,
+            title = draft.title,
+            date = start,
+            timeLabel = timeLabel(draft.startHour, draft.startMinute),
+            startHour = draft.startHour,
+            startMinute = draft.startMinute,
+            endLabel = if (draft.hasEnd && draft.endDate != null) "~${MockScheduleData.shortDate(draft.endDate)}" else null,
+            location = draft.location,
+            memo = draft.memo,
+            accent = existing?.accent ?: ScheduleAccent.PRIMARY,
+            addedToMyCalendar = existing?.addedToMyCalendar ?: false,
+            hostName = myName,
+            createdAt = existing?.createdAt ?: orderCounter++,
+            event = event,
+        )
+    }
+
+    /** 63 일정 삭제 / 62 이벤트 취소. 관련 내 신청도 제거. */
+    fun deleteSchedule(scheduleId: Long) {
+        _schedules.update { list -> list.filterNot { it.id == scheduleId } }
+        _myApplications.update { list -> list.filterNot { it.eventId == scheduleId } }
+    }
+
+    /** 21/22 '내 일정에 추가' 토글 — 새 상태 반환. */
+    fun toggleScheduleCalendar(scheduleId: Long): Boolean {
+        var added = false
+        _schedules.update { list ->
+            list.map { if (it.id == scheduleId) it.copy(addedToMyCalendar = !it.addedToMyCalendar).also { s -> added = s.addedToMyCalendar } else it }
+        }
+        return added
+    }
+
+    /** 47/62 신청 조기 마감. */
+    fun closeEventEarly(scheduleId: Long) {
+        _schedules.update { list ->
+            list.map { s -> if (s.id != scheduleId || s.event == null) s else s.copy(event = s.event.copy(status = EventStatus.CLOSED)) }
+        }
+    }
+
+    /** 25 참여 신청 — 성공 시 true. 이미 신청/정원초과/마감이면 false. 정원이 차면 자동 마감. */
+    fun applyToEvent(scheduleId: Long, answers: List<QuestionAnswer>): Boolean {
+        var applied = false
+        var title = ""
+        var dateLabel = ""
+        _schedules.update { list ->
+            list.map { s ->
+                val e = s.event
+                if (s.id != scheduleId || e == null || e.appliedByMe || e.status != EventStatus.OPEN || e.appliedCount >= e.capacity) return@map s
+                applied = true; title = s.title; dateLabel = MockScheduleData.midDate(s.date)
+                val count = e.appliedCount + 1
+                s.copy(
+                    event = e.copy(
+                        appliedCount = count,
+                        appliedByMe = true,
+                        status = if (count >= e.capacity) EventStatus.CLOSED else e.status,
+                        applicants = e.applicants + EventApplicant(nextId++, myName, initialsOf(myName), e.applicants.size % 4, ApplicantStatus.APPLIED, "방금 전", answers),
+                    ),
+                )
+            }
+        }
+        if (applied) {
+            _myApplications.update { listOf(MyApplication(scheduleId, title, dateLabel, ApplicationStatus.APPLIED, answers)) + it.filterNot { a -> a.eventId == scheduleId } }
+        }
+        return applied
+    }
+
+    /** 48 응답 수정 — 재신청 없이 답변만 교체. */
+    fun updateMyApplication(scheduleId: Long, answers: List<QuestionAnswer>) {
+        _myApplications.update { list -> list.map { if (it.eventId == scheduleId) it.copy(answers = answers) else it } }
+        _schedules.update { list ->
+            list.map { s ->
+                val e = s.event ?: return@map s
+                if (s.id != scheduleId) s else s.copy(event = e.copy(applicants = e.applicants.map { if (it.name == myName) it.copy(answers = answers) else it }))
+            }
+        }
+    }
+
+    /** 48 신청 취소 — 내 신청 제거, 정원 -1, 내 신청자 행 취소 표시. */
+    fun cancelMyApplication(eventId: Long) {
+        _myApplications.update { list -> list.filterNot { it.eventId == eventId } }
+        _schedules.update { list ->
+            list.map { s ->
+                val e = s.event
+                if (s.id != eventId || e == null) s
+                else {
+                    val count = (e.appliedCount - 1).coerceAtLeast(0)
+                    s.copy(
+                        event = e.copy(
+                            appliedCount = count,
+                            appliedByMe = false,
+                            status = if (e.status == EventStatus.CLOSED && count < e.capacity) EventStatus.OPEN else e.status,
+                            applicants = e.applicants.map { if (it.name == myName) it.copy(status = ApplicantStatus.CANCELED) else it },
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    /** G5 '공지로 알리기' — 이벤트를 게시판 공지 글(필독)로 등록. */
+    fun announceEvent(scheduleId: Long) {
+        val s = _schedules.value.firstOrNull { it.id == scheduleId } ?: return
+        createPost(
+            PostDraft(
+                category = BoardCategory.NOTICE,
+                title = "[이벤트] ${s.title}",
+                content = "${MockScheduleData.longDate(s.date)} ${s.timeLabel} · ${s.location}\n\n${s.memo}",
+                pinned = true,
+            ),
+        )
+    }
+
+    // 진행 중 등록 초안(23 ↔ 46 양식편집 공유)
+    fun currentScheduleDraft(): ScheduleDraft? = scheduleDraft
+    fun saveScheduleDraft(draft: ScheduleDraft) { scheduleDraft = draft }
+    fun clearScheduleDraft() { scheduleDraft = null }
+
     // ══════════ 시드(데모 동아리) ══════════
 
     private fun seedDemoClub() {
@@ -680,6 +893,9 @@ object MockStore {
         _processed.value = MockData.processedApplicants
         _notifications.value = MockData.notifications
         _resources.value = MockResourceData.seedResources()
+        val seedToday = today()
+        _schedules.value = MockScheduleData.seedSchedules(seedToday)
+        _myApplications.value = MockScheduleData.seedMyApplications(seedToday)
         _cohorts.value = MockData.cohorts
         // 본인은 세션 역할 기반: LEADER면 리더 슬롯을 차지(김민준 생략), MEMBER면 24기 일반 + 김민준 리더 포함
         val meLeader = _session.value?.role == ClubRole.LEADER

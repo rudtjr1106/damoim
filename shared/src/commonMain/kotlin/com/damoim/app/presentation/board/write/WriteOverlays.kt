@@ -37,6 +37,9 @@ import com.damoim.app.presentation.component.ChartIcon
 import com.damoim.app.presentation.component.ChevronRightIcon
 import com.damoim.app.presentation.component.CommentIcon
 import com.damoim.app.presentation.component.DamoimBottomSheet
+import com.damoim.app.presentation.component.CalendarGrid
+import com.damoim.app.presentation.component.TimeWheel
+import com.damoim.app.presentation.component.koreanWeekday
 import com.damoim.app.presentation.component.ImageIcon
 import com.damoim.app.presentation.component.LinkIcon
 import com.damoim.app.presentation.component.LockIcon
@@ -49,7 +52,6 @@ import kotlin.time.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 
@@ -242,7 +244,6 @@ internal fun ddayLabel(date: LocalDate, today: LocalDate): String? {
     }
 }
 
-private fun koreanWeekday(date: LocalDate): String = "월화수목금토일"[date.dayOfWeek.isoDayNumber - 1].toString()
 
 private fun deadlineLabel(date: LocalDate, isPm: Boolean, hour12: Int, minute: Int): String =
     "${date.monthNumber}.${date.dayOfMonth} (${koreanWeekday(date)}) " +
@@ -354,136 +355,4 @@ private fun PresetChip(label: String, onClick: () -> Unit) {
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
     )
-}
-
-@Composable
-private fun CalendarGrid(year: Int, month: Int, selected: LocalDate, today: LocalDate, onSelect: (LocalDate) -> Unit) {
-    val colors = DamoimTheme.colors
-    val first = LocalDate(year, month, 1)
-    val offset = first.dayOfWeek.isoDayNumber % 7               // 일요일 시작(일=0)
-    val daysInMonth = first.plus(DatePeriod(months = 1)).plus(DatePeriod(days = -1)).dayOfMonth
-    val rows = (offset + daysInMonth + 6) / 7
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        repeat(rows) { row ->
-            Row(Modifier.fillMaxWidth()) {
-                repeat(7) { col ->
-                    val dayNum = row * 7 + col - offset + 1
-                    Box(Modifier.weight(1f).height(42.dp), contentAlignment = Alignment.Center) {
-                        if (dayNum in 1..daysInMonth) {
-                            val date = LocalDate(year, month, dayNum)
-                            val isPast = date < today
-                            val isSelected = date == selected
-                            val isToday = date == today
-                            val textColor = when {
-                                isSelected -> colors.onPrimary
-                                isPast -> colors.calOtherMonth
-                                col == 0 -> colors.calSunday
-                                col == 6 -> colors.calSaturday
-                                else -> colors.textPrimary
-                            }
-                            Box(
-                                Modifier.size(38.dp).clip(CircleShape)
-                                    .then(if (isSelected) Modifier.background(colors.primary) else Modifier)
-                                    .clickable(enabled = !isPast, interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(date) },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("$dayNum", style = DamoimTheme.typography.body.copy(fontWeight = if (isSelected || isToday) FontWeight.ExtraBold else FontWeight.Normal, fontSize = 14.sp), color = textColor)
-                                }
-                                if (isToday && !isSelected) {
-                                    Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp).size(4.dp).clip(CircleShape).background(colors.primary))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** 시간 선택 — 드래그로 스크롤되는 스피너 휠(스냅). */
-@Composable
-private fun TimeWheel(
-    isPm: Boolean, hour12: Int, minute: Int,
-    onAmPm: (Boolean) -> Unit, onHour: (Int) -> Unit, onMinute: (Int) -> Unit,
-) {
-    val colors = DamoimTheme.colors
-    val hours = remember { (1..12).map { "$it" } }
-    val minutes = remember { (0..50 step 10).map { it.toString().padStart(2, '0') } }
-    Box(Modifier.fillMaxWidth().height(132.dp).padding(horizontal = 24.dp)) {
-        // 중앙 선택 하이라이트
-        Box(Modifier.fillMaxWidth().height(44.dp).align(Alignment.Center).clip(RoundedCornerShape(12.dp)).background(colors.surfaceVariant))
-        Row(Modifier.fillMaxWidth().height(132.dp)) {
-            SpinnerColumn(
-                items = listOf(DamoimStrings.PICKER_AM, DamoimStrings.PICKER_PM),
-                selectedIndex = if (isPm) 1 else 0,
-                onSelect = { onAmPm(it == 1) },
-                modifier = Modifier.weight(1f),
-            )
-            SpinnerColumn(
-                items = hours,
-                selectedIndex = hour12 - 1,
-                onSelect = { onHour(it + 1) },
-                modifier = Modifier.weight(1f),
-            )
-            Box(Modifier.width(14.dp).height(132.dp), contentAlignment = Alignment.Center) {
-                Text(":", style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = colors.textPrimary)
-            }
-            SpinnerColumn(
-                items = minutes,
-                selectedIndex = (minute / 10).coerceIn(0, minutes.lastIndex),
-                onSelect = { onMinute(it * 10) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-/**
- * 스피너 컬럼 — LazyColumn + 스냅 플링. 행 높이 44dp × 3행 뷰포트, 상하 44dp 패딩으로
- * 스냅된 첫 항목이 중앙에 오도록 한다. 드래그를 놓으면 중앙 항목이 선택된다.
- */
-@Composable
-private fun SpinnerColumn(
-    items: List<String>,
-    selectedIndex: Int,
-    onSelect: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colors = DamoimTheme.colors
-    val listState = androidx.compose.foundation.lazy.rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex.coerceIn(0, items.lastIndex))
-    val fling = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(lazyListState = listState)
-    // 스크롤 중 중앙(=스냅 기준 첫 항목) 인덱스
-    val centeredIndex by remember {
-        androidx.compose.runtime.derivedStateOf {
-            val offsetAdjust = if (listState.firstVisibleItemScrollOffset > 22 * 3) 1 else 0 // 절반 이상 지나면 다음 항목
-            (listState.firstVisibleItemIndex + offsetAdjust).coerceIn(0, items.lastIndex)
-        }
-    }
-    // 스냅 완료 시 선택 확정
-    androidx.compose.runtime.LaunchedEffect(listState, items) {
-        androidx.compose.runtime.snapshotFlow { listState.isScrollInProgress to centeredIndex }
-            .collect { (scrolling, index) -> if (!scrolling) onSelect(index) }
-    }
-    androidx.compose.foundation.lazy.LazyColumn(
-        state = listState,
-        flingBehavior = fling,
-        modifier = modifier.height(132.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 44.dp),
-    ) {
-        items(items.size) { index ->
-            val centered = index == centeredIndex
-            Box(Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    items[index],
-                    style = DamoimTheme.typography.titleMedium.copy(
-                        fontWeight = if (centered) FontWeight.ExtraBold else FontWeight.Normal,
-                        fontSize = if (centered) 18.sp else 16.sp,
-                    ),
-                    color = if (centered) colors.textPrimary else colors.outlineStrong,
-                )
-            }
-        }
-    }
 }

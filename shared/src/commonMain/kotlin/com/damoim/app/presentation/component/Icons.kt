@@ -19,6 +19,7 @@ import damoim.shared.generated.resources.ic_chevron_down
 import damoim.shared.generated.resources.ic_clock
 import damoim.shared.generated.resources.ic_edit
 import damoim.shared.generated.resources.ic_list
+import damoim.shared.generated.resources.ic_location
 import damoim.shared.generated.resources.ic_reply
 import damoim.shared.generated.resources.ic_share
 import damoim.shared.generated.resources.ic_trash
@@ -173,6 +174,10 @@ fun ImageIcon(tint: Color, modifier: Modifier = Modifier.size(22.dp)) = VectorIc
 
 @Composable
 fun ClockIcon(tint: Color, modifier: Modifier = Modifier.size(17.dp)) = VectorIcon(Res.drawable.ic_clock, tint, modifier)
+
+/** 장소 핀(21/22/24 일정 위치). */
+@Composable
+fun LocationIcon(tint: Color, modifier: Modifier = Modifier.size(17.dp)) = VectorIcon(Res.drawable.ic_location, tint, modifier)
 
 /** 신청자/명단 리스트(불균형 3선). */
 @Composable
