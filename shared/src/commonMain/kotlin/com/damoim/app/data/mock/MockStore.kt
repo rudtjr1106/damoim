@@ -141,13 +141,16 @@ object MockStore {
         val schedules: List<Schedule>,
         val myApplications: List<MyApplication>,
         val scheduleDraft: ScheduleDraft?,
+        val subscription: SubscriptionState,
+        val admins: List<AdminMember>,
+        val blocked: List<BlockedUser>,
     )
 
     private val bundles = mutableMapOf<Long, ClubBundle>()
 
     private fun snapshotCurrent(): ClubBundle? {
         val s = _session.value ?: return null
-        return ClubBundle(s, _posts.value, _comments.value, _pending.value, _processed.value, _notifications.value, _resources.value, _cohorts.value, _members.value, savedDraft, _schedules.value, _myApplications.value, scheduleDraft)
+        return ClubBundle(s, _posts.value, _comments.value, _pending.value, _processed.value, _notifications.value, _resources.value, _cohorts.value, _members.value, savedDraft, _schedules.value, _myApplications.value, scheduleDraft, _subscription.value, _admins.value, _blocked.value)
     }
 
     private fun applyBundle(b: ClubBundle) {
@@ -164,6 +167,9 @@ object MockStore {
         _schedules.value = b.schedules
         _myApplications.value = b.myApplications
         scheduleDraft = b.scheduleDraft
+        _subscription.value = b.subscription
+        _admins.value = b.admins
+        _blocked.value = b.blocked
     }
 
     /** 코드 가입 완료(04 확인) 후 데모 동아리 입장. 이미 세션이 있으면(생성 경로) 무시. */
@@ -256,6 +262,7 @@ object MockStore {
             members = listOf(runnerMe) + MockData.runnersMembersExceptMe(),
             draft = null,
             schedules = emptyList(), myApplications = emptyList(), scheduleDraft = null,
+            subscription = MockSettingsData.freeState(MockData.runnersClub.memberCount), admins = emptyList(), blocked = emptyList(),
         )
     }
 
@@ -646,21 +653,19 @@ object MockStore {
         val posts = _posts.value
             .filter { it.title.contains(query, true) || it.content.contains(query, true) || it.authorName.contains(query, true) }
             .sortedByDescending { it.createdAt }
-        val schedules = demoScheduleHits().filter { it.title.contains(query, true) }
+        val schedules = _schedules.value
+            .filter { it.title.contains(query, true) || it.location.contains(query, true) }
+            .sortedBy { it.date.toEpochDays() }
+            .map { s ->
+                val extra = s.event?.meta?.takeIf { it.isNotBlank() } ?: s.location
+                SearchScheduleHit("${s.date.monthNumber}월", "${s.date.dayOfMonth}", s.title, buildString { append(s.timeLabel); if (extra.isNotBlank()) append(" · $extra") }, id = s.id)
+            }
         val files = _posts.value
             .flatMap { p -> p.attachments.filterIsInstance<PostAttachment.FileDoc>() }
             .filter { it.name.contains(query, true) }
             .map { SearchFileHit(it.name, "게시글 첨부 · ${it.size}") }
         return SearchResults(query, posts, schedules, files)
     }
-
-    private fun demoScheduleHits(): List<SearchScheduleHit> =
-        if (_session.value?.club?.id == MockData.myClub.id) {
-            listOf(
-                SearchScheduleHit("6월", "14", "신입 환영 MT", "1박 2일 · 가평"),
-                SearchScheduleHit("6월", "7", "정기 월례회의", "오전 10:00 · 동아리방"),
-            )
-        } else emptyList()
 
     // ══════════ 홈 요약(05/06) ══════════
 

@@ -85,7 +85,7 @@ data class SearchResults(
     val total: Int get() = posts.size + schedules.size + files.size
 }
 
-data class SearchScheduleHit(val month: String, val day: String, val title: String, val subtitle: String)
+data class SearchScheduleHit(val month: String, val day: String, val title: String, val subtitle: String, val id: Long = 0)
 data class SearchFileHit(val name: String, val meta: String)
 
 /** 검색 시작 화면(85) 데이터. */

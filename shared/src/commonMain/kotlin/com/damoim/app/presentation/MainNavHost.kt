@@ -166,6 +166,7 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
             MainDestination.Search -> SearchRoute(
                 onBack = { back() },
                 onOpenPost = { id -> navigate(MainDestination.PostDetail(id)) },
+                onOpenSchedule = { id -> navigate(MainDestination.EventDetail(id)) },
                 onComingSoon = { toast = DamoimStrings.TOAST_COMING_SOON },
             )
 
@@ -240,6 +241,7 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
                 onEditProfile = { navigate(MainDestination.ProfileEdit) },
                 onExitToAuth = onExitToAuth,
                 onSwitched = { resetTo(MainDestination.Home) },   // 동아리 전환 → 새 동아리 홈으로
+                onOpenNotification = { navigate(MainDestination.NotifSettings) },
                 onComingSoon = { toast = DamoimStrings.TOAST_COMING_SOON },
             )
 

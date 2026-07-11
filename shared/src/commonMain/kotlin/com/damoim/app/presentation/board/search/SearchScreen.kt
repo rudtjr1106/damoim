@@ -63,6 +63,7 @@ fun SearchRoute(
     viewModel: SearchViewModel = viewModel { SearchViewModel(AppGraph.getSearchSuggestionsUseCase, AppGraph.searchBoardUseCase, AppGraph.manageRecentSearchUseCase) },
     onBack: () -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
+    onOpenSchedule: (Long) -> Unit = {},
     onComingSoon: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -76,6 +77,7 @@ fun SearchRoute(
         onRemoveRecent = viewModel::onRemoveRecent,
         onClearRecents = viewModel::onClearRecents,
         onOpenPost = onOpenPost,
+        onOpenSchedule = onOpenSchedule,
         onComingSoon = onComingSoon,
     )
 }
@@ -91,6 +93,7 @@ fun SearchScreen(
     onRemoveRecent: (String) -> Unit = {},
     onClearRecents: () -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
+    onOpenSchedule: (Long) -> Unit = {},
     onComingSoon: () -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
@@ -100,7 +103,7 @@ fun SearchScreen(
             when {
                 state.showSuggestions -> state.suggestions?.let { SuggestionsBody(it, onKeyword, onRemoveRecent, onClearRecents) }
                 state.noResult -> NoResultBody(state.query, state.suggestions?.recommended.orEmpty().take(3), onKeyword)
-                else -> state.results?.let { ResultsBody(it, onOpenPost, onComingSoon) }
+                else -> state.results?.let { ResultsBody(it, onOpenPost, onOpenSchedule, onComingSoon) }
             }
         }
     }
@@ -202,7 +205,7 @@ private fun NoResultBody(query: String, recommended: List<String>, onKeyword: (S
 
 // ── 40 검색 결과 ──
 @Composable
-private fun ResultsBody(results: SearchResults, onOpenPost: (Long) -> Unit, onComingSoon: () -> Unit) {
+private fun ResultsBody(results: SearchResults, onOpenPost: (Long) -> Unit, onOpenSchedule: (Long) -> Unit, onComingSoon: () -> Unit) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth()) {
         // 필터 탭
@@ -226,7 +229,7 @@ private fun ResultsBody(results: SearchResults, onOpenPost: (Long) -> Unit, onCo
             results.schedules.forEach { sch ->
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     SectionLabel(DamoimStrings.SEARCH_SECTION_SCHEDULE)
-                    Row(Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onComingSoon).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onOpenSchedule(sch.id) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(colors.primaryContainer), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Text(sch.month, style = DamoimTheme.typography.labelSmall, color = colors.primaryDark)
                             Text(sch.day, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.textPrimary)

@@ -70,6 +70,7 @@ fun MyProfileRoute(
     onEditProfile: () -> Unit = {},
     onExitToAuth: () -> Unit = {},
     onSwitched: () -> Unit = {},
+    onOpenNotification: () -> Unit = {},
     onComingSoon: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -79,6 +80,7 @@ fun MyProfileRoute(
         onEditProfile = onEditProfile,
         onSwitchClub = { id -> viewModel.onSwitchClub(id); onSwitched() },
         onLeave = { viewModel.onLeave(); onExitToAuth() },
+        onOpenNotification = onOpenNotification,
         onComingSoon = onComingSoon,
     )
 }
@@ -90,6 +92,7 @@ fun MyProfileScreen(
     onEditProfile: () -> Unit = {},
     onSwitchClub: (Long) -> Unit = {},
     onLeave: () -> Unit = {},
+    onOpenNotification: () -> Unit = {},
     onComingSoon: () -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
@@ -107,7 +110,7 @@ fun MyProfileScreen(
                 Hero(state, onEditProfile)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     InfoCard(state)
-                    ActionCard(state, onEditProfile, onNotification = onComingSoon, onSwitch = { overlay = ProfileOverlay.Switch })
+                    ActionCard(state, onEditProfile, onNotification = onOpenNotification, onSwitch = { overlay = ProfileOverlay.Switch })
                     DangerCard(onLogout = { overlay = ProfileOverlay.Logout }, onLeave = { overlay = ProfileOverlay.Leave })
                     Text(DamoimStrings.APP_VERSION, style = DamoimTheme.typography.label, color = colors.outlineStrong, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
