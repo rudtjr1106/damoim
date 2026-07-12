@@ -6,6 +6,7 @@ import com.damoim.app.domain.model.ClubMembership
 import com.damoim.app.domain.model.Member
 import com.damoim.app.domain.model.MemberDetail
 import com.damoim.app.domain.model.MemberRole
+import com.damoim.app.domain.repository.AuthRepository
 import com.damoim.app.domain.repository.ClubRepository
 import kotlinx.coroutines.flow.Flow
 
@@ -46,5 +47,11 @@ class CohortActionUseCase(private val repo: ClubRepository) {
 /** 33 전환 / 60 탈퇴 / 로그아웃 — 세션 전환·종료. */
 class ClubSessionUseCase(private val repo: ClubRepository) {
     fun switch(clubId: Long) = repo.switchClub(clubId)
-    fun leave() = repo.leaveClub()
+    /** 60 동아리 탈퇴. @return true=잔존 활성 동아리 있음(→ 새 홈), false=없음(→ 온보딩). */
+    suspend fun withdraw(): DataResult<Boolean> = repo.withdrawFromActiveClub()
+}
+
+/** 로그아웃 — 토큰 폐기·세션 종료(→ 로그인). */
+class LogoutUseCase(private val repo: AuthRepository) {
+    suspend operator fun invoke(): DataResult<Unit> = repo.logout()
 }

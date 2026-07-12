@@ -96,7 +96,12 @@ private sealed interface MainDestination {
  * 하단 탭 중 홈·게시판만 실제 화면이 있고 일정·회원·설정은 토스트로 안내한다.
  */
 @Composable
-fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
+fun MainNavHost(
+    initialRole: ClubRole,
+    onLoggedOut: () -> Unit = {},
+    onWithdrewToOnboarding: () -> Unit = {},
+    onAddClub: () -> Unit = {},
+) {
     // 역할은 세션에서 관찰 — 동아리 전환(33)으로 세션이 바뀌면 자동 반영된다
     val ctx by AppGraph.observeMyContextUseCase().collectAsState(
         initial = com.damoim.app.domain.usecase.ObserveMyContextUseCase.MyContext(0, "", initialRole),
@@ -239,10 +244,14 @@ fun MainNavHost(initialRole: ClubRole, onExitToAuth: () -> Unit = {}) {
             MainDestination.MyProfile -> MyProfileRoute(
                 onBack = { back() },
                 onEditProfile = { navigate(MainDestination.ProfileEdit) },
-                onExitToAuth = onExitToAuth,
-                onSwitched = { resetTo(MainDestination.Home) },   // 동아리 전환 → 새 동아리 홈으로
+                onLoggedOut = onLoggedOut,                             // 로그아웃 → 로그인
+                onWithdrewToClub = { resetTo(MainDestination.Home) },  // 탈퇴 후 잔존 → 새 동아리 홈
+                onWithdrewToOnboarding = onWithdrewToOnboarding,       // 탈퇴 후 없음 → 온보딩
+                onAddClub = onAddClub,                                 // 33 새 참여/생성 → 온보딩
+                onSwitched = { resetTo(MainDestination.Home) },        // 동아리 전환 → 새 동아리 홈으로
                 onOpenNotification = { navigate(MainDestination.NotifSettings) },
                 onComingSoon = { toast = DamoimStrings.TOAST_COMING_SOON },
+                onError = { toast = it },                              // 탈퇴 실패(예: 위임 필요) 메시지
             )
 
             MainDestination.ProfileEdit -> ProfileEditRoute(

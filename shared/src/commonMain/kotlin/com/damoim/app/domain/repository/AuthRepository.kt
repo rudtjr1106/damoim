@@ -21,4 +21,10 @@ interface AuthRepository {
         contact: String,
         profileImageUrl: String?,
     ): DataResult<AuthUser>
+
+    /** 로그인 여부(저장된 토큰 존재). 콜드스타트 초기 라우팅 결정에 사용. */
+    fun isLoggedIn(): Boolean
+
+    /** 로그아웃 — 리프레시 토큰 폐기(서버) + 로컬 토큰/신원 정리. 성공 시 미로그인 상태로 복귀. */
+    suspend fun logout(): DataResult<Unit>
 }

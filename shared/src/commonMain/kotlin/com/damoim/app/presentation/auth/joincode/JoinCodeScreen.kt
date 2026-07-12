@@ -65,6 +65,7 @@ fun JoinCodeRoute(
     onCreateClub: () -> Unit = {},
     onNavigateComplete: (Club) -> Unit = {},
     onNavigateRejected: (Club, String) -> Unit = { _, _ -> },
+    onNavigateHome: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -73,6 +74,7 @@ fun JoinCodeRoute(
             when (effect) {
                 is JoinCodeSideEffect.NavigateToComplete -> onNavigateComplete(effect.club)
                 is JoinCodeSideEffect.NavigateToRejected -> onNavigateRejected(effect.club, effect.reason)
+                JoinCodeSideEffect.NavigateToHome -> onNavigateHome()
             }
         }
     }

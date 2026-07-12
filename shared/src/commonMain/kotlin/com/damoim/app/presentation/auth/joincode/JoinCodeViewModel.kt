@@ -18,8 +18,9 @@ data class JoinCodeUiState(
 }
 
 sealed interface JoinCodeSideEffect : UiSideEffect {
-    data class NavigateToComplete(val club: Club) : JoinCodeSideEffect            // → 04
-    data class NavigateToRejected(val club: Club, val reason: String) : JoinCodeSideEffect  // → 38
+    data class NavigateToComplete(val club: Club) : JoinCodeSideEffect            // PENDING → 04 대기
+    data class NavigateToRejected(val club: Club, val reason: String) : JoinCodeSideEffect  // REJECTED → 38
+    data object NavigateToHome : JoinCodeSideEffect                               // APPROVED → 홈(MEMBER)
 }
 
 /**
@@ -52,7 +53,8 @@ class JoinCodeViewModel(
                                 reason = joinResult.rejectionReason ?: "가입이 거절되었어요",
                             ),
                         )
-                        else -> sendEffect(JoinCodeSideEffect.NavigateToComplete(joinResult.club))
+                        JoinStatus.APPROVED -> sendEffect(JoinCodeSideEffect.NavigateToHome)
+                        JoinStatus.PENDING -> sendEffect(JoinCodeSideEffect.NavigateToComplete(joinResult.club))
                     }
                 },
                 onFailure = { error ->

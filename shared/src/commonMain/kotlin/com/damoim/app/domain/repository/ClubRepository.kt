@@ -83,6 +83,10 @@ interface ClubRepository {
     /** 33 동아리 전환 (즉시 데이터 스왑). */
     fun switchClub(clubId: Long)
 
-    /** 60 탈퇴 / 로그아웃 / 33 새 참여 — 세션 종료(→ Auth). */
-    fun leaveClub()
+    /**
+     * 60 동아리 탈퇴 — 활성 동아리 멤버십 삭제(POST /api/clubs/me/leave). 로그인은 유지된다.
+     * 서버가 남은 가입 동아리 중 하나로 활성 동아리를 재지정한다.
+     * @return true=아직 활성 동아리 있음(→ 새 동아리 홈), false=남은 동아리 없음(→ 온보딩, 재로그인 없이).
+     */
+    suspend fun withdrawFromActiveClub(): DataResult<Boolean>
 }

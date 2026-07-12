@@ -23,14 +23,16 @@ import com.damoim.app.presentation.component.DamoimToastHost
 /**
  * A(인증·가입) 플로우 호스트. 온보딩이 끝나면 [onEnterClub]로 메인(홈) 플로우로 넘긴다.
  * - 동아리 생성(07) 완료 → 동아리장(LEADER)으로 홈 진입
- * - 가입 신청 완료(04) 확인 → (데모) 일반회원(MEMBER)으로 홈 진입
+ * - 가입 코드 제출 결과: APPROVED → 일반회원(MEMBER) 홈, PENDING → 04 대기(홈 진입 없음), REJECTED → 38
+ * - [start]로 시작 화면을 지정한다: Login(미로그인) / Start(로그인됐지만 동아리 없음 → 재로그인 없이 생성·가입).
  */
 @Composable
 fun AuthNavHost(
+    start: AuthDestination = AuthDestination.Login,
     onEnterClub: (ClubRole) -> Unit = {},
 ) {
     val backStack: SnapshotStateList<AuthDestination> =
-        remember { mutableStateListOf(AuthDestination.Login) }
+        remember { mutableStateListOf(start) }
     var toast by remember { mutableStateOf<String?>(null) }
 
     fun navigate(destination: AuthDestination) = backStack.add(destination)
@@ -66,13 +68,15 @@ fun AuthNavHost(
             AuthDestination.JoinCode -> JoinCodeRoute(
                 onBack = { back() },
                 onCreateClub = { navigate(AuthDestination.ClubCreate) },
-                onNavigateComplete = { club -> navigate(AuthDestination.JoinComplete(club)) },
-                onNavigateRejected = { club, reason -> navigate(AuthDestination.JoinRejected(club, reason)) },
+                onNavigateComplete = { club -> navigate(AuthDestination.JoinComplete(club)) }, // PENDING → 04
+                onNavigateRejected = { club, reason -> navigate(AuthDestination.JoinRejected(club, reason)) }, // → 38
+                onNavigateHome = { onEnterClub(ClubRole.MEMBER) },                             // APPROVED → 홈
             )
 
             is AuthDestination.JoinComplete -> JoinCompleteRoute(
                 club = current.club,
-                onConfirm = { onEnterClub(ClubRole.MEMBER) },
+                // 04는 승인 대기 화면 — 홈 진입 금지. 확인 시 시작 화면으로 복귀(승인되면 다음 진입 때 홈).
+                onConfirm = { resetTo(AuthDestination.Start) },
             )
 
             is AuthDestination.JoinRejected -> JoinRejectedRoute(

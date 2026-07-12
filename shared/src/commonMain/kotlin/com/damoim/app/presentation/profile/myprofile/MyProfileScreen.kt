@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,22 +65,38 @@ private sealed interface ProfileOverlay {
 @Composable
 fun MyProfileRoute(
     viewModel: MyProfileViewModel = viewModel(key = "my_profile") {
-        MyProfileViewModel(AppGraph.getMyMemberUseCase, AppGraph.getCohortsUseCase, AppGraph.getClubInfoUseCase, AppGraph.getJoinedClubsUseCase, AppGraph.observeMyContextUseCase, AppGraph.clubSessionUseCase)
+        MyProfileViewModel(AppGraph.getMyMemberUseCase, AppGraph.getCohortsUseCase, AppGraph.getClubInfoUseCase, AppGraph.getJoinedClubsUseCase, AppGraph.observeMyContextUseCase, AppGraph.clubSessionUseCase, AppGraph.logoutUseCase)
     },
     onBack: () -> Unit = {},
     onEditProfile: () -> Unit = {},
-    onExitToAuth: () -> Unit = {},
+    onLoggedOut: () -> Unit = {},              // 로그아웃 → 로그인
+    onWithdrewToClub: () -> Unit = {},         // 탈퇴 후 잔존 → 새 동아리 홈
+    onWithdrewToOnboarding: () -> Unit = {},   // 탈퇴 후 없음 → 온보딩(재로그인 X)
+    onAddClub: () -> Unit = {},                // 33 새 참여/생성 → 온보딩(세션 유지)
     onSwitched: () -> Unit = {},
     onOpenNotification: () -> Unit = {},
     onComingSoon: () -> Unit = {},
+    onError: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    LaunchedEffect(viewModel) {
+        viewModel.sideEffect.collect { effect ->
+            when (effect) {
+                MyProfileSideEffect.WithdrewToClub -> onWithdrewToClub()
+                MyProfileSideEffect.WithdrewNoClub -> onWithdrewToOnboarding()
+                MyProfileSideEffect.LoggedOut -> onLoggedOut()
+                is MyProfileSideEffect.ActionFailed -> onError(effect.message)
+            }
+        }
+    }
     MyProfileScreen(
         state = state,
         onBack = onBack,
         onEditProfile = onEditProfile,
         onSwitchClub = { id -> viewModel.onSwitchClub(id); onSwitched() },
-        onLeave = { viewModel.onLeave(); onExitToAuth() },
+        onLogout = viewModel::onLogout,
+        onWithdraw = viewModel::onWithdraw,
+        onAddClub = onAddClub,
         onOpenNotification = onOpenNotification,
         onComingSoon = onComingSoon,
     )
@@ -91,7 +108,9 @@ fun MyProfileScreen(
     onBack: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onSwitchClub: (Long) -> Unit = {},
-    onLeave: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    onWithdraw: () -> Unit = {},
+    onAddClub: () -> Unit = {},
     onOpenNotification: () -> Unit = {},
     onComingSoon: () -> Unit = {},
 ) {
@@ -123,16 +142,16 @@ fun MyProfileScreen(
                 currentClubId = state.joinedClubs.firstOrNull { it.club.name == state.currentClubName }?.club?.id ?: -1L,
                 onDismiss = { overlay = null },
                 onSwitch = { id -> overlay = null; onSwitchClub(id) },
-                onJoinOrCreate = { overlay = null; onLeave() },
+                onJoinOrCreate = { overlay = null; onAddClub() },
             )
             ProfileOverlay.Logout -> ConfirmDialog(
                 DamoimStrings.LOGOUT_TITLE, DamoimStrings.LOGOUT_BODY, confirmLabel = DamoimStrings.LOGOUT_CONFIRM, destructive = false,
-                onDismiss = { overlay = null }, onConfirm = { overlay = null; onLeave() },
+                onDismiss = { overlay = null }, onConfirm = { overlay = null; onLogout() },
             )
             ProfileOverlay.Leave -> ConfirmDialog(
                 DamoimStrings.clubLeaveTitle(state.currentClubName), DamoimStrings.CLUB_LEAVE_BODY, note = DamoimStrings.CLUB_LEAVE_NOTE, confirmLabel = DamoimStrings.CLUB_LEAVE_CONFIRM, destructive = true,
                 icon = { DoorExitIcon(it, Modifier.size(26.dp)) },
-                onDismiss = { overlay = null }, onConfirm = { overlay = null; onLeave() },
+                onDismiss = { overlay = null }, onConfirm = { overlay = null; onWithdraw() },
             )
             null -> Unit
         }
