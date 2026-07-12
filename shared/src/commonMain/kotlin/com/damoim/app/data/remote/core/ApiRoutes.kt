@@ -15,6 +15,7 @@ object ApiRoutes {
     object Me {
         const val ROOT = "/api/me"
         const val PROFILE = "/api/me/profile"
+        const val PROFILE_IMAGE = "/api/me/profile-image"
         const val NOTIFICATIONS = "/api/me/notifications"
         const val NOTIFICATIONS_READ_ALL = "/api/me/notifications/read-all"
         const val NOTIFICATION_SETTINGS = "/api/me/notification-settings"
@@ -47,6 +48,7 @@ object ApiRoutes {
     object Board {
         const val HOME = "/api/board/home"
         const val POSTS = "/api/board/posts"
+        const val UPLOAD_URL = "/api/board/upload-url"
         const val SEARCH = "/api/board/search"
         const val SEARCH_SUGGESTIONS = "/api/board/search/suggestions"
         const val SEARCH_RECENT = "/api/board/search/recent"
