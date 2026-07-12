@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -38,6 +39,8 @@ kotlin {
         androidMain.dependencies {
             // 카메라/문서 피커(ActivityResult)·시스템 백 처리용
             implementation(libs.androidx.activity.compose)
+            // Ktor 엔진 (Android) — 명시 엔진 없이 HttpClient{}가 자동 선택
+            implementation(libs.ktor.client.okhttp)
             implementation(libs.compose.uiToolingPreview)
             // @Preview 렌더링에 필요한 ComposeViewAdapter(androidx ui-tooling)를 android 컴파일+런타임
             // 클래스패스에 올린다. 이 KMP android 라이브러리 플러그인은 debug/release 변형 구분이 없어
@@ -58,6 +61,17 @@ kotlin {
             implementation(libs.peekaboo.imagepicker)
             // 날짜/시간 (KMP) — 날짜 피커·D-day 계산
             implementation(libs.kotlinx.datetime)
+            // Ktor (서버 통합) — HTTP 클라이언트 + JSON 직렬화 + 인증(refresh)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.contentNegotiation)
+            implementation(libs.ktor.serialization.json)
+            implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.kotlinx.serialization.json)
+        }
+        iosMain.dependencies {
+            // Ktor 엔진 (iOS/Darwin)
+            implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
