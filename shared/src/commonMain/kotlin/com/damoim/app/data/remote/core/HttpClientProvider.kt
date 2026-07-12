@@ -12,6 +12,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.encodeToString
@@ -52,9 +53,11 @@ fun buildHttpClient(): HttpClient = HttpClient {
         install(ResponseObserver) {
             onResponse { response ->
                 val req = response.call.request
-                val body = runCatching { response.bodyAsText() }.getOrDefault("")
-                println("[API] → ${req.method.value} ${req.url}")
-                println("[API] ← ${response.status.value}\n${prettyJson(body)}")
+                val reqBody = (req.content as? TextContent)?.text.orEmpty()  // 전송된 JSON(없으면 빈값)
+                val resBody = runCatching { response.bodyAsText() }.getOrDefault("")
+                val reqLine = "[API] → ${req.method.value} ${req.url}"
+                println(if (reqBody.isBlank()) reqLine else "$reqLine\n${prettyJson(reqBody)}")
+                println("[API] ← ${response.status.value}\n${prettyJson(resBody)}")
             }
         }
     }
