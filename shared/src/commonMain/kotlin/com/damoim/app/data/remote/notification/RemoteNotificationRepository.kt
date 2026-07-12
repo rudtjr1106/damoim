@@ -1,0 +1,23 @@
+package com.damoim.app.data.remote.notification
+
+import com.damoim.app.core.result.DataResult
+import com.damoim.app.core.result.getOrNull
+import com.damoim.app.data.remote.core.ApiClient
+import com.damoim.app.data.remote.core.ApiRoutes
+import com.damoim.app.data.remote.core.RemoteBus
+import com.damoim.app.data.remote.core.reactiveFlow
+import com.damoim.app.domain.model.AppNotification
+import com.damoim.app.domain.repository.NotificationRepository
+import kotlinx.coroutines.flow.Flow
+
+/** [NotificationRepository]의 서버 구현 (B, 화면 37/74). */
+class RemoteNotificationRepository(private val api: ApiClient) : NotificationRepository {
+
+    override fun observeNotifications(): Flow<List<AppNotification>> = reactiveFlow(emptyList()) {
+        api.getData<List<NotificationResponseDto>>(ApiRoutes.Me.NOTIFICATIONS).getOrNull()
+            ?.map { it.toDomain() } ?: emptyList()
+    }
+
+    override suspend fun markAllRead(): DataResult<Unit> =
+        api.postUnit(ApiRoutes.Me.NOTIFICATIONS_READ_ALL).also { RemoteBus.invalidate() }
+}

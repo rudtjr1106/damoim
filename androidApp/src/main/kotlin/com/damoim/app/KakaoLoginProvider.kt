@@ -23,7 +23,9 @@ class KakaoLoginProvider(private val context: Context) : SocialLoginProvider {
 
     override suspend fun login(): SocialUser? {
         val token = loginForToken() ?: return null
-        return fetchMe().also { if (it == null) return null }
+        val me = fetchMe() ?: return null
+        // 서버 로그인에 필요한 카카오 access token을 실어 반환.
+        return me.copy(accessToken = token.accessToken)
     }
 
     private suspend fun loginForToken(): OAuthToken? = suspendCancellableCoroutine { cont ->

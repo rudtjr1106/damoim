@@ -11,6 +11,8 @@ data class SocialUser(
     val nickname: String,
     val email: String?,
     val profileImageUrl: String?,
+    /** 소셜 access token — 서버 로그인(POST /api/auth/kakao)에 필요. Mock 경로에선 미사용. */
+    val accessToken: String? = null,
 )
 
 interface SocialLoginProvider {
