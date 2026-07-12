@@ -4,6 +4,7 @@ import com.damoim.app.core.result.DataResult
 import com.damoim.app.core.result.getOrNull
 import com.damoim.app.data.remote.core.ApiClient
 import com.damoim.app.data.remote.core.ApiRoutes
+import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.reactiveFlow
 import com.damoim.app.domain.model.AdminMember
@@ -22,10 +23,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 /**
- * [SettingsRepository]의 서버 구현 (G 설정/구독/권한/차단/알림).
- *
- * plans()가 동기 계약이라 정적 플랜(V2 시드)을 인메모리로 캐시(init 프라임 + 비었으면 재프라임).
- * subscribe/cancel/updateNotif는 서버가 상태를 반환하나 인터페이스가 Unit이라 폐기 + 전역 무효화로 재조회.
+ * [SettingsRepository]의 서버 구현 (G 설정/구독/권한/차단/알림). 변경은 [DataTopic.SETTINGS]만 무효화
+ * (운영진 추가/해제는 회원 역할을 바꾸므로 MEMBER·CLUB도). plans()는 인메모리 캐시.
  */
 class RemoteSettingsRepository(private val api: ApiClient) : SettingsRepository {
 
@@ -37,63 +36,73 @@ class RemoteSettingsRepository(private val api: ApiClient) : SettingsRepository 
     }
 
     // ── 구독 ──
-    override fun observeSubscription(): Flow<SubscriptionState> = reactiveFlow(FREE_STATE) {
-        api.getData<SubscriptionStateResponseDto>(ApiRoutes.Subscription.ROOT).getOrNull()?.toDomain() ?: FREE_STATE
-    }
+    override fun observeSubscription(): Flow<SubscriptionState> =
+        reactiveFlow(DataTopic.SETTINGS, fallback = FREE_STATE) {
+            api.getData<SubscriptionStateResponseDto>(ApiRoutes.Subscription.ROOT).getOrNull()?.toDomain()
+                ?: FREE_STATE
+        }
 
     override fun plans(): List<SubscriptionPlan> {
-        if (plansCache.isEmpty()) scope.launch { primePlans() } // 콜드 재시도
+        if (plansCache.isEmpty()) scope.launch { primePlans() }
         return plansCache
     }
 
     override suspend fun subscribe(tier: PlanTier): DataResult<Unit> =
         api.postUnit(ApiRoutes.Subscription.SUBSCRIBE, SubscribeRequestDto(tier = tier.name))
-            .also { RemoteBus.invalidate() }
+            .also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     override suspend fun cancelSubscription(): DataResult<Unit> =
-        api.postUnit(ApiRoutes.Subscription.CANCEL).also { RemoteBus.invalidate() }
+        api.postUnit(ApiRoutes.Subscription.CANCEL).also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     // ── 운영진 권한 ──
-    override fun observeAdmins(): Flow<List<AdminMember>> = reactiveFlow(emptyList()) {
-        api.getData<List<AdminMemberResponseDto>>(ApiRoutes.Admins.ROOT).getOrNull()?.map { it.toDomain() }
-            ?: emptyList()
-    }
+    override fun observeAdmins(): Flow<List<AdminMember>> =
+        reactiveFlow(DataTopic.SETTINGS, DataTopic.MEMBER, fallback = emptyList()) {
+            api.getData<List<AdminMemberResponseDto>>(ApiRoutes.Admins.ROOT).getOrNull()?.map { it.toDomain() }
+                ?: emptyList()
+        }
 
-    override fun observeAssignableMembers(): Flow<List<Member>> = reactiveFlow(emptyList()) {
-        api.getData<List<AdminCandidateResponseDto>>(ApiRoutes.Admins.ASSIGNABLE).getOrNull()
-            ?.map { it.toMember() } ?: emptyList()
-    }
+    override fun observeAssignableMembers(): Flow<List<Member>> =
+        reactiveFlow(DataTopic.SETTINGS, DataTopic.MEMBER, fallback = emptyList()) {
+            api.getData<List<AdminCandidateResponseDto>>(ApiRoutes.Admins.ASSIGNABLE).getOrNull()
+                ?.map { it.toMember() } ?: emptyList()
+        }
 
     override suspend fun togglePermission(userId: Long, type: PermissionType): DataResult<Unit> =
         api.postUnit(ApiRoutes.Admins.permissionsToggle(userId), TogglePermissionRequestDto(type.name))
-            .also { RemoteBus.invalidate() }
+            .also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     override suspend fun addAdmin(memberId: Long, title: String): DataResult<Unit> =
-        api.postUnit(ApiRoutes.Admins.ROOT, AddAdminRequestDto(memberId, title)).also { RemoteBus.invalidate() }
+        api.postUnit(ApiRoutes.Admins.ROOT, AddAdminRequestDto(memberId, title))
+            .also { RemoteBus.invalidate(DataTopic.SETTINGS, DataTopic.MEMBER, DataTopic.CLUB) }
 
     override suspend fun removeAdmin(userId: Long): DataResult<Unit> =
-        api.deleteUnit(ApiRoutes.Admins.admin(userId)).also { RemoteBus.invalidate() }
+        api.deleteUnit(ApiRoutes.Admins.admin(userId))
+            .also { RemoteBus.invalidate(DataTopic.SETTINGS, DataTopic.MEMBER, DataTopic.CLUB) }
 
     override suspend fun changeAdminTitle(userId: Long, title: String): DataResult<Unit> =
-        api.patchUnit(ApiRoutes.Admins.title(userId), ChangeTitleRequestDto(title)).also { RemoteBus.invalidate() }
+        api.patchUnit(ApiRoutes.Admins.title(userId), ChangeTitleRequestDto(title))
+            .also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     // ── 차단 ──
-    override fun observeBlocked(): Flow<List<BlockedUser>> = reactiveFlow(emptyList()) {
-        api.getData<List<BlockedUserResponseDto>>(ApiRoutes.Blocked.ROOT).getOrNull()?.map { it.toDomain() }
-            ?: emptyList()
-    }
+    override fun observeBlocked(): Flow<List<BlockedUser>> =
+        reactiveFlow(DataTopic.SETTINGS, fallback = emptyList()) {
+            api.getData<List<BlockedUserResponseDto>>(ApiRoutes.Blocked.ROOT).getOrNull()?.map { it.toDomain() }
+                ?: emptyList()
+        }
 
     override suspend fun unblock(id: Long): DataResult<Unit> =
-        api.deleteUnit(ApiRoutes.Blocked.byId(id)).also { RemoteBus.invalidate() }
+        api.deleteUnit(ApiRoutes.Blocked.byId(id)).also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     // ── 알림 설정 ──
-    override fun observeNotifSettings(): Flow<NotifSettings> = reactiveFlow(NotifSettings()) {
-        api.getData<NotifSettingsResponseDto>(ApiRoutes.Me.NOTIFICATION_SETTINGS).getOrNull()?.toDomain()
-            ?: NotifSettings()
-    }
+    override fun observeNotifSettings(): Flow<NotifSettings> =
+        reactiveFlow(DataTopic.SETTINGS, fallback = NotifSettings()) {
+            api.getData<NotifSettingsResponseDto>(ApiRoutes.Me.NOTIFICATION_SETTINGS).getOrNull()?.toDomain()
+                ?: NotifSettings()
+        }
 
     override suspend fun updateNotifSettings(settings: NotifSettings): DataResult<Unit> =
-        api.putUnit(ApiRoutes.Me.NOTIFICATION_SETTINGS, settings.toRequest()).also { RemoteBus.invalidate() }
+        api.putUnit(ApiRoutes.Me.NOTIFICATION_SETTINGS, settings.toRequest())
+            .also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     private suspend fun primePlans() {
         api.getData<List<SubscriptionPlanResponseDto>>(ApiRoutes.Subscription.PLANS).getOrNull()

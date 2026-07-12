@@ -6,6 +6,7 @@ import com.damoim.app.core.result.getOrNull
 import com.damoim.app.core.result.map
 import com.damoim.app.data.remote.core.ApiClient
 import com.damoim.app.data.remote.core.ApiRoutes
+import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.ErrorCodes
 import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.reactiveFlow
@@ -23,11 +24,9 @@ import io.ktor.http.isSuccess
 import kotlinx.coroutines.flow.Flow
 
 /**
- * [ResourceRepository]의 서버 구현 (D 자료실).
+ * [ResourceRepository]의 서버 구현 (D 자료실). 변경은 [DataTopic.RESOURCE]만 무효화.
  *
- * 업로드는 3단계: (1) POST /upload-url 로 presigned PUT URL 발급 → (2) [rawClient]로 S3에 바이트 직접 PUT
- * (앱 토큰/JSON 협상 없이 — 서명 훼손 방지) → (3) POST / 로 등록. [ResourceDraft.bytes]는 업로드 화면이
- * 문서 피커에서 읽어 실은 실제 파일 바이트.
+ * 업로드는 3단계: POST /upload-url → [rawClient]로 S3 직접 PUT → POST / 등록.
  */
 class RemoteResourceRepository(private val api: ApiClient) : ResourceRepository {
 
@@ -35,7 +34,7 @@ class RemoteResourceRepository(private val api: ApiClient) : ResourceRepository 
     private val rawClient by lazy { HttpClient() }
 
     override fun observeResources(folder: ResourceFolder?): Flow<List<ResourceFile>> =
-        reactiveFlow(emptyList()) {
+        reactiveFlow(DataTopic.RESOURCE, fallback = emptyList()) {
             api.getData<List<ResourceResponseDto>>(
                 ApiRoutes.Resources.ROOT,
                 mapOf("folder" to folder?.name),
@@ -43,17 +42,18 @@ class RemoteResourceRepository(private val api: ApiClient) : ResourceRepository 
         }
 
     override fun observeResourceDetail(resourceId: Long): Flow<ResourceFile?> =
-        reactiveFlow<ResourceFile?>(null) {
+        reactiveFlow<ResourceFile?>(DataTopic.RESOURCE, fallback = null) {
             api.getData<ResourceResponseDto>(ApiRoutes.Resources.detail(resourceId))
                 .getOrNull()?.toDomain(orderKey = 0L)
         }
 
-    override fun observeStorage(): Flow<StorageUsage> = reactiveFlow(StorageUsage()) {
-        val usage = api.getData<StorageUsageResponseDto>(ApiRoutes.Resources.STORAGE).getOrNull()
-        // count는 서버 필드가 없어 전체 목록 크기에서 파생.
-        val count = api.getData<List<ResourceResponseDto>>(ApiRoutes.Resources.ROOT).getOrNull()?.size ?: 0
-        usage?.toDomain(count) ?: StorageUsage(count = count)
-    }
+    override fun observeStorage(): Flow<StorageUsage> =
+        reactiveFlow(DataTopic.RESOURCE, fallback = StorageUsage()) {
+            val usage = api.getData<StorageUsageResponseDto>(ApiRoutes.Resources.STORAGE).getOrNull()
+            // count는 서버 필드가 없어 전체 목록 크기에서 파생.
+            val count = api.getData<List<ResourceResponseDto>>(ApiRoutes.Resources.ROOT).getOrNull()?.size ?: 0
+            usage?.toDomain(count) ?: StorageUsage(count = count)
+        }
 
     override suspend fun uploadResource(draft: ResourceDraft): DataResult<Long> {
         val bytes = draft.bytes ?: ByteArray(0)
@@ -99,16 +99,16 @@ class RemoteResourceRepository(private val api: ApiClient) : ResourceRepository 
                 sizeBytes = sizeBytes,
                 storageKey = upload.storageKey,
             ),
-        ).map { it.id }.also { RemoteBus.invalidate() }
+        ).map { it.id }.also { RemoteBus.invalidate(DataTopic.RESOURCE) }
     }
 
     override suspend fun deleteResource(resourceId: Long): DataResult<Unit> =
-        api.deleteUnit(ApiRoutes.Resources.detail(resourceId)).also { RemoteBus.invalidate() }
+        api.deleteUnit(ApiRoutes.Resources.detail(resourceId)).also { RemoteBus.invalidate(DataTopic.RESOURCE) }
 
     override suspend fun incrementDownload(resourceId: Long): DataResult<Unit> {
         // 전용 증가 엔드포인트가 없어 download-url 호출(서버가 카운트 증가) 후 URL은 폐기.
         val result = api.getData<DownloadUrlResponseDto>(ApiRoutes.Resources.downloadUrl(resourceId))
-        RemoteBus.invalidate()
+        RemoteBus.invalidate(DataTopic.RESOURCE)
         return result.map { }
     }
 }

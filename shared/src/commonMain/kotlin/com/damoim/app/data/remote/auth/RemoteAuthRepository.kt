@@ -8,6 +8,7 @@ import com.damoim.app.core.social.SocialLogin
 import com.damoim.app.data.remote.core.ApiClient
 import com.damoim.app.data.remote.core.ApiRoutes
 import com.damoim.app.data.remote.core.AuthTokens
+import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.ErrorCodes
 import com.damoim.app.data.remote.core.RefreshRequestDto
 import com.damoim.app.data.remote.core.RemoteBus
@@ -54,7 +55,7 @@ class RemoteAuthRepository(private val api: ApiClient) : AuthRepository {
                 RemoteEnv.tokenStore.save(AuthTokens(token.accessToken, token.refreshToken))
                 val user = token.user.toDomain()
                 setUser(user)
-                RemoteBus.invalidate() // 로그인 → 전 화면 데이터 준비
+                RemoteBus.invalidateAll() // 로그인 → 전 도메인 데이터 준비
                 user
             }
     }
@@ -76,7 +77,8 @@ class RemoteAuthRepository(private val api: ApiClient) : AuthRepository {
         return api.patchData<UserResponseDto>(ApiRoutes.Me.PROFILE, body).map { dto ->
             val user = dto.toDomain()
             setUser(user)
-            RemoteBus.invalidate()
+            // 이름이 회원 명부·홈 인사말에 반영되므로 MEMBER·CLUB 갱신(observeUser는 즉시 반영됨).
+            RemoteBus.invalidate(DataTopic.MEMBER, DataTopic.CLUB)
             user
         }
     }
@@ -95,7 +97,7 @@ class RemoteAuthRepository(private val api: ApiClient) : AuthRepository {
         } else {
             DataResult.Success(Unit)
         }
-        RemoteBus.invalidate()
+        RemoteBus.invalidateAll() // 세션 종료 → 전 도메인 무효화
         return result
     }
 
