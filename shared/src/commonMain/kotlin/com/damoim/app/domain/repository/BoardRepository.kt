@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * 게시판(C 그룹) 데이터 접근. 조회는 Flow(상태 변경 실시간 반영), 변경은 suspend.
- * 서버 도입 전까지 [com.damoim.app.data.repository.MockBoardRepository]가 MockStore에 위임한다.
+ * 구현체는 [com.damoim.app.data.remote.board.RemoteBoardRepository](서버 위임).
  */
 interface BoardRepository {
 

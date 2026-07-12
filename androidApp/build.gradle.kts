@@ -24,12 +24,15 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
 
-// 카카오 네이티브 앱 키 — local.properties에 `kakao.native.app.key=...` 로 넣으면 실제 로그인 활성화
-val kakaoNativeAppKey: String = Properties().run {
+// local.properties 로더 (커밋 제외 파일 — 키/서버주소/전환 플래그 주입)
+val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
-    getProperty("kakao.native.app.key", "")
 }
+// 카카오 네이티브 앱 키 — `kakao.native.app.key=...` 로 넣으면 실제 로그인 활성화
+val kakaoNativeAppKey: String = localProps.getProperty("kakao.native.app.key", "")
+// 서버 통합 — `server.base.url`(기본 에뮬레이터→호스트 로컬 서버). 앱은 항상 서버 연결.
+val serverBaseUrl: String = localProps.getProperty("server.base.url", "http://10.0.2.2:8080")
 
 android {
     namespace = "com.damoim.app"
@@ -43,6 +46,7 @@ android {
         versionName = "1.0"
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
+        buildConfigField("String", "SERVER_BASE_URL", "\"$serverBaseUrl\"")
     }
     buildFeatures {
         buildConfig = true

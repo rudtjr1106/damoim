@@ -1,12 +1,14 @@
 package com.damoim.app.core.di
 
-import com.damoim.app.data.repository.MockAuthRepository
-import com.damoim.app.data.repository.MockBoardRepository
-import com.damoim.app.data.repository.MockClubRepository
-import com.damoim.app.data.repository.MockNotificationRepository
-import com.damoim.app.data.repository.MockResourceRepository
-import com.damoim.app.data.repository.MockScheduleRepository
-import com.damoim.app.data.repository.MockSettingsRepository
+import com.damoim.app.data.remote.auth.RemoteAuthRepository
+import com.damoim.app.data.remote.board.RemoteBoardRepository
+import com.damoim.app.data.remote.club.RemoteClubRepository
+import com.damoim.app.data.remote.core.ApiClient
+import com.damoim.app.data.remote.core.buildHttpClient
+import com.damoim.app.data.remote.notification.RemoteNotificationRepository
+import com.damoim.app.data.remote.resource.RemoteResourceRepository
+import com.damoim.app.data.remote.schedule.RemoteScheduleRepository
+import com.damoim.app.data.remote.settings.RemoteSettingsRepository
 import com.damoim.app.domain.repository.AuthRepository
 import com.damoim.app.domain.repository.BoardRepository
 import com.damoim.app.domain.repository.ClubRepository
@@ -17,6 +19,7 @@ import com.damoim.app.domain.repository.SettingsRepository
 import com.damoim.app.domain.usecase.AdminPermissionUseCase
 import com.damoim.app.domain.usecase.BlockedUserUseCase
 import com.damoim.app.domain.usecase.ClubSessionUseCase
+import com.damoim.app.domain.usecase.LogoutUseCase
 import com.damoim.app.domain.usecase.NotifSettingsUseCase
 import com.damoim.app.domain.usecase.SubscriptionUseCase
 import com.damoim.app.domain.usecase.EventApplicationUseCase
@@ -62,18 +65,24 @@ import com.damoim.app.domain.usecase.UpdateProfileUseCase
 import com.damoim.app.domain.usecase.UploadResourceUseCase
 
 /**
- * 임시 수동 DI 컨테이너 (Service Locator). 서버·정식 DI(Koin) 도입 전까지 의존성을 조립한다.
- * Repository는 lazy 싱글턴(Mock — MockStore 위임), UseCase는 매 호출 생성(stateless).
+ * 수동 DI 컨테이너 (Service Locator). 정식 DI(Koin) 도입 전까지 의존성을 조립한다.
+ * Repository는 lazy 싱글턴(Remote — [ApiClient]/서버 위임), UseCase는 매 호출 생성(stateless).
  */
 object AppGraph {
 
-    private val authRepository: AuthRepository by lazy { MockAuthRepository() }
-    private val clubRepository: ClubRepository by lazy { MockClubRepository() }
-    private val notificationRepository: NotificationRepository by lazy { MockNotificationRepository() }
-    private val boardRepository: BoardRepository by lazy { MockBoardRepository() }
-    private val resourceRepository: ResourceRepository by lazy { MockResourceRepository() }
-    private val scheduleRepository: ScheduleRepository by lazy { MockScheduleRepository() }
-    private val settingsRepository: SettingsRepository by lazy { MockSettingsRepository() }
+    /** 서버 통합 HTTP 클라이언트(공용 봉투 언랩). Remote 리포지토리들이 공유. */
+    private val apiClient: ApiClient by lazy { ApiClient(buildHttpClient()) }
+
+    private val authRepository: AuthRepository by lazy { RemoteAuthRepository(apiClient) }
+    private val clubRepository: ClubRepository by lazy { RemoteClubRepository(apiClient) }
+    private val notificationRepository: NotificationRepository by lazy { RemoteNotificationRepository(apiClient) }
+    private val boardRepository: BoardRepository by lazy { RemoteBoardRepository(apiClient) }
+    private val resourceRepository: ResourceRepository by lazy { RemoteResourceRepository(apiClient) }
+    private val scheduleRepository: ScheduleRepository by lazy { RemoteScheduleRepository(apiClient) }
+    private val settingsRepository: SettingsRepository by lazy { RemoteSettingsRepository(apiClient) }
+
+    /** 로그인 여부(콜드스타트 라우팅용) — 저장된 토큰 존재 여부. */
+    val isLoggedIn: Boolean get() = authRepository.isLoggedIn()
 
     // A. 인증·가입
     val loginWithKakaoUseCase get() = LoginWithKakaoUseCase(authRepository)
@@ -102,6 +111,7 @@ object AppGraph {
     val memberActionUseCase get() = MemberActionUseCase(clubRepository)
     val cohortActionUseCase get() = CohortActionUseCase(clubRepository)
     val clubSessionUseCase get() = ClubSessionUseCase(clubRepository)
+    val logoutUseCase get() = LogoutUseCase(authRepository)
 
     // C. 게시판
     val getBoardHomeUseCase get() = GetBoardHomeUseCase(boardRepository)
