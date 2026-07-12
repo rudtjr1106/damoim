@@ -7,10 +7,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
+import com.damoim.app.domain.model.ResourceDraft
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 actual fun rememberCameraLauncher(onResult: (ImageBitmap?) -> Unit): CameraLauncher {
@@ -30,23 +35,38 @@ actual fun rememberCameraLauncher(onResult: (ImageBitmap?) -> Unit): CameraLaunc
 @Composable
 actual fun rememberDocumentPickerLauncher(onResult: (PickedDocument?) -> Unit): DocumentPickerLauncher {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri == null) {
             onResult(null)
-        } else {
-            var name = "문서"
-            var size = 0L
-            runCatching {
-                context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
-                    if (cursor.moveToFirst()) {
-                        if (nameIdx >= 0) name = cursor.getString(nameIdx) ?: name
-                        if (sizeIdx >= 0) size = cursor.getLong(sizeIdx)
+            return@rememberLauncherForActivityResult
+        }
+        // 파일 읽기는 IO 디스패처에서(메인 스레드 readBytes는 ANR 위험).
+        scope.launch {
+            val doc = withContext(Dispatchers.IO) {
+                var name = "문서"
+                var size = 0L
+                runCatching {
+                    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                        val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                        if (cursor.moveToFirst()) {
+                            if (nameIdx >= 0) name = cursor.getString(nameIdx) ?: name
+                            if (sizeIdx >= 0) size = cursor.getLong(sizeIdx)
+                        }
                     }
                 }
+                // 신고된 크기가 상한 초과면 읽지 않고 포기(OOM 방지). size<=0(미상)은 읽어보되 상한 컷.
+                if (size > ResourceDraft.MAX_UPLOAD_BYTES) return@withContext null
+                val bytes = runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                }.getOrNull() ?: return@withContext null
+                if (bytes.size > ResourceDraft.MAX_UPLOAD_BYTES) return@withContext null
+                val contentType = context.contentResolver.getType(uri)
+                val realSize = if (size > 0) size else bytes.size.toLong()
+                PickedDocument(name = name, sizeLabel = formatSize(realSize), bytes = bytes, contentType = contentType)
             }
-            onResult(PickedDocument(name, formatSize(size)))
+            onResult(doc) // doc == null → 상한초과/읽기실패 → 화면은 취소처럼 처리
         }
     }
     return remember(launcher) {

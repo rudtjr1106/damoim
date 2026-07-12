@@ -49,10 +49,14 @@ import com.damoim.app.presentation.component.PersonPlusIcon
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
 import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 
 // ── 52/53 카테고리 선택 시트 ──
@@ -233,6 +237,18 @@ data class PickedDeadline(
     val hour24: Int,
     val minute: Int,
 )
+
+/** 피커 확정값 → 절대 순간(epoch ms). 사용자의 시스템 타임존으로 해석해 서버에 절대 시각으로 전달. */
+internal fun PickedDeadline.toEpochMillis(tz: TimeZone = TimeZone.currentSystemDefault()): Long =
+    date.atTime(hour24, minute).toInstant(tz).toEpochMilliseconds()
+
+/** epoch ms → 피커 초기값 복원(편집/임시저장 프리필 시 initial로 넘긴다). */
+internal fun pickedDeadlineFromMillis(millis: Long, tz: TimeZone = TimeZone.currentSystemDefault()): PickedDeadline {
+    val ldt = Instant.fromEpochMilliseconds(millis).toLocalDateTime(tz)
+    val isPm = ldt.hour >= 12
+    val hour12 = (ldt.hour % 12).let { if (it == 0) 12 else it }
+    return PickedDeadline(deadlineLabel(ldt.date, isPm, hour12, ldt.minute), ldt.date, ldt.hour, ldt.minute)
+}
 
 /** 오늘부터 [date]까지의 D-day 라벨. */
 internal fun ddayLabel(date: LocalDate, today: LocalDate): String? {

@@ -180,8 +180,10 @@ fun PostWriteScreen(
     var pollMulti by remember(prefill, prefillDraft) { mutableStateOf(prefill?.poll?.multiSelect ?: prefillDraft?.poll?.multiSelect ?: false) }
     var pollAnon by remember(prefill, prefillDraft) { mutableStateOf(prefill?.poll?.anonymous ?: prefillDraft?.poll?.anonymous ?: true) }
     var pollDeadlineLabel by remember(prefill, prefillDraft) { mutableStateOf(prefill?.poll?.deadlineLabel ?: prefillDraft?.poll?.deadlineLabel ?: "") }
+    var pollDeadlineMillis by remember(prefill, prefillDraft) { mutableStateOf(prefill?.poll?.deadlineEpochMillis ?: prefillDraft?.poll?.deadlineEpochMillis) }
     var recruitCapacity by remember(prefill, prefillDraft) { mutableStateOf(prefill?.recruit?.capacity ?: prefillDraft?.recruit?.capacity ?: 5) }
     var recruitDeadlineLabel by remember(prefill, prefillDraft) { mutableStateOf(prefill?.recruit?.deadlineLabel ?: prefillDraft?.recruit?.deadlineLabel ?: "") }
+    var recruitDeadlineMillis by remember(prefill, prefillDraft) { mutableStateOf(prefill?.recruit?.deadlineEpochMillis ?: prefillDraft?.recruit?.deadlineEpochMillis) }
     var recruitDday by remember(prefill, prefillDraft) { mutableStateOf(prefill?.recruit?.dday ?: prefillDraft?.recruit?.dday) }
     var recruitFirstCome by remember(prefill, prefillDraft) { mutableStateOf((prefill?.recruit?.method ?: if (prefillDraft?.recruit?.firstCome == false) "승인제" else null) != "승인제") }
     var attach by remember(prefill, prefillDraft) {
@@ -237,10 +239,10 @@ fun PostWriteScreen(
             PostAttachment.Link(title = host, domain = host)
         } else null,
         poll = if (attach == AttachMode.POLL && pollOptions.any { it.isNotBlank() }) {
-            PollDraft(pollOptions.toList(), pollAnon, pollMulti, pollDeadlineLabel.ifBlank { DamoimStrings.PICKER_TITLE })
+            PollDraft(pollOptions.toList(), pollAnon, pollMulti, pollDeadlineLabel.ifBlank { DamoimStrings.PICKER_TITLE }, pollDeadlineMillis)
         } else null,
         recruit = if (category == BoardCategory.RECRUIT) {
-            RecruitDraft(recruitCapacity, recruitDeadlineLabel.ifBlank { "미정" }, recruitDday, recruitFirstCome)
+            RecruitDraft(recruitCapacity, recruitDeadlineLabel.ifBlank { "미정" }, recruitDday, recruitFirstCome, recruitDeadlineMillis)
         } else null,
         pinned = category == BoardCategory.NOTICE && pinned,
     )
@@ -364,14 +366,21 @@ fun PostWriteScreen(
                 onDismiss = { sheet = null },
             )
             WriteSheet.PollDeadline -> DatePickerSheet(
+                initial = pollDeadlineMillis?.let { pickedDeadlineFromMillis(it) },
                 onDismiss = { sheet = null },
-                onConfirm = { picked -> pollDeadlineLabel = picked.label; sheet = null },
+                onConfirm = { picked ->
+                    pollDeadlineLabel = picked.label
+                    pollDeadlineMillis = picked.toEpochMillis()
+                    sheet = null
+                },
             )
             WriteSheet.RecruitDeadline -> DatePickerSheet(
+                initial = recruitDeadlineMillis?.let { pickedDeadlineFromMillis(it) },
                 onDismiss = { sheet = null },
                 onConfirm = { picked ->
                     recruitDeadlineLabel = picked.label
                     recruitDday = ddayLabel(picked.date, today)
+                    recruitDeadlineMillis = picked.toEpochMillis()
                     sheet = null
                 },
             )

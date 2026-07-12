@@ -54,6 +54,7 @@ data class Poll(
     val anonymous: Boolean,               // 익명 투표
     val multiSelect: Boolean,             // 복수 선택 허용
     val deadlineLabel: String,            // "마감 D-2"
+    val deadlineEpochMillis: Long? = null, // 실제 마감 순간(편집 프리필용, 서버가 내리면 채워짐)
     val myVotes: Set<Int> = emptySet(),   // 내가 고른 옵션 인덱스(복수 선택이면 여러 개)
 ) {
     val totalVotes: Int get() = options.sumOf { it.votes }
@@ -72,6 +73,7 @@ data class RecruitInfo(
     val current: Int,                     // 현재 인원
     val capacity: Int,                    // 정원
     val deadlineLabel: String? = null,    // "6.17 (화) 자정"
+    val deadlineEpochMillis: Long? = null, // 실제 마감 순간(편집 프리필용)
     val method: String? = null,           // "선착순"
     val applicants: List<RecruitApplicant> = emptyList(),
     val appliedByMe: Boolean = false,     // 내가 신청했는지
@@ -127,6 +129,7 @@ data class PollDraft(
     val anonymous: Boolean,
     val multiSelect: Boolean,
     val deadlineLabel: String,
+    val deadlineEpochMillis: Long? = null,   // 피커(86)에서 고른 실제 마감 순간(UTC epoch ms)
 )
 
 /** 모집 초안(39). 마감 라벨·D-day는 날짜 피커(86) 선택값에서 계산해 전달. */
@@ -135,4 +138,5 @@ data class RecruitDraft(
     val deadlineLabel: String,
     val dday: String?,
     val firstCome: Boolean,
+    val deadlineEpochMillis: Long? = null,   // 피커(86)에서 고른 실제 마감 순간(UTC epoch ms)
 )

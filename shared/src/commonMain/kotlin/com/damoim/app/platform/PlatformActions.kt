@@ -19,8 +19,16 @@ interface CameraLauncher {
 @Composable
 expect fun rememberCameraLauncher(onResult: (ImageBitmap?) -> Unit): CameraLauncher
 
-/** 문서 피커 결과. */
-data class PickedDocument(val name: String, val sizeLabel: String)
+/**
+ * 문서 피커 결과. [bytes]는 실제 파일 내용(presigned PUT용), [contentType]은 MIME(예: "application/pdf").
+ * 취소/미지원/상한초과면 이 객체가 만들어지지 않고 onResult(null)이 온다.
+ */
+data class PickedDocument(
+    val name: String,
+    val sizeLabel: String,
+    val bytes: ByteArray,
+    val contentType: String? = null,
+)
 
 /** 문서(PDF 등) 피커 런처. [launch] 호출 → 선택 결과(취소/미지원이면 null). */
 interface DocumentPickerLauncher {

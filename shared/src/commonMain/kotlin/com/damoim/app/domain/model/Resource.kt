@@ -33,7 +33,12 @@ enum class ResourceFolder { DOCS, ACCOUNTING, PRESENTATION, PHOTOS }
 /** 69 공개 범위. */
 enum class ResourceVisibility { ALL_MEMBERS, COHORT_ONLY }
 
-/** 69 자료 업로드 입력값. */
+/**
+ * 69 자료 업로드 입력값.
+ *
+ * [bytes]/[contentType]는 실제 서버 업로드(presigned PUT)에 필요 — 문서 피커가 바이트를 제공하면 채운다.
+ * Mock 및 현재 프레젠테이션은 미지정(null)이라 무손상. (bytes가 null이면 로컬 스토리지 모드에서만 동작.)
+ */
 data class ResourceDraft(
     val fileName: String,
     val sizeLabel: String,
@@ -42,4 +47,11 @@ data class ResourceDraft(
     val folder: ResourceFolder,
     val visibility: ResourceVisibility,
     val cohortIds: List<Long> = emptyList(),
-)
+    val bytes: ByteArray? = null,
+    val contentType: String? = null,
+) {
+    companion object {
+        /** 인메모리로 읽어 presigned PUT하므로 단일 파일 상한(25MB). 서버 쿼터(5GB 전체)와 별개. */
+        const val MAX_UPLOAD_BYTES: Long = 25L * 1024 * 1024
+    }
+}

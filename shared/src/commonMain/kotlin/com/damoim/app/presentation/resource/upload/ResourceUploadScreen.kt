@@ -142,6 +142,8 @@ fun ResourceUploadScreen(
                 folder = if (state.isLeader) folder else ResourceFolder.PHOTOS,
                 visibility = visibility,
                 cohortIds = if (visibility == ResourceVisibility.COHORT_ONLY) cohortIds.toList() else emptyList(),
+                bytes = file.bytes,
+                contentType = file.contentType,
             ),
         )
     }
