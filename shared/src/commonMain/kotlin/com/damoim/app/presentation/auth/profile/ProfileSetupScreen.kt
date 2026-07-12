@@ -58,7 +58,7 @@ import com.preat.peekaboo.image.picker.toImageBitmap
  */
 @Composable
 fun ProfileSetupRoute(
-    viewModel: ProfileSetupViewModel = viewModel { ProfileSetupViewModel(AppGraph.updateProfileUseCase, AppGraph.observeMyContextUseCase) },
+    viewModel: ProfileSetupViewModel = viewModel { ProfileSetupViewModel(AppGraph.updateProfileUseCase) },
     onNavigateStart: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()

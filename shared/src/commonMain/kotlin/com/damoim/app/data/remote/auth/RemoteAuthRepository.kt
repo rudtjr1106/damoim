@@ -64,10 +64,11 @@ class RemoteAuthRepository(private val api: ApiClient) : AuthRepository {
         contact: String,
         profileImageUrl: String?,
     ): DataResult<AuthUser> {
-        // 서버 검증: contact는 빈문자/숫자10~11, 이미지 URL은 http(s)만. 로컬 URI는 전송하지 않는다.
+        // 서버 검증: contact는 숫자 10~11자리(하이픈 X). 표시용 하이픈을 제거해 숫자만 전송.
+        // 이미지 URL은 http(s)만 — 로컬 URI는 전송하지 않는다.
         val body = UpdateProfileRequestDto(
             nickname = nickname,
-            contact = contact.ifBlank { null },
+            contact = contact.filter { it.isDigit() }.ifBlank { null },
             profileImageUrl = profileImageUrl?.takeIf {
                 it.startsWith("http://") || it.startsWith("https://")
             },

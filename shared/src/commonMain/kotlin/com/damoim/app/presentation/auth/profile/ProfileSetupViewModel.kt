@@ -4,9 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.damoim.app.core.mvi.BaseViewModel
 import com.damoim.app.core.mvi.UiSideEffect
 import com.damoim.app.core.mvi.UiState
-import com.damoim.app.domain.usecase.ObserveMyContextUseCase
 import com.damoim.app.domain.usecase.UpdateProfileUseCase
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class ProfileSetupUiState(
@@ -28,16 +26,9 @@ sealed interface ProfileSetupSideEffect : UiSideEffect {
  */
 class ProfileSetupViewModel(
     private val updateProfile: UpdateProfileUseCase,
-    observeMyContext: ObserveMyContextUseCase,
 ) : BaseViewModel<ProfileSetupUiState, ProfileSetupSideEffect>(ProfileSetupUiState()) {
 
-    init {
-        // 카카오 로그인 결과(닉네임)로 프리필 — 없으면 빈칸(직접 입력)
-        viewModelScope.launch {
-            val name = observeMyContext().first().name
-            setState { copy(nickname = name.take(UpdateProfileUseCase.MAX_NICKNAME_LENGTH)) }
-        }
-    }
+    // 프리필 없음 — 이름은 항상 빈칸에서 시작해 사용자가 직접 입력한다.
 
     fun onNicknameChange(value: String) {
         // 최대 글자수를 넘겨 입력되지 않도록 캡 (카운터 n/10과 일치)
