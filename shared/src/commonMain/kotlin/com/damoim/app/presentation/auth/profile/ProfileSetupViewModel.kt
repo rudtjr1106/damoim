@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class ProfileSetupUiState(
-    // 카카오에서 받은 이름으로 프리필 (소셜 로그인 성공 시 실제 닉네임, Mock이면 "서연")
+    // 카카오가 닉네임을 제공하면 프리필, 없으면 빈칸(사용자가 직접 입력)
     val nickname: String = "",
     val contact: String = "",
     val isSaving: Boolean = false,
@@ -32,10 +32,10 @@ class ProfileSetupViewModel(
 ) : BaseViewModel<ProfileSetupUiState, ProfileSetupSideEffect>(ProfileSetupUiState()) {
 
     init {
-        // 카카오 로그인 결과(닉네임)로 프리필 — 없으면 데모 기본값
+        // 카카오 로그인 결과(닉네임)로 프리필 — 없으면 빈칸(직접 입력)
         viewModelScope.launch {
             val name = observeMyContext().first().name
-            setState { copy(nickname = name.ifBlank { "서연" }.take(UpdateProfileUseCase.MAX_NICKNAME_LENGTH)) }
+            setState { copy(nickname = name.take(UpdateProfileUseCase.MAX_NICKNAME_LENGTH)) }
         }
     }
 

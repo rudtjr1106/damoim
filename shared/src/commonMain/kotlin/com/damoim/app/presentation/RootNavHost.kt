@@ -17,17 +17,16 @@ import com.damoim.app.presentation.auth.AuthNavHost
 import com.damoim.app.presentation.theme.DamoimTheme
 import kotlinx.coroutines.flow.first
 
-/** 앱 루트 플로우: 인증(로그인)·온보딩(생성/가입)·메인(홈). */
+/** 앱 루트 플로우: 인증(로그인/프로필설정/온보딩) · 메인(홈). */
 private sealed interface AppFlow {
-    data object Loading : AppFlow                    // 콜드스타트 세션 판정 중(스플래시)
-    data object Auth : AppFlow                       // 미로그인 → 로그인
-    data object Onboarding : AppFlow                 // 로그인됨·활성 동아리 없음/추가참여 → 시작(재로그인 X)
+    data object Loading : AppFlow                        // 콜드스타트 세션 판정 중(스플래시)
+    data class Auth(val start: AuthDestination) : AppFlow // 시작 화면 지정: Login / ProfileSetup / Start
     data class Main(val role: ClubRole) : AppFlow
 }
 
 /**
- * 최상위 네비게이션. 콜드스타트에 (로그인 여부, 활성 동아리 여부)로 초기 플로우를 결정하고,
- * 이후 전환(생성/가입/탈퇴/로그아웃)은 콜백으로 즉시 처리한다(재조회 지연에 따른 깜빡임 방지).
+ * 최상위 네비게이션. 콜드스타트에 (로그인 여부, 프로필 완료 여부, 활성 동아리 여부)로 초기 플로우를
+ * 결정하고, 이후 전환(생성/가입/탈퇴/로그아웃)은 콜백으로 즉시 처리한다(재조회 지연 깜빡임 방지).
  */
 @Composable
 fun RootNavHost() {
@@ -35,27 +34,22 @@ fun RootNavHost() {
 
     LaunchedEffect(Unit) {
         flow = if (!AppGraph.isLoggedIn) {
-            AppFlow.Auth
+            AppFlow.Auth(AuthDestination.Login)                     // 미로그인 → 로그인
         } else {
-            // 로그인됨: 활성 동아리 있으면 홈, 없으면(가입 대기/탈퇴 후) 온보딩.
             val ctx = AppGraph.observeMyContextUseCase().first()
-            ctx.role?.let { AppFlow.Main(it) } ?: AppFlow.Onboarding
+            when {
+                ctx.needsProfileSetup -> AppFlow.Auth(AuthDestination.ProfileSetup) // 프로필 미완료 → 31
+                ctx.role != null -> AppFlow.Main(ctx.role)          // 활성 동아리 있음 → 홈
+                else -> AppFlow.Auth(AuthDestination.Start)         // 로그인·프로필 O, 동아리 X → 온보딩
+            }
         }
     }
 
     when (val current = flow) {
         AppFlow.Loading -> SplashScreen()
 
-        AppFlow.Auth -> AuthNavHost(
-            start = AuthDestination.Login,
-            onEnterClub = { role ->
-                AppGraph.enterClubUseCase(role)
-                flow = AppFlow.Main(role)
-            },
-        )
-
-        AppFlow.Onboarding -> AuthNavHost(
-            start = AuthDestination.Start,               // 로그인 건너뛰고 생성/가입부터
+        is AppFlow.Auth -> AuthNavHost(
+            start = current.start,
             onEnterClub = { role ->
                 AppGraph.enterClubUseCase(role)
                 flow = AppFlow.Main(role)
@@ -64,9 +58,9 @@ fun RootNavHost() {
 
         is AppFlow.Main -> MainNavHost(
             initialRole = current.role,
-            onLoggedOut = { flow = AppFlow.Auth },              // 로그아웃 → 로그인
-            onWithdrewToOnboarding = { flow = AppFlow.Onboarding }, // 탈퇴 후 남은 동아리 없음 → 온보딩
-            onAddClub = { flow = AppFlow.Onboarding },          // 33 새 참여/생성 → 온보딩(세션 유지)
+            onLoggedOut = { flow = AppFlow.Auth(AuthDestination.Login) },       // 로그아웃 → 로그인
+            onWithdrewToOnboarding = { flow = AppFlow.Auth(AuthDestination.Start) }, // 탈퇴 후 동아리 없음 → 온보딩
+            onAddClub = { flow = AppFlow.Auth(AuthDestination.Start) },         // 33 새 참여/생성 → 온보딩
         )
     }
 }

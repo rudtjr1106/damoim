@@ -20,7 +20,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import com.damoim.app.core.di.AppGraph
+import com.damoim.app.domain.usecase.ObserveMyContextUseCase
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,16 +46,18 @@ import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
 /**
- * 화면 32 시작하기 — Route(네비게이션). 로그인 세션이 붙으면 userName은 세션에서 받아온다(지금은 Mock).
+ * 화면 32 시작하기 — Route(네비게이션). 인사말 이름은 로그인 세션에서 받아온다.
  */
 @Composable
 fun StartRoute(
-    userName: String = DamoimStrings.PREVIEW_USER_NAME,
     onJoinWithCode: () -> Unit = {},
     onCreateClub: () -> Unit = {},
 ) {
+    val ctx by AppGraph.observeMyContextUseCase().collectAsState(
+        initial = ObserveMyContextUseCase.MyContext(0L, "", null),
+    )
     StartScreen(
-        userName = userName,
+        userName = ctx.name,
         onJoinWithCode = onJoinWithCode,
         onCreateClub = onCreateClub,
     )
