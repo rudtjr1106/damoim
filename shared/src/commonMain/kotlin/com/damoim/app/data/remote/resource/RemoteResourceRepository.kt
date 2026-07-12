@@ -9,6 +9,7 @@ import com.damoim.app.data.remote.core.ApiRoutes
 import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.ErrorCodes
 import com.damoim.app.data.remote.core.RemoteBus
+import com.damoim.app.data.remote.core.SharedFlows
 import com.damoim.app.data.remote.core.reactiveFlow
 import com.damoim.app.domain.model.ResourceDraft
 import com.damoim.app.domain.model.ResourceFile
@@ -21,6 +22,9 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -30,30 +34,38 @@ import kotlinx.coroutines.flow.Flow
  */
 class RemoteResourceRepository(private val api: ApiClient) : ResourceRepository {
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val shared = SharedFlows(scope)
+
     /** presigned PUT 전용 — 인증/베이스URL/ContentNegotiation 없는 순수 클라이언트. */
     private val rawClient by lazy { HttpClient() }
 
     override fun observeResources(folder: ResourceFolder?): Flow<List<ResourceFile>> =
-        reactiveFlow(DataTopic.RESOURCE, fallback = emptyList()) {
-            api.getData<List<ResourceResponseDto>>(
-                ApiRoutes.Resources.ROOT,
-                mapOf("folder" to folder?.name),
-            ).getOrNull()?.toDomainList() ?: emptyList()
+        shared.get("resources:${folder?.name}") {
+            reactiveFlow(DataTopic.RESOURCE, fallback = emptyList()) {
+                api.getData<List<ResourceResponseDto>>(
+                    ApiRoutes.Resources.ROOT,
+                    mapOf("folder" to folder?.name),
+                ).getOrNull()?.toDomainList() ?: emptyList()
+            }
         }
 
     override fun observeResourceDetail(resourceId: Long): Flow<ResourceFile?> =
-        reactiveFlow<ResourceFile?>(DataTopic.RESOURCE, fallback = null) {
-            api.getData<ResourceResponseDto>(ApiRoutes.Resources.detail(resourceId))
-                .getOrNull()?.toDomain(orderKey = 0L)
+        shared.get("resource:$resourceId") {
+            reactiveFlow<ResourceFile?>(DataTopic.RESOURCE, fallback = null) {
+                api.getData<ResourceResponseDto>(ApiRoutes.Resources.detail(resourceId))
+                    .getOrNull()?.toDomain(orderKey = 0L)
+            }
         }
 
-    override fun observeStorage(): Flow<StorageUsage> =
+    override fun observeStorage(): Flow<StorageUsage> = shared.get("storage") {
         reactiveFlow(DataTopic.RESOURCE, fallback = StorageUsage()) {
             val usage = api.getData<StorageUsageResponseDto>(ApiRoutes.Resources.STORAGE).getOrNull()
             // count는 서버 필드가 없어 전체 목록 크기에서 파생.
             val count = api.getData<List<ResourceResponseDto>>(ApiRoutes.Resources.ROOT).getOrNull()?.size ?: 0
             usage?.toDomain(count) ?: StorageUsage(count = count)
         }
+    }
 
     override suspend fun uploadResource(draft: ResourceDraft): DataResult<Long> {
         val bytes = draft.bytes ?: ByteArray(0)

@@ -7,6 +7,7 @@ import com.damoim.app.data.remote.core.ApiClient
 import com.damoim.app.data.remote.core.ApiRoutes
 import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.RemoteBus
+import com.damoim.app.data.remote.core.SharedFlows
 import com.damoim.app.data.remote.core.reactiveFlow
 import com.damoim.app.domain.model.ApplicantsBoard
 import com.damoim.app.domain.model.Club
@@ -23,17 +24,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
  * [ClubRepository]의 서버 구현 (B 동아리/홈 + E 회원/기수/멀티동아리).
  *
- * 변경은 영향 도메인만 무효화한다(예: 기수 변경 → MEMBER·CLUB만). 동아리 전환/탈퇴는 전체 데이터가
- * 바뀌므로 invalidateAll.
+ * - 변경은 영향 도메인만 무효화(예: 기수 변경 → MEMBER·CLUB). 전환/탈퇴는 invalidateAll.
+ * - observe는 [SharedFlows]로 공유 → 여러 화면이 같은 데이터를 봐도 fetch 1회. 특히 observeRole·
+ *   observeMyMember는 같은 members/me 조회를 공유한다.
  */
 class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val shared = SharedFlows(scope)
 
     // ── B: 가입/생성/홈/코드/신청 ──
 
@@ -51,25 +55,34 @@ class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
         RemoteBus.invalidate(DataTopic.CLUB, DataTopic.MEMBER)
     }
 
-    override fun observeRole(): Flow<ClubRole?> =
-        reactiveFlow<ClubRole?>(DataTopic.CLUB, DataTopic.MEMBER, fallback = null) {
-            api.getData<MemberResponseDto>(ApiRoutes.Members.ME).getOrNull()?.let { clubRole(it.role) }
+    /** 내 명부 정보(members/me) — observeRole·observeMyMember가 공유하는 단일 조회. */
+    private fun meMember(): Flow<MemberResponseDto?> =
+        shared.get("me-member") {
+            reactiveFlow<MemberResponseDto?>(DataTopic.CLUB, DataTopic.MEMBER, fallback = null) {
+                api.getData<MemberResponseDto>(ApiRoutes.Members.ME).getOrNull()
+            }
         }
 
-    override fun observeHomeSummary(): Flow<HomeSummary?> =
+    override fun observeRole(): Flow<ClubRole?> = meMember().map { it?.let { m -> clubRole(m.role) } }
+
+    override fun observeHomeSummary(): Flow<HomeSummary?> = shared.get("home") {
         reactiveFlow<HomeSummary?>(DataTopic.CLUB, DataTopic.MEMBER, DataTopic.NOTIFICATION, fallback = null) {
             api.getData<HomeSummaryResponseDto>(ApiRoutes.Clubs.ME_HOME).getOrNull()?.toDomain()
         }
-
-    override fun observeClub(): Flow<Club?> = reactiveFlow<Club?>(DataTopic.CLUB, fallback = null) {
-        api.getData<ClubResponseDto>(ApiRoutes.Clubs.ME).getOrNull()?.toDomain()
     }
 
-    override fun observeCohorts(): Flow<List<Cohort>> =
+    override fun observeClub(): Flow<Club?> = shared.get("club") {
+        reactiveFlow<Club?>(DataTopic.CLUB, fallback = null) {
+            api.getData<ClubResponseDto>(ApiRoutes.Clubs.ME).getOrNull()?.toDomain()
+        }
+    }
+
+    override fun observeCohorts(): Flow<List<Cohort>> = shared.get("cohorts") {
         reactiveFlow(DataTopic.CLUB, DataTopic.MEMBER, fallback = emptyList()) {
             api.getData<List<CohortResponseDto>>(ApiRoutes.Clubs.ME_COHORTS).getOrNull()?.map { it.toDomain() }
                 ?: emptyList()
         }
+    }
 
     override suspend fun regenerateJoinCode(): DataResult<String> =
         api.postData<JoinCodeResponseDto>(ApiRoutes.Clubs.JOIN_CODE_REGENERATE)
@@ -79,40 +92,40 @@ class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
     override suspend fun disableJoinCode(): DataResult<Unit> =
         api.postUnit(ApiRoutes.Clubs.JOIN_CODE_DISABLE).also { RemoteBus.invalidate(DataTopic.CLUB) }
 
-    override fun observeApplicants(): Flow<ApplicantsBoard> =
+    override fun observeApplicants(): Flow<ApplicantsBoard> = shared.get("applicants") {
         reactiveFlow(DataTopic.CLUB, fallback = ApplicantsBoard(emptyList(), emptyList())) {
             api.getData<ApplicantsBoardResponseDto>(ApiRoutes.Clubs.ME_APPLICANTS).getOrNull()?.toDomain()
                 ?: ApplicantsBoard(emptyList(), emptyList())
         }
+    }
 
     override suspend fun decideApplicant(applicantId: Long, approve: Boolean): DataResult<Unit> =
         api.postUnit(ApiRoutes.Clubs.decide(applicantId), DecideRequestDto(approve))
-            // 승인 = 신청목록·회원목록·홈 통계 변경 + 승인 알림 생성.
             .also { RemoteBus.invalidate(DataTopic.CLUB, DataTopic.MEMBER, DataTopic.NOTIFICATION) }
 
     // ── E: 회원/기수/멀티동아리 ──
 
-    override fun observeMembers(): Flow<List<Member>> =
+    override fun observeMembers(): Flow<List<Member>> = shared.get("members") {
         reactiveFlow(DataTopic.MEMBER, DataTopic.CLUB, fallback = emptyList()) {
             api.getData<List<MemberResponseDto>>(ApiRoutes.Members.ROOT).getOrNull()?.map { it.toDomain() }
                 ?: emptyList()
         }
+    }
 
-    override fun observeMember(memberId: Long): Flow<MemberDetail?> =
+    override fun observeMember(memberId: Long): Flow<MemberDetail?> = shared.get("member:$memberId") {
         reactiveFlow<MemberDetail?>(DataTopic.MEMBER, fallback = null) {
             api.getData<MemberDetailResponseDto>(ApiRoutes.Members.detail(memberId)).getOrNull()?.toDomain()
         }
+    }
 
-    override fun observeMyMember(): Flow<Member?> =
-        reactiveFlow<Member?>(DataTopic.MEMBER, DataTopic.CLUB, fallback = null) {
-            api.getData<MemberResponseDto>(ApiRoutes.Members.ME).getOrNull()?.toDomain()
-        }
+    override fun observeMyMember(): Flow<Member?> = meMember().map { it?.toDomain() }
 
-    override fun observeJoinedClubs(): Flow<List<ClubMembership>> =
+    override fun observeJoinedClubs(): Flow<List<ClubMembership>> = shared.get("joined") {
         reactiveFlow(DataTopic.CLUB, fallback = emptyList()) {
             api.getData<List<ClubMembershipResponseDto>>(ApiRoutes.Clubs.JOINED).getOrNull()
                 ?.map { it.toDomain() } ?: emptyList()
         }
+    }
 
     override suspend fun changeMemberCohort(memberId: Long, cohortId: Long): DataResult<Unit> =
         api.postUnit(ApiRoutes.Members.cohort(memberId), ChangeCohortRequestDto(cohortId))
@@ -142,14 +155,14 @@ class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
     override fun switchClub(clubId: Long) {
         scope.launch {
             api.postUnit(ApiRoutes.Clubs.SWITCH, SwitchClubRequestDto(clubId))
-            RemoteBus.invalidateAll() // 활성 동아리 교체 → 전 도메인 데이터가 바뀜
+            RemoteBus.invalidateAll()
         }
     }
 
     override suspend fun withdrawFromActiveClub(): DataResult<Boolean> {
         val leave = api.postUnit(ApiRoutes.Clubs.ME_LEAVE)
         if (leave is DataResult.Failure) return leave
-        RemoteBus.invalidateAll() // 멤버십 삭제 + 활성 동아리 재지정 → 전 도메인 갱신
+        RemoteBus.invalidateAll()
         val hasActiveClub = api.getData<MemberResponseDto>(ApiRoutes.Members.ME) is DataResult.Success
         return DataResult.Success(hasActiveClub)
     }

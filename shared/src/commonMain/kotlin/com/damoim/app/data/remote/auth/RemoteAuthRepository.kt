@@ -15,11 +15,16 @@ import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.RemoteEnv
 import com.damoim.app.domain.model.AuthUser
 import com.damoim.app.domain.repository.AuthRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 
 /**
  * [AuthRepository]의 서버 구현.
@@ -31,12 +36,17 @@ import kotlinx.coroutines.flow.map
 class RemoteAuthRepository(private val api: ApiClient) : AuthRepository {
 
     private val userState = MutableStateFlow<AuthUser?>(null)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    override fun observeUser(): Flow<AuthUser> = flow {
-        // 구독 시작 시 서버 최신 프로필 동기화(토큰 있을 때만).
-        runCatching { refreshMe() }
-        emitAll(userState.map { it ?: GUEST })
+    // 여러 화면이 observeUser를 구독해도 /api/me 동기화는 1회로 공유(중복 호출 방지).
+    private val userFlow: Flow<AuthUser> by lazy {
+        flow {
+            runCatching { refreshMe() } // 구독 시작 시 서버 최신 프로필 동기화(토큰 있을 때만)
+            emitAll(userState.map { it ?: GUEST })
+        }.shareIn(scope, SharingStarted.WhileSubscribed(5_000L), replay = 1)
     }
+
+    override fun observeUser(): Flow<AuthUser> = userFlow
 
     override suspend fun loginWithKakao(): DataResult<AuthUser> {
         val provider = SocialLogin.provider

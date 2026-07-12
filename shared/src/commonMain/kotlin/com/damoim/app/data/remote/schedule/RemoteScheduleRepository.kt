@@ -6,12 +6,16 @@ import com.damoim.app.data.remote.core.ApiClient
 import com.damoim.app.data.remote.core.ApiRoutes
 import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.RemoteBus
+import com.damoim.app.data.remote.core.SharedFlows
 import com.damoim.app.data.remote.core.reactiveFlow
 import com.damoim.app.domain.model.MyApplication
 import com.damoim.app.domain.model.QuestionAnswer
 import com.damoim.app.domain.model.Schedule
 import com.damoim.app.domain.model.ScheduleDraft
 import com.damoim.app.domain.repository.ScheduleRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -20,22 +24,28 @@ import kotlinx.coroutines.flow.Flow
  */
 class RemoteScheduleRepository(private val api: ApiClient) : ScheduleRepository {
 
-    override fun observeSchedules(): Flow<List<Schedule>> =
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val shared = SharedFlows(scope)
+
+    override fun observeSchedules(): Flow<List<Schedule>> = shared.get("schedules") {
         reactiveFlow(DataTopic.SCHEDULE, fallback = emptyList()) {
             api.getData<List<ScheduleResponseDto>>(ApiRoutes.Schedules.ROOT).getOrNull()?.map { it.toDomain() }
                 ?: emptyList()
         }
+    }
 
-    override fun observeScheduleDetail(scheduleId: Long): Flow<Schedule?> =
+    override fun observeScheduleDetail(scheduleId: Long): Flow<Schedule?> = shared.get("schedule:$scheduleId") {
         reactiveFlow<Schedule?>(DataTopic.SCHEDULE, fallback = null) {
             api.getData<ScheduleResponseDto>(ApiRoutes.Schedules.detail(scheduleId)).getOrNull()?.toDomain()
         }
+    }
 
-    override fun observeMyApplications(): Flow<List<MyApplication>> =
+    override fun observeMyApplications(): Flow<List<MyApplication>> = shared.get("my-applications") {
         reactiveFlow(DataTopic.SCHEDULE, fallback = emptyList()) {
             api.getData<List<MyApplicationResponseDto>>(ApiRoutes.Schedules.MY_APPLICATIONS).getOrNull()
                 ?.map { it.toDomain() } ?: emptyList()
         }
+    }
 
     override suspend fun createSchedule(draft: ScheduleDraft): DataResult<Long> =
         api.postData<Long>(ApiRoutes.Schedules.ROOT, draft.toSaveRequest())

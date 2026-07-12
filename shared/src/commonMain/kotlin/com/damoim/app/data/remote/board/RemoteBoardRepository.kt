@@ -9,6 +9,7 @@ import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.ErrorCodes
 import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.RemoteEnv
+import com.damoim.app.data.remote.core.SharedFlows
 import com.damoim.app.data.remote.core.reactiveFlow
 import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.BoardPost
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
 class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val shared = SharedFlows(scope)
 
     /** loadDraft/clearDraft가 동기 계약이라 서버 초안을 인메모리로 캐시. */
     private var cachedDraft: PostDraft? = null
@@ -40,25 +42,29 @@ class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
         scope.launch { cachedDraft = fetchDraft() } // 콜드스타트 프라임
     }
 
-    override fun observeBoardHome(): Flow<BoardHomeData> =
+    override fun observeBoardHome(): Flow<BoardHomeData> = shared.get("board-home") {
         reactiveFlow(DataTopic.BOARD, fallback = BoardHomeData(emptyList(), emptyList())) {
             api.getData<BoardHomeResponseDto>(ApiRoutes.Board.HOME).getOrNull()?.toDomainHome()
                 ?: BoardHomeData(emptyList(), emptyList())
         }
+    }
 
     override fun observePosts(category: BoardCategory?): Flow<List<BoardPost>> =
-        reactiveFlow(DataTopic.BOARD, fallback = emptyList()) {
-            api.getData<List<PostSummaryResponseDto>>(
-                ApiRoutes.Board.POSTS,
-                mapOf("category" to category?.name),
-            ).getOrNull()?.toDomainList() ?: emptyList()
+        shared.get("posts:${category?.name}") {
+            reactiveFlow(DataTopic.BOARD, fallback = emptyList()) {
+                api.getData<List<PostSummaryResponseDto>>(
+                    ApiRoutes.Board.POSTS,
+                    mapOf("category" to category?.name),
+                ).getOrNull()?.toDomainList() ?: emptyList()
+            }
         }
 
-    override fun observePostDetail(postId: Long): Flow<PostDetail?> =
+    override fun observePostDetail(postId: Long): Flow<PostDetail?> = shared.get("post:$postId") {
         reactiveFlow<PostDetail?>(DataTopic.BOARD, fallback = null) {
             api.getData<PostDetailResponseDto>(ApiRoutes.Board.post(postId))
                 .getOrNull()?.toDomain(RemoteEnv.currentUserId)
         }
+    }
 
     override suspend fun createPost(draft: PostDraft): DataResult<Long> =
         api.postData<PostDetailResponseDto>(ApiRoutes.Board.POSTS, draft.toCreateRequest())
@@ -117,12 +123,13 @@ class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
             }
             .also { RemoteBus.invalidate(DataTopic.BOARD) } // 최근 검색어 기록 → 추천 화면 갱신
 
-    override fun observeSearchSuggestions(): Flow<SearchSuggestions> =
+    override fun observeSearchSuggestions(): Flow<SearchSuggestions> = shared.get("search-suggestions") {
         reactiveFlow(DataTopic.BOARD, fallback = SearchSuggestions(emptyList(), emptyList())) {
             api.getData<SearchSuggestionsResponseDto>(ApiRoutes.Board.SEARCH_SUGGESTIONS).getOrNull()
                 ?.let { SearchSuggestions(recent = it.recent, recommended = it.recommended) }
                 ?: SearchSuggestions(emptyList(), emptyList())
         }
+    }
 
     override suspend fun removeRecentSearch(query: String): DataResult<Unit> =
         api.deleteUnit(ApiRoutes.Board.SEARCH_RECENT, mapOf("q" to query))

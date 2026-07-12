@@ -6,6 +6,7 @@ import com.damoim.app.data.remote.core.ApiClient
 import com.damoim.app.data.remote.core.ApiRoutes
 import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.RemoteBus
+import com.damoim.app.data.remote.core.SharedFlows
 import com.damoim.app.data.remote.core.reactiveFlow
 import com.damoim.app.domain.model.AdminMember
 import com.damoim.app.domain.model.BlockedUser
@@ -29,6 +30,7 @@ import kotlinx.coroutines.launch
 class RemoteSettingsRepository(private val api: ApiClient) : SettingsRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val shared = SharedFlows(scope)
     private var plansCache: List<SubscriptionPlan> = emptyList()
 
     init {
@@ -36,11 +38,12 @@ class RemoteSettingsRepository(private val api: ApiClient) : SettingsRepository 
     }
 
     // ── 구독 ──
-    override fun observeSubscription(): Flow<SubscriptionState> =
+    override fun observeSubscription(): Flow<SubscriptionState> = shared.get("subscription") {
         reactiveFlow(DataTopic.SETTINGS, fallback = FREE_STATE) {
             api.getData<SubscriptionStateResponseDto>(ApiRoutes.Subscription.ROOT).getOrNull()?.toDomain()
                 ?: FREE_STATE
         }
+    }
 
     override fun plans(): List<SubscriptionPlan> {
         if (plansCache.isEmpty()) scope.launch { primePlans() }
@@ -55,17 +58,19 @@ class RemoteSettingsRepository(private val api: ApiClient) : SettingsRepository 
         api.postUnit(ApiRoutes.Subscription.CANCEL).also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     // ── 운영진 권한 ──
-    override fun observeAdmins(): Flow<List<AdminMember>> =
+    override fun observeAdmins(): Flow<List<AdminMember>> = shared.get("admins") {
         reactiveFlow(DataTopic.SETTINGS, DataTopic.MEMBER, fallback = emptyList()) {
             api.getData<List<AdminMemberResponseDto>>(ApiRoutes.Admins.ROOT).getOrNull()?.map { it.toDomain() }
                 ?: emptyList()
         }
+    }
 
-    override fun observeAssignableMembers(): Flow<List<Member>> =
+    override fun observeAssignableMembers(): Flow<List<Member>> = shared.get("assignable") {
         reactiveFlow(DataTopic.SETTINGS, DataTopic.MEMBER, fallback = emptyList()) {
             api.getData<List<AdminCandidateResponseDto>>(ApiRoutes.Admins.ASSIGNABLE).getOrNull()
                 ?.map { it.toMember() } ?: emptyList()
         }
+    }
 
     override suspend fun togglePermission(userId: Long, type: PermissionType): DataResult<Unit> =
         api.postUnit(ApiRoutes.Admins.permissionsToggle(userId), TogglePermissionRequestDto(type.name))
@@ -84,21 +89,23 @@ class RemoteSettingsRepository(private val api: ApiClient) : SettingsRepository 
             .also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     // ── 차단 ──
-    override fun observeBlocked(): Flow<List<BlockedUser>> =
+    override fun observeBlocked(): Flow<List<BlockedUser>> = shared.get("blocked") {
         reactiveFlow(DataTopic.SETTINGS, fallback = emptyList()) {
             api.getData<List<BlockedUserResponseDto>>(ApiRoutes.Blocked.ROOT).getOrNull()?.map { it.toDomain() }
                 ?: emptyList()
         }
+    }
 
     override suspend fun unblock(id: Long): DataResult<Unit> =
         api.deleteUnit(ApiRoutes.Blocked.byId(id)).also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     // ── 알림 설정 ──
-    override fun observeNotifSettings(): Flow<NotifSettings> =
+    override fun observeNotifSettings(): Flow<NotifSettings> = shared.get("notif-settings") {
         reactiveFlow(DataTopic.SETTINGS, fallback = NotifSettings()) {
             api.getData<NotifSettingsResponseDto>(ApiRoutes.Me.NOTIFICATION_SETTINGS).getOrNull()?.toDomain()
                 ?: NotifSettings()
         }
+    }
 
     override suspend fun updateNotifSettings(settings: NotifSettings): DataResult<Unit> =
         api.putUnit(ApiRoutes.Me.NOTIFICATION_SETTINGS, settings.toRequest())
