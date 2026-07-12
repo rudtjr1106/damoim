@@ -10,6 +10,7 @@ import com.damoim.app.data.remote.core.ApiRoutes
 import com.damoim.app.data.remote.core.AuthTokens
 import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.ErrorCodes
+import com.damoim.app.data.remote.core.RawHttp
 import com.damoim.app.data.remote.core.RefreshRequestDto
 import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.RemoteEnv
@@ -74,22 +75,41 @@ class RemoteAuthRepository(private val api: ApiClient) : AuthRepository {
         nickname: String,
         contact: String,
         profileImageUrl: String?,
+        profileImageKey: String?,
     ): DataResult<AuthUser> {
         // 서버 검증: contact는 숫자 10~11자리(하이픈 X). 표시용 하이픈을 제거해 숫자만 전송.
-        // 이미지 URL은 http(s)만 — 로컬 URI는 전송하지 않는다.
+        // 외부 URL은 http(s)만, 앱 업로드 사진은 profileImageKey(S3 키)로 전송.
         val body = UpdateProfileRequestDto(
             nickname = nickname,
             contact = contact.filter { it.isDigit() }.ifBlank { null },
             profileImageUrl = profileImageUrl?.takeIf {
                 it.startsWith("http://") || it.startsWith("https://")
             },
+            profileImageKey = profileImageKey?.takeIf { it.isNotBlank() },
         )
         return api.patchData<UserResponseDto>(ApiRoutes.Me.PROFILE, body).map { dto ->
             val user = dto.toDomain()
             setUser(user)
-            // 이름이 회원 명부·홈 인사말에 반영되므로 MEMBER·CLUB 갱신(observeUser는 즉시 반영됨).
+            // 이름/사진이 회원 명부·홈 인사말에 반영되므로 MEMBER·CLUB 갱신(observeUser는 즉시 반영됨).
             RemoteBus.invalidate(DataTopic.MEMBER, DataTopic.CLUB)
             user
+        }
+    }
+
+    override suspend fun uploadProfileImage(bytes: ByteArray, contentType: String?): DataResult<String> {
+        // 1) 업로드 URL 발급(상한 검증) → 2) S3에 직접 PUT → storageKey 반환.
+        val presign = api.postData<ProfileImageUploadResponseDto>(
+            ApiRoutes.Me.PROFILE_IMAGE,
+            ProfileImageUploadRequestDto(contentType = contentType, sizeBytes = bytes.size.toLong()),
+        )
+        val upload = when (presign) {
+            is DataResult.Success -> presign.data
+            is DataResult.Failure -> return presign
+        }
+        return if (RawHttp.put(upload.uploadUrl, bytes, contentType)) {
+            DataResult.Success(upload.storageKey)
+        } else {
+            DataResult.Failure(DataError(ErrorCodes.UPLOAD_FAILED, "사진 업로드에 실패했어요"))
         }
     }
 

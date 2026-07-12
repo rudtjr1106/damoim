@@ -62,6 +62,7 @@ import com.damoim.app.domain.usecase.SearchBoardUseCase
 import com.damoim.app.domain.usecase.SubmitJoinCodeUseCase
 import com.damoim.app.domain.usecase.SubmitPostUseCase
 import com.damoim.app.domain.usecase.UpdateProfileUseCase
+import com.damoim.app.domain.usecase.UploadProfileImageUseCase
 import com.damoim.app.domain.usecase.UploadResourceUseCase
 
 /**
@@ -87,6 +88,7 @@ object AppGraph {
     // A. 인증·가입
     val loginWithKakaoUseCase get() = LoginWithKakaoUseCase(authRepository)
     val updateProfileUseCase get() = UpdateProfileUseCase(authRepository)
+    val uploadProfileImageUseCase get() = UploadProfileImageUseCase(authRepository)
     val getAuthUserUseCase get() = GetAuthUserUseCase(authRepository)
     val submitJoinCodeUseCase get() = SubmitJoinCodeUseCase(clubRepository)
     val enterClubUseCase get() = EnterClubUseCase(clubRepository)

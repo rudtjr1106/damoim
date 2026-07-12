@@ -15,12 +15,19 @@ interface AuthRepository {
     /** 카카오 로그인. 신규 사용자면 needsProfileSetup=true로 돌아온다. */
     suspend fun loginWithKakao(): DataResult<AuthUser>
 
-    /** 프로필(이름·연락처·사진) 설정/수정. 화면 31. 저장된 값이 세션 동안 유지된다. */
+    /**
+     * 프로필(이름·연락처·사진) 설정/수정. 화면 31/45.
+     * [profileImageUrl]=외부 http(s) URL(카카오 등), [profileImageKey]=앱에서 S3에 올린 사진의 키.
+     */
     suspend fun updateProfile(
         nickname: String,
         contact: String,
-        profileImageUrl: String?,
+        profileImageUrl: String? = null,
+        profileImageKey: String? = null,
     ): DataResult<AuthUser>
+
+    /** 프로필 사진 바이트를 S3에 업로드하고 storageKey를 반환한다(이후 updateProfile에 전달). */
+    suspend fun uploadProfileImage(bytes: ByteArray, contentType: String?): DataResult<String>
 
     /** 로그인 여부(저장된 토큰 존재). 콜드스타트 초기 라우팅 결정에 사용. */
     fun isLoggedIn(): Boolean

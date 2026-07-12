@@ -27,6 +27,7 @@ data class MyProfileUiState(
     val joinedLabel: String = "",
     val currentClubName: String = "",
     val joinedClubs: List<ClubMembership> = emptyList(),
+    val profileImageUrl: String? = null,
 ) : UiState
 
 sealed interface MyProfileSideEffect : UiSideEffect {
@@ -61,6 +62,7 @@ class MyProfileViewModel(
                     joinedLabel = me?.joinedLabel ?: "",
                     currentClubName = club?.name ?: "",
                     joinedClubs = joined,
+                    profileImageUrl = ctx.profileImageUrl,
                 )
             }.collect { next -> setState { next } }
         }

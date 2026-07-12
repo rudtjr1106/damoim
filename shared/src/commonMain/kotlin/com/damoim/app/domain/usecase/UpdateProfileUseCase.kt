@@ -15,6 +15,7 @@ class UpdateProfileUseCase(
         nickname: String,
         contact: String,
         profileImageUrl: String? = null,
+        profileImageKey: String? = null,
     ): DataResult<AuthUser> {
         val trimmedName = nickname.trim()
         val trimmedContact = contact.trim()
@@ -25,7 +26,7 @@ class UpdateProfileUseCase(
                 DataResult.Failure(DataError(code = "TOO_LONG", message = "이름은 ${MAX_NICKNAME_LENGTH}자 이내로 입력해주세요"))
             trimmedContact.isEmpty() ->
                 DataResult.Failure(DataError(code = "EMPTY_CONTACT", message = "연락처를 입력해주세요"))
-            else -> authRepository.updateProfile(trimmedName, trimmedContact, profileImageUrl)
+            else -> authRepository.updateProfile(trimmedName, trimmedContact, profileImageUrl, profileImageKey)
         }
     }
 

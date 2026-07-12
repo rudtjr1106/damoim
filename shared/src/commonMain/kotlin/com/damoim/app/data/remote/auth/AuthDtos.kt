@@ -14,12 +14,31 @@ data class KakaoLoginRequestDto(
     val accessToken: String,
 )
 
-/** POST /api/me/profile(PATCH) 요청. contact/profileImageUrl은 서버 검증(빈문자/숫자10~11, http(s)). */
+/**
+ * PATCH /api/me/profile 요청. contact/profileImageUrl은 서버 검증(빈문자/숫자10~11, http(s)).
+ * profileImageKey=앱에서 presigned PUT으로 올린 사진의 S3 키(서버가 소유권 검증 후 저장).
+ */
 @Serializable
 data class UpdateProfileRequestDto(
     val nickname: String,
     val contact: String? = null,
     val profileImageUrl: String? = null,
+    val profileImageKey: String? = null,
+)
+
+/** POST /api/me/profile-image 요청(1단계) — 프로필 사진 업로드 URL 발급. */
+@Serializable
+data class ProfileImageUploadRequestDto(
+    val fileName: String? = null,
+    val contentType: String? = null,
+    val sizeBytes: Long,
+)
+
+@Serializable
+data class ProfileImageUploadResponseDto(
+    val uploadUrl: String,
+    val storageKey: String,
+    val expiresInSeconds: Long = 600,
 )
 
 /** 로그인/재발급 응답. accessToken=Bearer, refreshToken=안전저장. */

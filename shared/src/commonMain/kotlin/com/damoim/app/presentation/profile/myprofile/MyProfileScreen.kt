@@ -39,6 +39,7 @@ import com.damoim.app.core.di.AppGraph
 import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.platform.PlatformBackHandler
 import com.damoim.app.presentation.board.InitialAvatar
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.BackChevronIcon
 import com.damoim.app.presentation.component.BellIcon
 import com.damoim.app.presentation.component.CameraIcon
@@ -163,7 +164,9 @@ private fun Hero(state: MyProfileUiState, onEdit: () -> Unit) {
     val colors = DamoimTheme.colors
     Row(Modifier.fillMaxWidth().background(colors.surface).padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Box {
-            InitialAvatar(state.initials.ifBlank { state.name.takeLast(2) }, size = 72.dp, fontSize = 20.sp)
+            NetworkAvatar(url = state.profileImageUrl, size = 72.dp) {
+                InitialAvatar(state.initials.ifBlank { state.name.takeLast(2) }, size = 72.dp, fontSize = 20.sp)
+            }
             Box(
                 Modifier.align(Alignment.BottomEnd).size(26.dp).clip(CircleShape).background(colors.surface).border(1.dp, colors.divider, CircleShape).noRippleClick(onEdit),
                 contentAlignment = Alignment.Center,

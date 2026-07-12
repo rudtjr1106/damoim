@@ -46,6 +46,7 @@ import com.damoim.app.presentation.board.InitialAvatar
 import com.damoim.app.presentation.component.CameraIcon
 import com.damoim.app.presentation.component.DamoimTextField
 import com.damoim.app.presentation.component.KakaoBubbleIcon
+import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.PhoneNumberVisualTransformation
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.theme.DamoimStrings
@@ -58,19 +59,28 @@ import com.preat.peekaboo.image.picker.toImageBitmap
 @Composable
 fun ProfileEditRoute(
     viewModel: ProfileEditViewModel = viewModel(key = "profile_edit") {
-        ProfileEditViewModel(AppGraph.getAuthUserUseCase, AppGraph.updateProfileUseCase)
+        ProfileEditViewModel(AppGraph.getAuthUserUseCase, AppGraph.updateProfileUseCase, AppGraph.uploadProfileImageUseCase)
     },
     onCancel: () -> Unit = {},
     onSaved: () -> Unit = {},
+    onToast: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
     var pickedPhoto by remember { mutableStateOf<ImageBitmap?>(null) }
     val scope = rememberCoroutineScope()
     val picker = rememberImagePickerLauncher(selectionMode = SelectionMode.Single, scope = scope, onResult = { arr ->
-        arr.firstOrNull()?.let { pickedPhoto = it.toImageBitmap() }
+        arr.firstOrNull()?.let { bytes ->
+            pickedPhoto = bytes.toImageBitmap()      // 즉시 미리보기
+            viewModel.onPhotoPicked(bytes, null)     // 저장 시 S3 업로드용 바이트 보관
+        }
     })
     LaunchedEffect(viewModel) {
-        viewModel.sideEffect.collect { if (it is ProfileEditSideEffect.Saved) onSaved() }
+        viewModel.sideEffect.collect {
+            when (it) {
+                is ProfileEditSideEffect.Saved -> onSaved()
+                is ProfileEditSideEffect.Toast -> onToast(it.message)
+            }
+        }
     }
     ProfileEditScreen(
         state, pickedPhoto,
@@ -107,10 +117,13 @@ fun ProfileEditScreen(
         // 아바타 + 카메라 배지 (28sp, 배지 원 밖 2dp)
         Box(Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 20.dp), contentAlignment = Alignment.Center) {
             Box {
-                if (pickedPhoto != null) {
-                    Image(pickedPhoto, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(96.dp).clip(CircleShape))
-                } else {
-                    InitialAvatar(state.name.takeLast(2).ifBlank { DamoimStrings.PROFILE_AVATAR_FALLBACK }, size = 96.dp, fontSize = 28.sp)
+                when {
+                    pickedPhoto != null ->
+                        Image(pickedPhoto, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(96.dp).clip(CircleShape))
+                    !state.profileImageUrl.isNullOrBlank() ->
+                        NetworkImage(url = state.profileImageUrl, modifier = Modifier.size(96.dp).clip(CircleShape), cornerRadius = 96.dp)
+                    else ->
+                        InitialAvatar(state.name.takeLast(2).ifBlank { DamoimStrings.PROFILE_AVATAR_FALLBACK }, size = 96.dp, fontSize = 28.sp)
                 }
                 Box(
                     Modifier.align(Alignment.BottomEnd).offset(x = 2.dp, y = 2.dp).size(32.dp).clip(CircleShape).background(colors.primary).border(2.5.dp, colors.surface, CircleShape).noRippleClick(onPickPhoto),

@@ -16,10 +16,11 @@ class ObserveMyContextUseCase(
         val name: String,
         val role: ClubRole?,
         val needsProfileSetup: Boolean = false,
+        val profileImageUrl: String? = null,
     )
 
     operator fun invoke(): Flow<MyContext> =
         combine(authRepository.observeUser(), clubRepository.observeRole()) { user, role ->
-            MyContext(user.id, user.nickname, role, user.needsProfileSetup)
+            MyContext(user.id, user.nickname, role, user.needsProfileSetup, user.profileImageUrl)
         }
 }
