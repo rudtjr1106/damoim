@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,7 +61,6 @@ import com.damoim.app.platform.rememberShareText
 import com.damoim.app.presentation.board.CategoryBadge
 import com.damoim.app.presentation.board.InitialAvatar
 import com.damoim.app.presentation.board.SolidBadge
-import com.damoim.app.presentation.component.AttachedImage
 import com.damoim.app.presentation.component.BackChevronIcon
 import com.damoim.app.presentation.component.CalendarIcon
 import com.damoim.app.presentation.component.ChartIcon
@@ -74,6 +74,7 @@ import com.damoim.app.presentation.component.HeartIcon
 import com.damoim.app.presentation.component.LinkIcon
 import com.damoim.app.presentation.component.ListIcon
 import com.damoim.app.presentation.component.MoreIcon
+import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.PaperclipIcon
 import com.damoim.app.presentation.component.SendIcon
 import com.damoim.app.presentation.theme.DamoimStrings
@@ -154,8 +155,23 @@ fun PostDetailScreen(
     val colors = DamoimTheme.colors
     val detail = state.detail
     val clipboard = LocalClipboardManager.current
+    val uriHandler = LocalUriHandler.current
     val share = rememberShareText()
     var overlay by remember { mutableStateOf<DetailOverlay?>(null) }
+
+    // 링크=웹 이동, 문서=presigned URL 열기(브라우저 다운로드). URL이 없으면 안내 토스트.
+    fun openAttachment(att: PostAttachment) {
+        val url = when (att) {
+            is PostAttachment.Link -> att.url
+            is PostAttachment.FileDoc -> att.url
+            else -> null
+        }
+        if (!url.isNullOrBlank()) {
+            runCatching { uriHandler.openUri(url) }.onFailure { onToast(DamoimStrings.TOAST_FILE_DOWNLOADED) }
+        } else {
+            onToast(DamoimStrings.TOAST_FILE_DOWNLOADED)
+        }
+    }
 
     // 오버레이는 시스템 뒤로가기로 닫힌다
     PlatformBackHandler(enabled = overlay != null) { overlay = null }
@@ -174,7 +190,7 @@ fun PostDetailScreen(
                         PostBody(
                             detail.post,
                             onImageTap = { imgs, i -> overlay = DetailOverlay.ImageViewer(imgs, i, "${detail.post.authorName} · ${detail.post.title}") },
-                            onFileTap = { onToast(DamoimStrings.TOAST_FILE_DOWNLOADED) },
+                            onOpenAttachment = ::openAttachment,
                             onVote = onVote,
                             onRevote = onRevote,
                             onToggleLike = onToggleLike,
@@ -293,13 +309,13 @@ private fun HeaderIconButton(onClick: () -> Unit, content: @Composable () -> Uni
 private fun PostBody(
     post: BoardPost,
     onImageTap: (List<String>, Int) -> Unit,
-    onFileTap: () -> Unit,
+    onOpenAttachment: (PostAttachment) -> Unit,
     onVote: (Int) -> Unit,
     onRevote: () -> Unit,
     onToggleLike: () -> Unit,
 ) {
     val colors = DamoimTheme.colors
-    val imageLabels = post.attachments.filterIsInstance<PostAttachment.Image>().map { it.label }
+    val imageUrls = post.attachments.filterIsInstance<PostAttachment.Image>().mapNotNull { it.url }
     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         // 뱃지 행
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -322,15 +338,15 @@ private fun PostBody(
         post.attachments.forEach { att ->
             when (att) {
                 is PostAttachment.Image -> {
-                    val idx = imageLabels.indexOf(att.label).coerceAtLeast(0)
-                    AttachedImage(
-                        label = att.label,
+                    val idx = att.url?.let { imageUrls.indexOf(it) }?.coerceAtLeast(0) ?: 0
+                    NetworkImage(
+                        url = att.url,
                         modifier = Modifier.fillMaxWidth().height(180.dp)
-                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onImageTap(imageLabels, idx) },
+                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onImageTap(imageUrls, idx) },
                         cornerRadius = 14.dp,
                     )
                 }
-                else -> AttachmentCard(att, onFileTap)
+                else -> AttachmentCard(att) { onOpenAttachment(att) }
             }
         }
         ReactionRow(post, onToggleLike)

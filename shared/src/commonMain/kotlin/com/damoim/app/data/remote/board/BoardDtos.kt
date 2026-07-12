@@ -5,6 +5,7 @@ import com.damoim.app.data.remote.core.RecruitMethods
 import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.BoardPost
 import com.damoim.app.domain.model.Comment
+import com.damoim.app.domain.model.DraftLink
 import com.damoim.app.domain.model.Poll
 import com.damoim.app.domain.model.PollDraft
 import com.damoim.app.domain.model.PollOption
@@ -25,11 +26,29 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AttachmentInputDto(
     val type: String,
-    val imageLabel: String? = null,
+    val storageKey: String? = null,    // IMAGE/FILE_DOC — presigned PUT으로 올린 S3 키
+    val imageLabel: String? = null,    // IMAGE 캡션(선택)
     val fileName: String? = null,
     val fileSizeBytes: Long? = null,
     val linkTitle: String? = null,
     val linkDomain: String? = null,
+    val linkUrl: String? = null,       // LINK 전체 URL
+)
+
+/** 게시판 첨부 업로드 URL 요청(1단계). kind=IMAGE|FILE_DOC. */
+@Serializable
+data class BoardUploadUrlRequestDto(
+    val fileName: String,
+    val contentType: String? = null,
+    val sizeBytes: Long,
+    val kind: String,
+)
+
+@Serializable
+data class BoardUploadUrlResponseDto(
+    val uploadUrl: String,
+    val storageKey: String,
+    val expiresInSeconds: Long = 600,
 )
 
 @Serializable
@@ -99,17 +118,21 @@ data class PostSummaryResponseDto(
     val isPinned: Boolean = false,
     val isAuthorLeader: Boolean = false,
     val hasThumbnail: Boolean = false,
+    val thumbnailUrl: String? = null,
     val readRate: Int? = null,
 )
 
 @Serializable
 data class AttachmentResponseDto(
     val type: String,
+    val imageUrl: String? = null,
     val imageLabel: String? = null,
     val fileName: String? = null,
     val fileSize: String? = null,
+    val fileUrl: String? = null,
     val linkTitle: String? = null,
     val linkDomain: String? = null,
+    val linkUrl: String? = null,
 )
 
 @Serializable
@@ -260,6 +283,7 @@ internal fun PostSummaryResponseDto.toDomain(orderKey: Long): BoardPost = BoardP
     isPinned = isPinned,
     isAuthorLeader = isAuthorLeader,
     hasThumbnail = hasThumbnail,
+    thumbnailUrl = thumbnailUrl,
     readRate = readRate,
 )
 
@@ -267,9 +291,9 @@ internal fun List<PostSummaryResponseDto>.toDomainList(): List<BoardPost> =
     mapIndexed { index, dto -> dto.toDomain(orderKey = (size - index).toLong()) }
 
 internal fun AttachmentResponseDto.toDomain(): PostAttachment = when (type) {
-    AttachmentTypes.IMAGE -> PostAttachment.Image(label = imageLabel ?: "")
-    AttachmentTypes.FILE_DOC -> PostAttachment.FileDoc(name = fileName ?: "", size = fileSize ?: "")
-    else -> PostAttachment.Link(title = linkTitle ?: "", domain = linkDomain ?: "")
+    AttachmentTypes.IMAGE -> PostAttachment.Image(url = imageUrl)
+    AttachmentTypes.FILE_DOC -> PostAttachment.FileDoc(name = fileName ?: "", size = fileSize ?: "", url = fileUrl)
+    else -> PostAttachment.Link(title = linkTitle ?: "", domain = linkDomain ?: "", url = linkUrl ?: "")
 }
 
 internal fun PollResponseDto.toDomain(): Poll = Poll(
@@ -342,12 +366,11 @@ internal fun DraftResponseDto.toDomain(): PostDraft = PostDraft(
     title = title,
     content = content,
     pinned = pinned,
-    photoLabels = attachments.filter { it.type == AttachmentTypes.IMAGE }.mapNotNull { it.imageLabel },
-    docs = attachments.filter { it.type == AttachmentTypes.FILE_DOC }.map {
-        PostAttachment.FileDoc(name = it.fileName ?: "", size = formatSizeLabel(it.fileSizeBytes ?: 0L))
-    },
+    // 임시저장은 미디어 바이트를 보존하지 않는다(텍스트·링크·투표·모집만 복원).
+    images = emptyList(),
+    docs = emptyList(),
     link = attachments.firstOrNull { it.type == AttachmentTypes.LINK }
-        ?.let { PostAttachment.Link(title = it.linkTitle ?: "", domain = it.linkDomain ?: "") },
+        ?.let { DraftLink(url = it.linkUrl ?: "", title = it.linkTitle ?: "", domain = it.linkDomain ?: "") },
     poll = poll?.let {
         PollDraft(
             options = it.options, anonymous = it.anonymous, multiSelect = it.multiSelect,
@@ -363,56 +386,50 @@ internal fun DraftResponseDto.toDomain(): PostDraft = PostDraft(
     },
 )
 
-/** PostDraft → 생성/저장 요청 바디. 첨부 순서: 이미지 → 문서 → 링크. */
-internal fun PostDraft.toAttachmentInputs(): List<AttachmentInputDto> = buildList {
-    photoLabels.forEach { add(AttachmentInputDto(type = AttachmentTypes.IMAGE, imageLabel = it)) }
-    docs.forEach {
-        add(AttachmentInputDto(type = AttachmentTypes.FILE_DOC, fileName = it.name, fileSizeBytes = parseSizeToBytes(it.size)))
-    }
-    link?.let { add(AttachmentInputDto(type = AttachmentTypes.LINK, linkTitle = it.title, linkDomain = it.domain)) }
+/** 링크 첨부 입력(임시저장·생성 공용). */
+private fun DraftLink.toInput(): AttachmentInputDto =
+    AttachmentInputDto(type = AttachmentTypes.LINK, linkTitle = title, linkDomain = domain, linkUrl = url)
+
+private fun PostDraft.pollInput(): PollInputDto? = poll?.let {
+    PollInputDto(
+        options = it.options, anonymous = it.anonymous, multiSelect = it.multiSelect,
+        deadline = it.deadlineEpochMillis?.toIsoInstant(),
+    )
 }
 
-internal fun PostDraft.toCreateRequest(): CreatePostRequestDto = CreatePostRequestDto(
-    category = category.name,
-    title = title,
-    content = content,
-    pinned = pinned,
-    attachments = toAttachmentInputs(),
-    poll = poll?.let {
-        PollInputDto(
-            options = it.options, anonymous = it.anonymous, multiSelect = it.multiSelect,
-            deadline = it.deadlineEpochMillis?.toIsoInstant(),
-        )
-    },
-    recruit = recruit?.let {
-        RecruitInputDto(
-            capacity = it.capacity,
-            deadline = it.deadlineEpochMillis?.toIsoInstant(),
-            method = if (it.firstCome) RecruitMethods.FIRST_COME else RecruitMethods.APPROVAL,
-        )
-    },
-)
+private fun PostDraft.recruitInput(): RecruitInputDto? = recruit?.let {
+    RecruitInputDto(
+        capacity = it.capacity,
+        deadline = it.deadlineEpochMillis?.toIsoInstant(),
+        method = if (it.firstCome) RecruitMethods.FIRST_COME else RecruitMethods.APPROVAL,
+    )
+}
+
+/**
+ * PostDraft → 생성 요청. 이미지/문서 첨부는 리포지토리가 S3에 먼저 올린 뒤 [attachments]로 넘겨준다
+ * (storageKey 포함). 링크는 여기서 첨부에 더한다. 첨부 순서: 이미지 → 문서 → 링크.
+ */
+internal fun PostDraft.toCreateRequest(attachments: List<AttachmentInputDto>): CreatePostRequestDto =
+    CreatePostRequestDto(
+        category = category.name,
+        title = title,
+        content = content,
+        pinned = pinned,
+        attachments = attachments + listOfNotNull(link?.toInput()),
+        poll = pollInput(),
+        recruit = recruitInput(),
+    )
 
 internal fun PostDraft.toUpdateRequest(): UpdatePostRequestDto =
     UpdatePostRequestDto(category = category.name, title = title, content = content)
 
+/** 임시저장 — 미디어(바이트)는 서버에 올리지 않고 링크/투표/모집만 저장. */
 internal fun PostDraft.toDraftRequest(): DraftRequestDto = DraftRequestDto(
     category = category.name,
     title = title,
     content = content,
     pinned = pinned,
-    attachments = toAttachmentInputs(),
-    poll = poll?.let {
-        PollInputDto(
-            options = it.options, anonymous = it.anonymous, multiSelect = it.multiSelect,
-            deadline = it.deadlineEpochMillis?.toIsoInstant(),
-        )
-    },
-    recruit = recruit?.let {
-        RecruitInputDto(
-            capacity = it.capacity,
-            deadline = it.deadlineEpochMillis?.toIsoInstant(),
-            method = if (it.firstCome) RecruitMethods.FIRST_COME else RecruitMethods.APPROVAL,
-        )
-    },
+    attachments = listOfNotNull(link?.toInput()),
+    poll = pollInput(),
+    recruit = recruitInput(),
 )

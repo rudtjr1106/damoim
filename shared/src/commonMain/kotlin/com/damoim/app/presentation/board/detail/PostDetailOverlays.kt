@@ -225,8 +225,8 @@ internal fun ImageViewerOverlay(images: List<String>, startIndex: Int, caption: 
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) { page ->
             Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                com.damoim.app.presentation.component.AttachedImage(
-                    label = images.getOrNull(page).orEmpty(),
+                com.damoim.app.presentation.component.NetworkImage(
+                    url = images.getOrNull(page).orEmpty(),
                     modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f),
                     cornerRadius = 4.dp,
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit,
@@ -245,7 +245,7 @@ internal fun ImageViewerOverlay(images: List<String>, startIndex: Int, caption: 
                                 scope.launch { pagerState.animateScrollToPage(i) }
                             },
                     ) {
-                        com.damoim.app.presentation.component.AttachedImage(label, Modifier.size(52.dp), cornerRadius = 8.dp)
+                        com.damoim.app.presentation.component.NetworkImage(label, Modifier.size(52.dp), cornerRadius = 8.dp)
                     }
                 }
             }

@@ -1,12 +1,15 @@
 package com.damoim.app.data.remote.board
 
+import com.damoim.app.core.result.DataError
 import com.damoim.app.core.result.DataResult
 import com.damoim.app.core.result.getOrNull
 import com.damoim.app.core.result.map
 import com.damoim.app.data.remote.core.ApiClient
 import com.damoim.app.data.remote.core.ApiRoutes
+import com.damoim.app.data.remote.core.AttachmentTypes
 import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.ErrorCodes
+import com.damoim.app.data.remote.core.RawHttp
 import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.RemoteEnv
 import com.damoim.app.data.remote.core.SharedFlows
@@ -66,10 +69,42 @@ class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
         }
     }
 
-    override suspend fun createPost(draft: PostDraft): DataResult<Long> =
-        api.postData<PostDetailResponseDto>(ApiRoutes.Board.POSTS, draft.toCreateRequest())
+    override suspend fun createPost(draft: PostDraft): DataResult<Long> {
+        // 이미지/문서 첨부를 먼저 S3에 업로드해 storageKey를 확보(실패 시 글 생성 중단).
+        val attachments = uploadMedia(draft)
+            ?: return DataResult.Failure(DataError(ErrorCodes.UPLOAD_FAILED, "첨부 업로드에 실패했어요"))
+        return api.postData<PostDetailResponseDto>(ApiRoutes.Board.POSTS, draft.toCreateRequest(attachments))
             .map { it.id }
             .also { RemoteBus.invalidate(DataTopic.BOARD) }
+    }
+
+    /** draft의 이미지/문서를 presigned PUT으로 S3에 올리고 AttachmentInputDto(storageKey) 목록을 만든다. 실패 시 null. */
+    private suspend fun uploadMedia(draft: PostDraft): List<AttachmentInputDto>? {
+        val out = mutableListOf<AttachmentInputDto>()
+        draft.images.forEachIndexed { i, img ->
+            val bytes = img.bytes ?: return@forEachIndexed // 기존 이미지(수정 프리필)는 재업로드 안 함
+            val key = uploadOne("image_$i", img.contentType, bytes, AttachmentTypes.IMAGE) ?: return null
+            out += AttachmentInputDto(type = AttachmentTypes.IMAGE, storageKey = key)
+        }
+        draft.docs.forEach { doc ->
+            val bytes = doc.bytes ?: return@forEach
+            val key = uploadOne(doc.name, doc.contentType, bytes, AttachmentTypes.FILE_DOC) ?: return null
+            out += AttachmentInputDto(
+                type = AttachmentTypes.FILE_DOC, storageKey = key,
+                fileName = doc.name, fileSizeBytes = bytes.size.toLong(),
+            )
+        }
+        return out
+    }
+
+    /** 1) 업로드 URL 발급(권한·상한 검증) → 2) S3에 직접 PUT. storageKey 반환(실패 null). */
+    private suspend fun uploadOne(fileName: String, contentType: String?, bytes: ByteArray, kind: String): String? {
+        val presign = api.postData<BoardUploadUrlResponseDto>(
+            ApiRoutes.Board.UPLOAD_URL,
+            BoardUploadUrlRequestDto(fileName = fileName, contentType = contentType, sizeBytes = bytes.size.toLong(), kind = kind),
+        ).getOrNull() ?: return null
+        return if (RawHttp.put(presign.uploadUrl, bytes, contentType)) presign.storageKey else null
+    }
 
     override suspend fun updatePost(postId: Long, draft: PostDraft): DataResult<Unit> =
         api.patchUnit(ApiRoutes.Board.post(postId), draft.toUpdateRequest())

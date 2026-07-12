@@ -46,6 +46,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.BoardPost
+import com.damoim.app.domain.model.DraftDocFile
+import com.damoim.app.domain.model.DraftImage
+import com.damoim.app.domain.model.DraftLink
 import com.damoim.app.domain.model.PollDraft
 import com.damoim.app.domain.model.PostAttachment
 import com.damoim.app.domain.model.PostDraft
@@ -55,7 +58,6 @@ import com.damoim.app.platform.rememberCameraLauncher
 import com.damoim.app.platform.rememberDocumentPickerLauncher
 import com.damoim.app.presentation.board.PhotoPlaceholder
 import com.damoim.app.presentation.board.boardCategoryLabel
-import com.damoim.app.presentation.component.AttachedImage
 import com.damoim.app.presentation.component.CalendarIcon
 import com.damoim.app.presentation.component.CameraIcon
 import com.damoim.app.presentation.component.ChartIcon
@@ -64,6 +66,7 @@ import com.damoim.app.presentation.component.CloseIcon
 import com.damoim.app.presentation.component.ImageIcon
 import com.damoim.app.presentation.component.ImageStore
 import com.damoim.app.presentation.component.LinkIcon
+import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.LockIcon
 import com.damoim.app.presentation.component.PaperclipIcon
 import com.damoim.app.presentation.component.PersonPlusIcon
@@ -152,22 +155,23 @@ fun PostWriteScreen(
     var body by remember(prefill, prefillDraft) { mutableStateOf(prefill?.content ?: prefillDraft?.content ?: "") }
     var category by remember(prefill, prefillDraft) { mutableStateOf(prefill?.category ?: prefillDraft?.category ?: initialCategory) }
     var pinned by remember(prefill, prefillDraft) { mutableStateOf(prefill?.isPinned ?: prefillDraft?.pinned ?: false) }
+    // 수정 모드는 기존 이미지(url)를 프리필. 임시저장은 미디어를 보존하지 않아 여기선 비어 있음.
     val photos = remember(prefill, prefillDraft) {
-        mutableStateListOf<String>().apply {
-            prefill?.attachments?.filterIsInstance<PostAttachment.Image>()?.forEach { add(it.label) }
-            if (isEmpty()) prefillDraft?.photoLabels?.forEach { add(it) }
+        mutableStateListOf<DraftImage>().apply {
+            prefill?.attachments?.filterIsInstance<PostAttachment.Image>()?.forEach { add(DraftImage(url = it.url)) }
         }
     }
     val docs = remember(prefill, prefillDraft) {
-        mutableStateListOf<PostAttachment.FileDoc>().apply {
-            prefill?.attachments?.filterIsInstance<PostAttachment.FileDoc>()?.forEach { add(it) }
-            if (isEmpty()) prefillDraft?.docs?.forEach { add(it) }
+        mutableStateListOf<DraftDocFile>().apply {
+            prefill?.attachments?.filterIsInstance<PostAttachment.FileDoc>()
+                ?.forEach { add(DraftDocFile(name = it.name, sizeLabel = it.size, url = it.url)) }
         }
     }
     var linkUrl by remember(prefill, prefillDraft) {
         mutableStateOf(
-            prefill?.attachments?.filterIsInstance<PostAttachment.Link>()?.firstOrNull()?.let { "https://${it.domain}" }
-                ?: prefillDraft?.link?.let { "https://${it.domain}" } ?: "",
+            prefill?.attachments?.filterIsInstance<PostAttachment.Link>()?.firstOrNull()?.url?.takeIf { it.isNotBlank() }
+                ?: prefillDraft?.link?.url
+                ?: "",
         )
     }
     val pollOptions = remember(prefill, prefillDraft) {
@@ -190,7 +194,7 @@ fun PostWriteScreen(
         mutableStateOf(
             when {
                 prefill?.poll != null || prefillDraft?.poll != null -> AttachMode.POLL
-                (prefill?.attachments?.any { it is PostAttachment.Image } == true) || !prefillDraft?.photoLabels.isNullOrEmpty() -> AttachMode.PHOTO
+                (prefill?.attachments?.any { it is PostAttachment.Image } == true) || !prefillDraft?.images.isNullOrEmpty() -> AttachMode.PHOTO
                 (prefill?.attachments?.any { it is PostAttachment.FileDoc } == true) || !prefillDraft?.docs.isNullOrEmpty() -> AttachMode.DOC
                 (prefill?.attachments?.any { it is PostAttachment.Link } == true) || prefillDraft?.link != null -> AttachMode.LINK
                 else -> AttachMode.NONE
@@ -208,14 +212,21 @@ fun PostWriteScreen(
         scope = scope,
         onResult = { byteArrays ->
             byteArrays.forEach { bytes ->
-                if (photos.size < 10) photos.add(ImageStore.put(bytes.toImageBitmap()))
+                if (photos.size < 10) {
+                    // 바이트는 업로드용으로 보존, 로컬 미리보기는 ImageStore에 디코드해 둔다.
+                    val localKey = ImageStore.put(bytes.toImageBitmap())
+                    photos.add(DraftImage(bytes = bytes, localKey = localKey))
+                }
             }
             if (photos.isNotEmpty()) attach = AttachMode.PHOTO
         },
     )
-    val cameraLauncher = rememberCameraLauncher { bitmap ->
-        if (bitmap != null) {
-            if (photos.size < 10) photos.add(ImageStore.put(bitmap))
+    val cameraLauncher = rememberCameraLauncher { bytes ->
+        if (bytes != null) {
+            if (photos.size < 10) {
+                val localKey = ImageStore.put(bytes.toImageBitmap())
+                photos.add(DraftImage(bytes = bytes, contentType = "image/jpeg", localKey = localKey))
+            }
             attach = AttachMode.PHOTO
         } else {
             onToast(DamoimStrings.TOAST_CAMERA_UNAVAILABLE)
@@ -223,7 +234,7 @@ fun PostWriteScreen(
     }
     val documentPicker = rememberDocumentPickerLauncher { doc ->
         if (doc != null) {
-            docs.add(PostAttachment.FileDoc(doc.name, doc.sizeLabel))
+            docs.add(DraftDocFile(name = doc.name, sizeLabel = doc.sizeLabel, bytes = doc.bytes, contentType = doc.contentType))
             attach = AttachMode.DOC
         }
     }
@@ -232,11 +243,13 @@ fun PostWriteScreen(
         category = category,
         title = title.trim(),
         content = body.trim(),
-        photoLabels = if (attach == AttachMode.PHOTO) photos.toList() else emptyList(),
+        images = if (attach == AttachMode.PHOTO) photos.toList() else emptyList(),
         docs = if (attach == AttachMode.DOC) docs.toList() else emptyList(),
         link = if (attach == AttachMode.LINK && linkUrl.isNotBlank()) {
-            val host = linkUrl.substringAfter("://").substringBefore("/").ifBlank { linkUrl }
-            PostAttachment.Link(title = host, domain = host)
+            // 스킴이 없으면 https:// 보정 → 전체 URL 보존(웹 이동용).
+            val normalized = if (linkUrl.startsWith("http://") || linkUrl.startsWith("https://")) linkUrl else "https://$linkUrl"
+            val host = normalized.substringAfter("://").substringBefore("/").ifBlank { normalized }
+            DraftLink(url = normalized, title = host, domain = host)
         } else null,
         poll = if (attach == AttachMode.POLL && pollOptions.any { it.isNotBlank() }) {
             PollDraft(pollOptions.toList(), pollAnon, pollMulti, pollDeadlineLabel.ifBlank { DamoimStrings.PICKER_TITLE }, pollDeadlineMillis)
@@ -412,15 +425,16 @@ private fun AddTile(count: Int, onClick: () -> Unit) {
 
 // 15/PHOTO — 실제 선택/촬영 이미지 썸네일(삭제 가능) + 추가 타일
 @Composable
-private fun PhotoAttach(photos: List<String>, onAdd: () -> Unit, onRemove: (Int) -> Unit) {
+private fun PhotoAttach(photos: List<DraftImage>, onAdd: () -> Unit, onRemove: (Int) -> Unit) {
     val colors = DamoimTheme.colors
     Row(
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        photos.forEachIndexed { i, label ->
+        photos.forEachIndexed { i, img ->
             Box(Modifier.size(76.dp)) {
-                AttachedImage(label, Modifier.size(76.dp), cornerRadius = 14.dp)
+                // 방금 고른 사진=로컬 미리보기(localKey), 수정 프리필=서버 이미지(url).
+                NetworkImage(url = img.url, localKey = img.localKey, modifier = Modifier.size(76.dp), cornerRadius = 14.dp)
                 Box(
                     Modifier.align(Alignment.TopEnd).size(20.dp).clip(RoundedCornerShape(999.dp)).background(colors.textPrimary)
                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onRemove(i) },
@@ -438,7 +452,7 @@ private fun PhotoAttach(photos: List<String>, onAdd: () -> Unit, onRemove: (Int)
 
 // 70/DOC — 실제 문서 피커로 추가한 파일 목록(삭제 가능)
 @Composable
-private fun DocAttach(docs: List<PostAttachment.FileDoc>, onAdd: () -> Unit, onRemove: (Int) -> Unit) {
+private fun DocAttach(docs: List<DraftDocFile>, onAdd: () -> Unit, onRemove: (Int) -> Unit) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         docs.forEachIndexed { i, doc ->
@@ -448,7 +462,7 @@ private fun DocAttach(docs: List<PostAttachment.FileDoc>, onAdd: () -> Unit, onR
                 Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(tileColor), contentAlignment = Alignment.Center) { Text(ext, style = DamoimTheme.typography.labelSmall, color = colors.onPrimary) }
                 Column(Modifier.weight(1f)) {
                     Text(doc.name, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary, maxLines = 1)
-                    if (doc.size.isNotEmpty()) Text(doc.size, style = DamoimTheme.typography.label, color = colors.textDisabled)
+                    if (doc.sizeLabel.isNotEmpty()) Text(doc.sizeLabel, style = DamoimTheme.typography.label, color = colors.textDisabled)
                 }
                 Box(Modifier.size(24.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onRemove(i) }, contentAlignment = Alignment.Center) {
                     CloseIcon(colors.textDisabled, Modifier.size(16.dp))

@@ -221,9 +221,9 @@ private fun FreeRow(post: BoardPost, isLast: Boolean, onClick: () -> Unit) {
                 Text(DamoimStrings.commentCountLabel(post.commentCount), style = DamoimTheme.typography.caption, color = colors.textDisabled)
             }
         }
-        val thumbLabel = post.attachments.filterIsInstance<com.damoim.app.domain.model.PostAttachment.Image>().firstOrNull()?.label
-        if (thumbLabel != null) {
-            com.damoim.app.presentation.component.AttachedImage(thumbLabel, Modifier.size(64.dp), cornerRadius = 12.dp)
+        val thumbUrl = post.thumbnailUrl ?: post.attachments.filterIsInstance<com.damoim.app.domain.model.PostAttachment.Image>().firstNotNullOfOrNull { it.url }
+        if (thumbUrl != null) {
+            com.damoim.app.presentation.component.NetworkImage(thumbUrl, Modifier.size(64.dp), cornerRadius = 12.dp)
         }
     }
     if (!isLast) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))

@@ -1,7 +1,6 @@
 package com.damoim.app.platform
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.ImageBitmap
 
 /**
  * 플랫폼 기능 브릿지 (expect/actual).
@@ -11,13 +10,14 @@ import androidx.compose.ui.graphics.ImageBitmap
  *   iOS는 아직 스텁(카메라·문서는 null 반환 → 호출부가 준비 중 안내).
  */
 
-/** 카메라 촬영 런처. [launch] 호출 → 촬영 결과(취소/미지원이면 null). */
+/** 카메라 촬영 런처. [launch] 호출 → 촬영 결과 JPEG 바이트(취소/미지원이면 null). */
 interface CameraLauncher {
     fun launch()
 }
 
+/** 촬영 결과는 JPEG 바이트로 돌려준다 — S3 업로드(첨부)에 그대로 쓰고, 미리보기는 디코드해 표시. */
 @Composable
-expect fun rememberCameraLauncher(onResult: (ImageBitmap?) -> Unit): CameraLauncher
+expect fun rememberCameraLauncher(onResult: (ByteArray?) -> Unit): CameraLauncher
 
 /**
  * 문서 피커 결과. [bytes]는 실제 파일 내용(presigned PUT용), [contentType]은 MIME(예: "application/pdf").

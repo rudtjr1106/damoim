@@ -29,6 +29,7 @@ data class BoardPost(
     val isPinned: Boolean = false,        // 필독
     val isAuthorLeader: Boolean = false,  // 작성자명 옆 왕관
     val hasThumbnail: Boolean = false,    // 목록 우측 이미지 썸네일 여부
+    val thumbnailUrl: String? = null,     // 목록 썸네일 presigned URL(첫 이미지 첨부)
     val readRate: Int? = null,            // 공지 확인율(%) — 필독 공지에만
     val attachments: List<PostAttachment> = emptyList(),
     val poll: Poll? = null,               // 투표 게시글(35/36)
@@ -37,12 +38,12 @@ data class BoardPost(
 
 /** 게시글 첨부. 이미지/파일/링크(og 미리보기) 3종. */
 sealed interface PostAttachment {
-    /** 사진(현재는 플레이스홀더 라벨만). */
-    data class Image(val label: String) : PostAttachment
-    /** 문서 파일. 예: "OT_일정표.pdf" · "1.2MB". */
-    data class FileDoc(val name: String, val size: String) : PostAttachment
-    /** 링크 미리보기(og). 예: 제목 + 도메인. */
-    data class Link(val title: String, val domain: String) : PostAttachment
+    /** 사진. [url]=서버 presigned view URL(원격), [localKey]=업로드 전 로컬 미리보기(ImageStore 키). */
+    data class Image(val url: String? = null, val localKey: String? = null) : PostAttachment
+    /** 문서 파일. 예: "OT_일정표.pdf" · "1.2MB". [url]=서버 다운로드 URL. */
+    data class FileDoc(val name: String, val size: String, val url: String? = null) : PostAttachment
+    /** 링크 미리보기(og). [url]=전체 URL(클릭 시 웹 이동), title/domain은 표시용. */
+    data class Link(val title: String, val domain: String, val url: String = "") : PostAttachment
 }
 
 /**
@@ -110,18 +111,41 @@ data class PostDetail(
 
 // ── 작성(15/34/35/39/70) 제출용 초안 ──
 
-/** 게시글 작성/수정 초안. 화면 상태를 모아 스토어에 제출한다. */
+/** 게시글 작성/수정 초안. 화면 상태를 모아 리포지토리에 제출한다(리포지토리가 이미지/문서를 S3에 업로드). */
 data class PostDraft(
     val category: BoardCategory,
     val title: String,
     val content: String,
-    val photoLabels: List<String> = emptyList(),
-    val docs: List<PostAttachment.FileDoc> = emptyList(),
-    val link: PostAttachment.Link? = null,
+    val images: List<DraftImage> = emptyList(),
+    val docs: List<DraftDocFile> = emptyList(),
+    val link: DraftLink? = null,
     val poll: PollDraft? = null,
     val recruit: RecruitDraft? = null,
     val pinned: Boolean = false,          // 공지 필독 지정(53 시트)
 )
+
+/**
+ * 작성 중 이미지 첨부. [bytes]가 있으면 제출 시 S3에 업로드(신규 선택/촬영),
+ * [url]만 있으면 이미 서버에 있는 이미지(수정 프리필). [localKey]는 업로드 전 로컬 미리보기(ImageStore).
+ */
+data class DraftImage(
+    val bytes: ByteArray? = null,
+    val contentType: String? = null,
+    val url: String? = null,
+    val localKey: String? = null,
+)
+
+/** 작성 중 문서 첨부. [bytes]가 있으면 업로드, [url]만 있으면 기존 파일(수정 프리필). */
+data class DraftDocFile(
+    val name: String,
+    val sizeLabel: String,
+    val bytes: ByteArray? = null,
+    val contentType: String? = null,
+    val url: String? = null,
+)
+
+/** 작성 중 링크 첨부. [url]=전체 URL(웹 이동), title/domain은 표시용. */
+data class DraftLink(val url: String, val title: String, val domain: String)
 
 /** 투표 초안(35). */
 data class PollDraft(

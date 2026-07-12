@@ -2,13 +2,12 @@ package com.damoim.app.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.ImageBitmap
 import platform.Foundation.NSURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
 @Composable
-actual fun rememberCameraLauncher(onResult: (ImageBitmap?) -> Unit): CameraLauncher =
+actual fun rememberCameraLauncher(onResult: (ByteArray?) -> Unit): CameraLauncher =
     remember {
         object : CameraLauncher {
             // iOS 카메라(UIImagePickerController) 연동은 추후 — 호출부가 준비 중 안내 처리

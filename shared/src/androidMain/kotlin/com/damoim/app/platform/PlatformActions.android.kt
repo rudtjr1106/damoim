@@ -8,8 +8,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
 import com.damoim.app.domain.model.ResourceDraft
@@ -18,10 +16,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-actual fun rememberCameraLauncher(onResult: (ImageBitmap?) -> Unit): CameraLauncher {
-    // 미리보기 촬영(풀사이즈 파일 저장 불필요 — 첨부 표시용)
+actual fun rememberCameraLauncher(onResult: (ByteArray?) -> Unit): CameraLauncher {
+    // 미리보기 촬영(썸네일) → JPEG 바이트로 인코딩해 첨부 업로드에 사용.
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap: Bitmap? ->
-        onResult(bitmap?.asImageBitmap())
+        onResult(
+            bitmap?.let { bmp ->
+                java.io.ByteArrayOutputStream().use { out ->
+                    bmp.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                    out.toByteArray()
+                }
+            },
+        )
     }
     return remember(launcher) {
         object : CameraLauncher {
