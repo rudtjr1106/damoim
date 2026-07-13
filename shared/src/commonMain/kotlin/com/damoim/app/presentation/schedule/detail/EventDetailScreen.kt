@@ -191,7 +191,11 @@ fun EventDetailScreen(
 
             // 하단 CTA
             Box(Modifier.fillMaxWidth().background(colors.surface).padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 32.dp)) {
-                BottomCta(schedule) { overlay = DetailOverlay.Apply }
+                BottomCta(
+                    schedule = schedule,
+                    onApply = { overlay = DetailOverlay.Apply },
+                    onApplicants = onApplicants,
+                )
             }
         }
 
@@ -223,9 +227,20 @@ fun EventDetailScreen(
 }
 
 @Composable
-private fun BottomCta(schedule: Schedule, onApply: () -> Unit) {
+private fun BottomCta(schedule: Schedule, onApply: () -> Unit, onApplicants: () -> Unit) {
     val colors = DamoimTheme.colors
     val event = schedule.event
+    // 모집장(작성자)은 신청 버튼 대신 신청자 목록 확인 — 자기 모집글에는 신청할 수 없다.
+    if (event != null && event.isMine) {
+        Box(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.primary)
+                .noRippleClick(onApplicants).padding(vertical = 16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(DamoimStrings.APPLICANTS_TITLE, style = DamoimTheme.typography.button, color = colors.onPrimary)
+        }
+        return
+    }
     val (label, enabled) = when {
         event == null -> DamoimStrings.SCHEDULE_ADD_MY to false
         event.status == EventStatus.ENDED -> DamoimStrings.EVENT_ENDED_CTA to false

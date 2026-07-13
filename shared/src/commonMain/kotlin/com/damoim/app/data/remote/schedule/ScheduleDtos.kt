@@ -89,6 +89,7 @@ data class EventResponseDto(
     val form: List<FormQuestionResponseDto> = emptyList(),
     val applicants: List<ApplicantResponseDto> = emptyList(),
     val appliedByMe: Boolean = false,
+    val isMine: Boolean = false,
 )
 
 @Serializable
@@ -175,6 +176,7 @@ internal fun EventResponseDto.toDomain(): EventInfo = EventInfo(
     form = form.map { it.toDomain() },
     applicants = applicants.map { it.toDomain() },
     appliedByMe = appliedByMe,
+    isMine = isMine,
 )
 
 internal fun ScheduleResponseDto.toDomain(): Schedule = Schedule(

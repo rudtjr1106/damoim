@@ -48,6 +48,7 @@ data class EventInfo(
     val form: List<FormQuestion> = emptyList(),
     val applicants: List<EventApplicant> = emptyList(),
     val appliedByMe: Boolean = false,
+    val isMine: Boolean = false,               // 모집장(작성자) 여부 — true면 신청 대신 신청자 목록
 ) {
     /** 남은 자리(취소 제외 활성 신청 기준은 store에서 appliedCount로 관리). */
     val remaining: Int get() = (capacity - appliedCount).coerceAtLeast(0)
