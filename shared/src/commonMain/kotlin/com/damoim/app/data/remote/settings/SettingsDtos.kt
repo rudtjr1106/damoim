@@ -18,7 +18,13 @@ import kotlinx.serialization.Serializable
 
 // ── 요청 ──
 @Serializable
-data class SubscribeRequestDto(val tier: String, val channel: String = "App Store")
+data class SubscribeRequestDto(
+    val tier: String,
+    val channel: String = "App Store",
+    val platform: String? = null,        // "APP_STORE" | "PLAY" — 서버 영수증 검증용
+    val productId: String? = null,
+    val purchaseToken: String? = null,   // iOS=JWS/영수증, Android=purchaseToken
+)
 
 @Serializable
 data class AddAdminRequestDto(val memberId: Long, val title: String)

@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
+import com.damoim.app.domain.model.PurchaseProof
 import com.damoim.app.domain.model.ResourceDraft
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -96,18 +97,19 @@ private fun formatSize(bytes: Long): String = when {
 }
 
 @Composable
-actual fun rememberSubscriptionBilling(): (String, String, (BillingResult) -> Unit) -> Unit {
+actual fun rememberSubscriptionBilling(): (String, String, (BillingResult, PurchaseProof?) -> Unit) -> Unit {
     val context = LocalContext.current
     return remember(context) {
-        { productId: String, priceLabel: String, onResult: (BillingResult) -> Unit ->
-            // 실제 배포 시 Google Play BillingClient.launchBillingFlow(productId)로 교체. 데모는 모의 다이얼로그.
+        { productId: String, priceLabel: String, onResult: (BillingResult, PurchaseProof?) -> Unit ->
+            // 실제 배포 시 Play BillingClient.launchBillingFlow(productId) → 성공 시 purchaseToken을
+            // PurchaseProof("PLAY", productId, token)로 전달. 데모는 모의 다이얼로그(증빙 없음).
             android.app.AlertDialog.Builder(context)
                 .setTitle("인앱 결제 (모의)")
                 .setMessage("다모임 프리미엄 구독\n$priceLabel\n상품: $productId\n\n실제 결제는 Play Console 등록 후 연동됩니다.")
-                .setPositiveButton("결제 성공") { _, _ -> onResult(BillingResult.SUCCESS) }
-                .setNeutralButton("결제 실패") { _, _ -> onResult(BillingResult.FAILURE) }
-                .setNegativeButton("취소") { _, _ -> onResult(BillingResult.CANCELLED) }
-                .setOnCancelListener { onResult(BillingResult.CANCELLED) }
+                .setPositiveButton("결제 성공") { _, _ -> onResult(BillingResult.SUCCESS, null) }
+                .setNeutralButton("결제 실패") { _, _ -> onResult(BillingResult.FAILURE, null) }
+                .setNegativeButton("취소") { _, _ -> onResult(BillingResult.CANCELLED, null) }
+                .setOnCancelListener { onResult(BillingResult.CANCELLED, null) }
                 .show()
             Unit
         }

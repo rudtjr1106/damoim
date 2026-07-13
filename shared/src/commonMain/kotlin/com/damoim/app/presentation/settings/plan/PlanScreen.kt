@@ -53,9 +53,9 @@ fun PlanRoute(
         state = state,
         onBack = onBack,
         onStart = { plan ->
-            billing(BillingProducts.forTier(plan.tier), "${plan.priceLabel} / 월") { result ->
+            billing(BillingProducts.forTier(plan.tier), "${plan.priceLabel} / 월") { result, proof ->
                 when (result) {
-                    BillingResult.SUCCESS -> { viewModel.subscribe(plan.tier); onPaySuccess() }
+                    BillingResult.SUCCESS -> { viewModel.subscribe(plan.tier, proof); onPaySuccess() }
                     BillingResult.FAILURE -> onPayFail()
                     BillingResult.CANCELLED -> {}
                 }

@@ -1,0 +1,70 @@
+{
+  "identifier" : "5C0D6C0A-1111-4A00-9000-000000000001",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "0000000000",
+    "_developerTeamID" : "0000000000"
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "5C0D6C0A-1111-4A00-9000-000000000002",
+      "localizations" : [
+        {
+          "description" : "다모임 프리미엄 구독",
+          "displayName" : "다모임 프리미엄",
+          "locale" : "ko_KR"
+        }
+      ],
+      "name" : "다모임 프리미엄",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "5C0D6C0A-1111-4A00-9000-000000000003",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "회원 100명까지, 월 자동갱신",
+              "displayName" : "스탠다드",
+              "locale" : "ko_KR"
+            }
+          ],
+          "productID" : "com.damoim.app.subscription.standard",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Standard",
+          "subscriptionGroupID" : "5C0D6C0A-1111-4A00-9000-000000000002",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "5C0D6C0A-1111-4A00-9000-000000000004",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "회원 무제한, 월 자동갱신",
+              "displayName" : "프로",
+              "locale" : "ko_KR"
+            }
+          ],
+          "productID" : "com.damoim.app.subscription.pro",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro",
+          "subscriptionGroupID" : "5C0D6C0A-1111-4A00-9000-000000000002",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

@@ -2,6 +2,7 @@ package com.damoim.app.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.damoim.app.domain.model.PurchaseProof
 import com.damoim.app.domain.model.ResourceDraft
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -166,79 +167,98 @@ actual fun rememberShareText(): (String) -> Unit = remember {
 }
 
 /**
- * StoreKit 1(SKPaymentQueue) 기반 인앱 구독 결제. 앱 전역 단일 트랜잭션 옵저버로 결제 상태를 관찰한다.
- * (StoreKit 2는 Swift async/await 전용이라 Kotlin/Native에서 호출 불가 → StoreKit 1 사용.)
- *
- * ⚠️ 실동작 요건: ①App Store Connect에 [productId]로 자동갱신 구독 상품 등록 ②샌드박스 테스터로 실기기 검증
- * ③보안상 결제 영수증을 서버가 App Store로 재검증(현재 서버 subscribe는 tier만 신뢰 — 하드닝 2차).
+ * StoreKit 2(Swift) 결제 구현 주입점. iosApp이 앱 시작 시 `IosBillingRegistry.impl`을 등록하면 그걸 우선 쓰고,
+ * 없으면 아래 StoreKit 1 폴백을 쓴다. onResult의 두번째 인자 = 서버 검증용 JWS 서명 트랜잭션(성공 시).
+ */
+interface IosSubscriptionBilling {
+    fun purchase(productId: String, onResult: (BillingResult, String?) -> Unit)
+}
+
+object IosBillingRegistry {
+    var impl: IosSubscriptionBilling? = null
+}
+
+/**
+ * StoreKit 1(SKPaymentQueue) 폴백 — StoreKit 2 브릿지가 등록되지 않았을 때. 앱 전역 단일 옵저버로 관찰.
+ * (StoreKit 2는 Swift async/await 전용이라 K/N 직접 호출 불가 → Swift 브릿지 또는 이 StoreKit 1.)
+ * 성공 시 서버 검증용으로 앱 영수증(base64)을 함께 돌려준다.
  */
 private object StoreKitBilling : NSObject(), SKPaymentTransactionObserverProtocol, SKProductsRequestDelegateProtocol {
     private const val ERROR_PAYMENT_CANCELLED = 2L  // SKErrorPaymentCancelled
 
-    private var callback: ((BillingResult) -> Unit)? = null
+    private var callback: ((BillingResult, String?) -> Unit)? = null
     private var productsRequest: SKProductsRequest? = null
     private var observerAdded = false
 
-    fun purchase(productId: String, onResult: (BillingResult) -> Unit) {
-        if (!SKPaymentQueue.canMakePayments()) { onResult(BillingResult.FAILURE); return }
-        if (callback != null) { onResult(BillingResult.FAILURE); return }  // 이미 진행 중
+    fun purchase(productId: String, onResult: (BillingResult, String?) -> Unit) {
+        if (!SKPaymentQueue.canMakePayments()) { onResult(BillingResult.FAILURE, null); return }
+        if (callback != null) { onResult(BillingResult.FAILURE, null); return }  // 이미 진행 중
         callback = onResult
         if (!observerAdded) {
             SKPaymentQueue.defaultQueue().addTransactionObserver(this)
             observerAdded = true
         }
-        // 1) 상품 조회 → didReceiveResponse에서 결제 시작
         val request = SKProductsRequest(productIdentifiers = setOf(productId))
         request.delegate = this
         productsRequest = request
-        request.start()
+        request.start()  // 상품 조회 → didReceiveResponse에서 결제 시작
     }
 
-    // SKProductsRequestDelegate — 상품 조회 응답
     override fun productsRequest(request: SKProductsRequest, didReceiveResponse: SKProductsResponse) {
         productsRequest = null
         val product = didReceiveResponse.products.firstOrNull() as? SKProduct
-        if (product == null) { finish(BillingResult.FAILURE); return }  // 미등록 상품
-        // 2) 결제 큐에 추가 → 이후 paymentQueue:updatedTransactions:로 상태 통보
+        if (product == null) { finish(BillingResult.FAILURE, null); return }  // 미등록 상품
         SKPaymentQueue.defaultQueue().addPayment(SKPayment.paymentWithProduct(product))
     }
 
-    // SKRequestDelegate — 상품 조회 실패
     override fun request(request: SKRequest, didFailWithError: NSError) {
         productsRequest = null
-        finish(BillingResult.FAILURE)
+        finish(BillingResult.FAILURE, null)  // 상품 조회 실패
     }
 
-    // SKPaymentTransactionObserver — 결제 상태 변화
     override fun paymentQueue(queue: SKPaymentQueue, updatedTransactions: List<*>) {
         updatedTransactions.forEach { any ->
             val tx = any as? SKPaymentTransaction ?: return@forEach
             when (tx.transactionState) {
                 SKPaymentTransactionState.SKPaymentTransactionStatePurchased,
                 SKPaymentTransactionState.SKPaymentTransactionStateRestored -> {
-                    queue.finishTransaction(tx)  // ⚠️ 서버 영수증 검증 후 finish가 이상적(현재 즉시)
-                    finish(BillingResult.SUCCESS)
+                    queue.finishTransaction(tx)  // ⚠️ 이상적으론 서버 영수증 검증 후 finish
+                    // StoreKit 1 폴백은 서버 검증용 증빙을 만들지 않는다(dev 전용).
+                    // 프로덕션은 StoreKit 2 브릿지(IosBillingRegistry.impl)가 JWS를 제공한다.
+                    finish(BillingResult.SUCCESS, null)
                 }
                 SKPaymentTransactionState.SKPaymentTransactionStateFailed -> {
                     val cancelled = tx.error?.code == ERROR_PAYMENT_CANCELLED
                     queue.finishTransaction(tx)
-                    finish(if (cancelled) BillingResult.CANCELLED else BillingResult.FAILURE)
+                    finish(if (cancelled) BillingResult.CANCELLED else BillingResult.FAILURE, null)
                 }
                 else -> Unit  // Purchasing/Deferred — 진행 중, 대기
             }
         }
     }
 
-    private fun finish(result: BillingResult) {
+    private fun finish(result: BillingResult, token: String?) {
         val cb = callback
         callback = null
-        cb?.invoke(result)
+        cb?.invoke(result, token)
     }
 }
 
 @Composable
-actual fun rememberSubscriptionBilling(): (String, String, (BillingResult) -> Unit) -> Unit = remember {
-    { productId, _, onResult -> StoreKitBilling.purchase(productId, onResult) }
+actual fun rememberSubscriptionBilling(): (String, String, (BillingResult, PurchaseProof?) -> Unit) -> Unit = remember {
+    { productId, _, onResult ->
+        // 성공 시 token을 PurchaseProof로 감싸 서버 검증에 전달.
+        val handle: (BillingResult, String?) -> Unit = { result, token ->
+            val proof = if (result == BillingResult.SUCCESS && token != null) {
+                PurchaseProof(platform = "APP_STORE", productId = productId, token = token)
+            } else {
+                null
+            }
+            onResult(result, proof)
+        }
+        val swift = IosBillingRegistry.impl
+        if (swift != null) swift.purchase(productId, handle) else StoreKitBilling.purchase(productId, handle)
+    }
 }
 
 @Composable

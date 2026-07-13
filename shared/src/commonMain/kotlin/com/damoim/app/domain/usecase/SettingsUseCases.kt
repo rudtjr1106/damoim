@@ -18,7 +18,8 @@ import kotlinx.coroutines.flow.Flow
 class SubscriptionUseCase(private val repo: SettingsRepository) {
     fun observe(): Flow<SubscriptionState> = repo.observeSubscription()
     fun plans(): List<SubscriptionPlan> = repo.plans()
-    suspend fun subscribe(tier: PlanTier): DataResult<Unit> = repo.subscribe(tier)
+    suspend fun subscribe(tier: PlanTier, proof: com.damoim.app.domain.model.PurchaseProof? = null): DataResult<Unit> =
+        repo.subscribe(tier, proof)
     suspend fun cancel(): DataResult<Unit> = repo.cancelSubscription()
 }
 

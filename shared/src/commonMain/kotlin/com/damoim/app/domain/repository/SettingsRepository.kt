@@ -2,6 +2,7 @@ package com.damoim.app.domain.repository
 
 import com.damoim.app.core.result.DataResult
 import com.damoim.app.domain.model.AdminMember
+import com.damoim.app.domain.model.PurchaseProof
 import com.damoim.app.domain.model.BlockedUser
 import com.damoim.app.domain.model.Member
 import com.damoim.app.domain.model.NotifSettings
@@ -16,7 +17,7 @@ interface SettingsRepository {
     // 구독(27·29·49·50)
     fun observeSubscription(): Flow<SubscriptionState>
     fun plans(): List<SubscriptionPlan>
-    suspend fun subscribe(tier: PlanTier): DataResult<Unit>
+    suspend fun subscribe(tier: PlanTier, proof: PurchaseProof? = null): DataResult<Unit>
     suspend fun cancelSubscription(): DataResult<Unit>
 
     // 운영진 권한(30·64)

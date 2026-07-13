@@ -50,9 +50,17 @@ class RemoteSettingsRepository(private val api: ApiClient) : SettingsRepository 
         return plansCache
     }
 
-    override suspend fun subscribe(tier: PlanTier): DataResult<Unit> =
-        api.postUnit(ApiRoutes.Subscription.SUBSCRIBE, SubscribeRequestDto(tier = tier.name))
-            .also { RemoteBus.invalidate(DataTopic.SETTINGS) }
+    override suspend fun subscribe(tier: PlanTier, proof: com.damoim.app.domain.model.PurchaseProof?): DataResult<Unit> =
+        api.postUnit(
+            ApiRoutes.Subscription.SUBSCRIBE,
+            SubscribeRequestDto(
+                tier = tier.name,
+                channel = if (proof?.platform == "PLAY") "Play Store" else "App Store",
+                platform = proof?.platform,
+                productId = proof?.productId,
+                purchaseToken = proof?.token,
+            ),
+        ).also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     override suspend fun cancelSubscription(): DataResult<Unit> =
         api.postUnit(ApiRoutes.Subscription.CANCEL).also { RemoteBus.invalidate(DataTopic.SETTINGS) }

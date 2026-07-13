@@ -28,5 +28,6 @@ class PlanViewModel(
         }
     }
 
-    fun subscribe(tier: PlanTier) = viewModelScope.launch { subscription.subscribe(tier) }
+    fun subscribe(tier: PlanTier, proof: com.damoim.app.domain.model.PurchaseProof? = null) =
+        viewModelScope.launch { subscription.subscribe(tier, proof) }
 }
