@@ -120,13 +120,14 @@ fun ScheduleHomeScreen(
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 when {
-                    state.isEmpty -> EmptyState()
+                    state.isEmpty -> EmptyState(isLeader = isLeader, onRegister = onRegister)
                     state.listMode -> ListView(state, onOpenSchedule, onAddCalendar)
                     else -> CalendarView(state, onSelectDate, onPrevMonth, onNextMonth, onOpenSchedule, onAddCalendar)
                 }
                 Spacer(Modifier.height(96.dp))
             }
-            if (isLeader && !state.isEmpty) {
+            // 리더는 빈 목록에서도 첫 일정을 만들 수 있어야 한다(빈 상태에서 FAB가 사라지면 생성 진입점이 없어짐).
+            if (isLeader) {
                 ScheduleFab(onRegister, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 24.dp))
             }
         }
@@ -191,7 +192,7 @@ private fun ListView(state: ScheduleHomeUiState, onOpenSchedule: (Long) -> Unit,
 }
 
 @Composable
-private fun EmptyState() {
+private fun EmptyState(isLeader: Boolean = false, onRegister: () -> Unit = {}) {
     val colors = DamoimTheme.colors
     Column(
         Modifier.fillMaxWidth().padding(top = 120.dp, start = 40.dp, end = 40.dp),
@@ -204,6 +205,17 @@ private fun EmptyState() {
         Text(DamoimStrings.SCHEDULE_EMPTY_TITLE, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary)
         Spacer(Modifier.height(6.dp))
         Text(DamoimStrings.SCHEDULE_EMPTY_SUBTITLE, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Normal), color = colors.textMuted, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        // 리더에게는 빈 상태에서도 첫 일정 생성 CTA를 노출한다.
+        if (isLeader) {
+            Spacer(Modifier.height(22.dp))
+            Box(
+                Modifier.clip(RoundedCornerShape(12.dp)).background(colors.primary)
+                    .noRippleClick(onRegister).padding(horizontal = 22.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(DamoimStrings.SCHEDULE_REGISTER_TITLE, style = DamoimTheme.typography.button, color = colors.onPrimary)
+            }
+        }
     }
 }
 
