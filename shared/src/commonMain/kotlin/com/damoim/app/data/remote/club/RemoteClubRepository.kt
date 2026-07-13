@@ -1,11 +1,14 @@
 package com.damoim.app.data.remote.club
 
+import com.damoim.app.core.result.DataError
 import com.damoim.app.core.result.DataResult
 import com.damoim.app.core.result.getOrNull
 import com.damoim.app.core.result.map
 import com.damoim.app.data.remote.core.ApiClient
 import com.damoim.app.data.remote.core.ApiRoutes
 import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.ErrorCodes
+import com.damoim.app.data.remote.core.RawHttp
 import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.SharedFlows
 import com.damoim.app.data.remote.core.reactiveFlow
@@ -83,6 +86,29 @@ class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
                 ?: emptyList()
         }
     }
+
+    override suspend fun uploadClubImage(bytes: ByteArray, contentType: String?): DataResult<String> {
+        // 1) 업로드 URL 발급(상한 검증) → 2) S3에 직접 PUT → storageKey 반환. (프로필 사진과 동일 패턴)
+        val presign = api.postData<ClubImageUploadResponseDto>(
+            ApiRoutes.Clubs.ME_IMAGE,
+            ClubImageUploadRequestDto(contentType = contentType, sizeBytes = bytes.size.toLong()),
+        )
+        val upload = when (presign) {
+            is DataResult.Success -> presign.data
+            is DataResult.Failure -> return presign
+        }
+        return if (RawHttp.put(upload.uploadUrl, bytes, contentType)) {
+            DataResult.Success(upload.storageKey)
+        } else {
+            DataResult.Failure(DataError(ErrorCodes.UPLOAD_FAILED, "이미지 업로드에 실패했어요"))
+        }
+    }
+
+    override suspend fun updateClub(name: String?, intro: String?, imageKey: String?): DataResult<Club> =
+        api.patchData<ClubResponseDto>(ApiRoutes.Clubs.ME, UpdateClubRequestDto(name, intro, imageKey))
+            .map { it.toDomain() }
+            // 이름/이미지가 홈·설정·전환 시트에 반영되므로 CLUB 무효화(observeClub 즉시 재조회).
+            .also { RemoteBus.invalidate(DataTopic.CLUB) }
 
     override suspend fun regenerateJoinCode(): DataResult<String> =
         api.postData<JoinCodeResponseDto>(ApiRoutes.Clubs.JOIN_CODE_REGENERATE)

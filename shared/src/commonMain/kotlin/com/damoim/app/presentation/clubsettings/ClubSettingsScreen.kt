@@ -23,15 +23,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,30 +47,52 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.presentation.component.CameraIcon
 import com.damoim.app.presentation.component.CopyIcon
+import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.TitleTopBar
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
+import com.preat.peekaboo.image.picker.SelectionMode
+import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
+import com.preat.peekaboo.image.picker.toImageBitmap
 
 /**
  * 화면 08 동아리 정보 설정 · 가입 코드 발급 — Route. 토스트는 [onToast].
  */
 @Composable
 fun ClubSettingsRoute(
-    viewModel: ClubSettingsViewModel = viewModel { ClubSettingsViewModel(AppGraph.getClubInfoUseCase, AppGraph.regenerateJoinCodeUseCase, AppGraph.disableJoinCodeUseCase) },
+    viewModel: ClubSettingsViewModel = viewModel {
+        ClubSettingsViewModel(
+            AppGraph.getClubInfoUseCase,
+            AppGraph.regenerateJoinCodeUseCase,
+            AppGraph.disableJoinCodeUseCase,
+            AppGraph.uploadClubImageUseCase,
+            AppGraph.updateClubUseCase,
+        )
+    },
     onBack: () -> Unit = {},
     onToast: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     val share = com.damoim.app.platform.rememberShareText()
+    val scope = rememberCoroutineScope()
+    // 방금 고른 대표 이미지 즉시 미리보기(저장 시 업로드).
+    var pickedPhoto by remember { mutableStateOf<ImageBitmap?>(null) }
+    val picker = rememberImagePickerLauncher(selectionMode = SelectionMode.Single, scope = scope, onResult = { arr ->
+        arr.firstOrNull()?.let { bytes ->
+            pickedPhoto = bytes.toImageBitmap()
+            viewModel.onPhotoPicked(bytes, null)
+        }
+    })
     LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { if (it is ClubSettingsSideEffect.Toast) onToast(it.message) }
     }
     ClubSettingsScreen(
         state = state,
+        pickedPhoto = pickedPhoto,
         onBack = onBack,
         onSave = viewModel::onSave,
-        onEditLogo = viewModel::onSave,
+        onEditLogo = { picker.launch() },
         onOpenShare = viewModel::onOpenShare,
         onCloseShare = viewModel::onCloseShare,
         onRegenerate = viewModel::onRegenerate,
@@ -89,6 +117,7 @@ fun ClubSettingsRoute(
 @Composable
 fun ClubSettingsScreen(
     state: ClubSettingsUiState = ClubSettingsUiState(isLoading = false, clubName = "코딩하는 사람들", intro = "함께 성장하는 개발 동아리.", clubInitial = "코", joinCode = "DM29AX"),
+    pickedPhoto: ImageBitmap? = null,
     onBack: () -> Unit = {},
     onSave: () -> Unit = {},
     onEditLogo: () -> Unit = {},
@@ -107,10 +136,17 @@ fun ClubSettingsScreen(
 
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
                 Spacer(Modifier.height(16.dp))
-                // 로고 (이니셜 + 편집 배지)
+                // 로고 (대표 이미지 / 이니셜 + 편집 배지)
                 Box(Modifier.size(92.dp).align(Alignment.CenterHorizontally)) {
-                    Box(Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
-                        Text(state.clubInitial, style = DamoimTheme.typography.display.copy(fontSize = 34.sp), color = colors.onPrimary)
+                    when {
+                        pickedPhoto != null ->
+                            Image(pickedPhoto, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)))
+                        !state.imageUrl.isNullOrBlank() ->
+                            NetworkImage(url = state.imageUrl, modifier = Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)), cornerRadius = 30.dp)
+                        else ->
+                            Box(Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
+                                Text(state.clubInitial, style = DamoimTheme.typography.display.copy(fontSize = 34.sp), color = colors.onPrimary)
+                            }
                     }
                     Box(
                         modifier = Modifier.align(Alignment.BottomEnd).offset(x = 4.dp, y = 4.dp).size(32.dp).clip(CircleShape).background(colors.surface)

@@ -39,6 +39,12 @@ interface ClubRepository {
     /** 동아리 기수 목록 (19/42 · 69 공개 범위 선택). */
     fun observeCohorts(): Flow<List<Cohort>>
 
+    /** 08 대표 이미지 업로드 — 바이트를 S3에 올리고 storageKey 반환(이후 [updateClub]에 전달). */
+    suspend fun uploadClubImage(bytes: ByteArray, contentType: String?): DataResult<String>
+
+    /** 08 동아리 정보 수정 — null 필드는 변경 안 함(부분 수정). imageKey는 업로드한 S3 키. */
+    suspend fun updateClub(name: String?, intro: String?, imageKey: String?): DataResult<Club>
+
     /** 가입 코드 재발급 (화면 08). 새 코드 반환. */
     suspend fun regenerateJoinCode(): DataResult<String>
 

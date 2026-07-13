@@ -15,6 +15,7 @@ data class Club(
     val memberCount: Int,
     val joinCode: String = "",
     val emblemColor: Long = 0xFF2F6DD3,
+    val imageUrl: String? = null,          // 대표 이미지(없으면 이니셜 로고)
 )
 
 /** 내가 속한 동아리 + 그 동아리에서의 역할 (33 동아리 전환 시트). */

@@ -25,6 +25,7 @@ object ApiRoutes {
         const val ROOT = "/api/clubs"
         const val JOIN = "/api/clubs/join"
         const val ME = "/api/clubs/me"
+        const val ME_IMAGE = "/api/clubs/me/image"
         const val ME_HOME = "/api/clubs/me/home"
         const val ME_COHORTS = "/api/clubs/me/cohorts"
         const val ME_APPLICANTS = "/api/clubs/me/applicants"

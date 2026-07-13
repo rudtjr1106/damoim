@@ -63,10 +63,21 @@ data class ClubResponseDto(
     val joinCodeActive: Boolean = false,
     val memberCount: Int = 0,
     val emblemColor: Long = 0xFF2F6DD3,
+    val imageUrl: String? = null,
 )
 
 @Serializable
 data class JoinCodeResponseDto(val joinCode: String? = null, val joinCodeActive: Boolean = false)
+
+// ── 동아리 정보 수정(08) ──
+@Serializable
+data class ClubImageUploadRequestDto(val fileName: String? = null, val contentType: String? = null, val sizeBytes: Long)
+
+@Serializable
+data class ClubImageUploadResponseDto(val uploadUrl: String, val storageKey: String, val expiresInSeconds: Long = 0)
+
+@Serializable
+data class UpdateClubRequestDto(val name: String? = null, val intro: String? = null, val imageKey: String? = null)
 
 @Serializable
 data class CohortResponseDto(val id: Long, val label: String, val short: String, val memberCount: Int = 0)
@@ -192,6 +203,7 @@ internal fun ClubResponseDto.toDomain(): Club = Club(
     memberCount = memberCount,
     joinCode = joinCode ?: "",
     emblemColor = emblemColor,
+    imageUrl = imageUrl,
 )
 
 internal fun ClubSummaryDto.toDomain(): Club = Club(
