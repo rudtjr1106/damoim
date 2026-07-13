@@ -371,8 +371,8 @@ internal fun DraftResponseDto.toDomain(): PostDraft = PostDraft(
     // 임시저장은 미디어 바이트를 보존하지 않는다(텍스트·링크·투표·모집만 복원).
     images = emptyList(),
     docs = emptyList(),
-    link = attachments.firstOrNull { it.type == AttachmentTypes.LINK }
-        ?.let { DraftLink(url = it.linkUrl ?: "", title = it.linkTitle ?: "", domain = it.linkDomain ?: "") },
+    links = attachments.filter { it.type == AttachmentTypes.LINK }
+        .map { DraftLink(url = it.linkUrl ?: "", title = it.linkTitle ?: "", domain = it.linkDomain ?: "") },
     poll = poll?.let {
         PollDraft(
             options = it.options, anonymous = it.anonymous, multiSelect = it.multiSelect,
@@ -417,7 +417,7 @@ internal fun PostDraft.toCreateRequest(attachments: List<AttachmentInputDto>): C
         title = title,
         content = content,
         pinned = pinned,
-        attachments = attachments + listOfNotNull(link?.toInput()),
+        attachments = attachments + links.map { it.toInput() },
         poll = pollInput(),
         recruit = recruitInput(),
     )
@@ -431,7 +431,7 @@ internal fun PostDraft.toUpdateRequest(attachments: List<AttachmentInputDto>): U
         category = category.name,
         title = title,
         content = content,
-        attachments = attachments + listOfNotNull(link?.toInput()),
+        attachments = attachments + links.map { it.toInput() },
     )
 
 /** 임시저장 — 미디어(바이트)는 서버에 올리지 않고 링크/투표/모집만 저장. */
@@ -440,7 +440,7 @@ internal fun PostDraft.toDraftRequest(): DraftRequestDto = DraftRequestDto(
     title = title,
     content = content,
     pinned = pinned,
-    attachments = listOfNotNull(link?.toInput()),
+    attachments = links.map { it.toInput() },
     poll = pollInput(),
     recruit = recruitInput(),
 )

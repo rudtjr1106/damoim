@@ -118,7 +118,7 @@ data class PostDraft(
     val content: String,
     val images: List<DraftImage> = emptyList(),
     val docs: List<DraftDocFile> = emptyList(),
-    val link: DraftLink? = null,
+    val links: List<DraftLink> = emptyList(),
     val poll: PollDraft? = null,
     val recruit: RecruitDraft? = null,
     val pinned: Boolean = false,          // 공지 필독 지정(53 시트)

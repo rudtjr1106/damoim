@@ -80,9 +80,6 @@ import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
-/** 첨부 모드(작성 화면 15/34/35/39/70). */
-enum class AttachMode { NONE, PHOTO, DOC, LINK, POLL }
-
 private sealed interface WriteSheet {
     data object Category : WriteSheet
     data object Attach : WriteSheet
@@ -168,12 +165,12 @@ fun PostWriteScreen(
                 ?.forEach { add(DraftDocFile(name = it.name, sizeLabel = it.size, url = it.url, storageKey = it.storageKey)) }
         }
     }
-    var linkUrl by remember(prefill, prefillDraft) {
-        mutableStateOf(
-            prefill?.attachments?.filterIsInstance<PostAttachment.Link>()?.firstOrNull()?.url?.takeIf { it.isNotBlank() }
-                ?: prefillDraft?.link?.url
-                ?: "",
-        )
+    // 링크는 여러 개 동시 첨부 가능 — 각 항목은 편집 중인 URL 문자열.
+    val links = remember(prefill, prefillDraft) {
+        mutableStateListOf<String>().apply {
+            prefill?.attachments?.filterIsInstance<PostAttachment.Link>()?.forEach { it.url.takeIf { u -> u.isNotBlank() }?.let(::add) }
+            if (isEmpty()) prefillDraft?.links?.forEach { it.url.takeIf { u -> u.isNotBlank() }?.let(::add) }
+        }
     }
     val pollOptions = remember(prefill, prefillDraft) {
         mutableStateListOf<String>().apply {
@@ -191,17 +188,8 @@ fun PostWriteScreen(
     var recruitDeadlineMillis by remember(prefill, prefillDraft) { mutableStateOf(prefill?.recruit?.deadlineEpochMillis ?: prefillDraft?.recruit?.deadlineEpochMillis) }
     var recruitDday by remember(prefill, prefillDraft) { mutableStateOf(prefill?.recruit?.dday ?: prefillDraft?.recruit?.dday) }
     var recruitFirstCome by remember(prefill, prefillDraft) { mutableStateOf((prefill?.recruit?.method ?: if (prefillDraft?.recruit?.firstCome == false) "승인제" else null) != "승인제") }
-    var attach by remember(prefill, prefillDraft) {
-        mutableStateOf(
-            when {
-                prefill?.poll != null || prefillDraft?.poll != null -> AttachMode.POLL
-                (prefill?.attachments?.any { it is PostAttachment.Image } == true) || !prefillDraft?.images.isNullOrEmpty() -> AttachMode.PHOTO
-                (prefill?.attachments?.any { it is PostAttachment.FileDoc } == true) || !prefillDraft?.docs.isNullOrEmpty() -> AttachMode.DOC
-                (prefill?.attachments?.any { it is PostAttachment.Link } == true) || prefillDraft?.link != null -> AttachMode.LINK
-                else -> AttachMode.NONE
-            },
-        )
-    }
+    // 투표 첨부 여부 — 이미지·문서·링크와 독립적으로 공존할 수 있다.
+    var pollEnabled by remember(prefill, prefillDraft) { mutableStateOf(prefill?.poll != null || prefillDraft?.poll != null) }
     var sheet by remember { mutableStateOf<WriteSheet?>(null) }
 
     // 오버레이(시트)는 시스템 뒤로가기로 닫힌다
@@ -219,7 +207,6 @@ fun PostWriteScreen(
                     photos.add(DraftImage(bytes = bytes, localKey = localKey))
                 }
             }
-            if (photos.isNotEmpty()) attach = AttachMode.PHOTO
         },
     )
     val cameraLauncher = rememberCameraLauncher { bytes ->
@@ -228,7 +215,6 @@ fun PostWriteScreen(
                 val localKey = ImageStore.put(bytes.toImageBitmap())
                 photos.add(DraftImage(bytes = bytes, contentType = "image/jpeg", localKey = localKey))
             }
-            attach = AttachMode.PHOTO
         } else {
             onToast(DamoimStrings.TOAST_CAMERA_UNAVAILABLE)
         }
@@ -236,7 +222,6 @@ fun PostWriteScreen(
     val documentPicker = rememberDocumentPickerLauncher { doc ->
         if (doc != null) {
             docs.add(DraftDocFile(name = doc.name, sizeLabel = doc.sizeLabel, bytes = doc.bytes, contentType = doc.contentType))
-            attach = AttachMode.DOC
         }
     }
 
@@ -244,15 +229,18 @@ fun PostWriteScreen(
         category = category,
         title = title.trim(),
         content = body.trim(),
-        images = if (attach == AttachMode.PHOTO) photos.toList() else emptyList(),
-        docs = if (attach == AttachMode.DOC) docs.toList() else emptyList(),
-        link = if (attach == AttachMode.LINK && linkUrl.isNotBlank()) {
+        // 첨부는 서로 배타적이지 않다 — 이미지·문서·링크·투표를 동시에 담는다.
+        images = photos.toList(),
+        docs = docs.toList(),
+        links = links.mapNotNull { raw ->
+            val url = raw.trim()
+            if (url.isBlank()) return@mapNotNull null
             // 스킴이 없으면 https:// 보정 → 전체 URL 보존(웹 이동용).
-            val normalized = if (linkUrl.startsWith("http://") || linkUrl.startsWith("https://")) linkUrl else "https://$linkUrl"
+            val normalized = if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
             val host = normalized.substringAfter("://").substringBefore("/").ifBlank { normalized }
             DraftLink(url = normalized, title = host, domain = host)
-        } else null,
-        poll = if (attach == AttachMode.POLL && pollOptions.any { it.isNotBlank() }) {
+        },
+        poll = if (pollEnabled && pollOptions.any { it.isNotBlank() }) {
             PollDraft(pollOptions.toList(), pollAnon, pollMulti, pollDeadlineLabel.ifBlank { DamoimStrings.PICKER_TITLE }, pollDeadlineMillis)
         } else null,
         recruit = if (category == BoardCategory.RECRUIT) {
@@ -290,6 +278,7 @@ fun PostWriteScreen(
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))
 
+            val hasAttach = photos.isNotEmpty() || docs.isNotEmpty() || links.isNotEmpty() || pollEnabled
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 // 제목
                 Box(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 14.dp)) {
@@ -310,22 +299,23 @@ fun PostWriteScreen(
                 }
                 // 본문
                 Box(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp)) {
-                    BasicTextField(body, { body = it }, textStyle = DamoimTheme.typography.body.copy(color = colors.textSecondary, fontSize = 15.sp, lineHeight = 25.sp), cursorBrush = SolidColor(colors.primary), modifier = Modifier.fillMaxWidth().height(if (attach == AttachMode.NONE && category != BoardCategory.RECRUIT) 180.dp else 90.dp), decorationBox = { inner -> if (body.isEmpty()) Text(DamoimStrings.WRITE_BODY_PLACEHOLDER, style = DamoimTheme.typography.body.copy(fontSize = 15.sp), color = colors.textDisabled); inner() })
+                    BasicTextField(body, { body = it }, textStyle = DamoimTheme.typography.body.copy(color = colors.textSecondary, fontSize = 15.sp, lineHeight = 25.sp), cursorBrush = SolidColor(colors.primary), modifier = Modifier.fillMaxWidth().height(if (!hasAttach && category != BoardCategory.RECRUIT) 180.dp else 90.dp), decorationBox = { inner -> if (body.isEmpty()) Text(DamoimStrings.WRITE_BODY_PLACEHOLDER, style = DamoimTheme.typography.body.copy(fontSize = 15.sp), color = colors.textDisabled); inner() })
                 }
-                // 첨부 영역
-                when (attach) {
-                    AttachMode.PHOTO -> PhotoAttach(
-                        photos = photos,
-                        onAdd = { photoPicker.launch() },
-                        onRemove = { photos.removeAt(it) },
-                    )
-                    AttachMode.DOC -> DocAttach(
-                        docs = docs,
-                        onAdd = { documentPicker.launch() },
-                        onRemove = { docs.removeAt(it) },
-                    )
-                    AttachMode.LINK -> LinkAttach(url = linkUrl, onUrlChange = { linkUrl = it }, onClear = { linkUrl = "" })
-                    AttachMode.POLL -> PollBuilder(
+                // 첨부 영역 — 여러 종류를 동시에 쌓아 보여준다(상호 배타 아님)
+                if (photos.isNotEmpty()) {
+                    PhotoAttach(photos = photos, onAdd = { photoPicker.launch() }, onRemove = { photos.removeAt(it) })
+                    Spacer(Modifier.height(12.dp))
+                }
+                if (docs.isNotEmpty()) {
+                    DocAttach(docs = docs, onAdd = { documentPicker.launch() }, onRemove = { docs.removeAt(it) })
+                    Spacer(Modifier.height(12.dp))
+                }
+                links.forEachIndexed { i, url ->
+                    LinkAttach(url = url, onUrlChange = { links[i] = it }, onClear = { links.removeAt(i) })
+                    Spacer(Modifier.height(12.dp))
+                }
+                if (pollEnabled) {
+                    PollBuilder(
                         options = pollOptions,
                         multi = pollMulti,
                         anon = pollAnon,
@@ -336,20 +326,20 @@ fun PostWriteScreen(
                         onMulti = { pollMulti = it },
                         onAnon = { pollAnon = it },
                         onPickDeadline = { sheet = WriteSheet.PollDeadline },
-                        onClose = { attach = AttachMode.NONE },
+                        onClose = { pollEnabled = false },
                     )
-                    AttachMode.NONE -> AddTile(count = 0, onClick = { sheet = WriteSheet.Attach })
                 }
+                if (!hasAttach) AddTile(count = 0, onClick = { sheet = WriteSheet.Attach })
                 Spacer(Modifier.height(20.dp))
             }
             // 하단 툴바 — 각 아이콘이 실제 피커/모드로 연결
             Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
             Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 ToolIcon({ CameraIcon(it, Modifier.size(22.dp)) }, active = false) { cameraLauncher.launch() }
-                ToolIcon({ ImageIcon(it, Modifier.size(22.dp)) }, active = attach == AttachMode.PHOTO) { photoPicker.launch() }
-                ToolIcon({ PaperclipIcon(it, Modifier.size(22.dp)) }, active = attach == AttachMode.DOC) { documentPicker.launch() }
-                ToolIcon({ LinkIcon(it, Modifier.size(22.dp)) }, active = attach == AttachMode.LINK) { attach = AttachMode.LINK }
-                ToolIcon({ ChartIcon(it, Modifier.size(22.dp)) }, active = attach == AttachMode.POLL) { attach = AttachMode.POLL }
+                ToolIcon({ ImageIcon(it, Modifier.size(22.dp)) }, active = photos.isNotEmpty()) { photoPicker.launch() }
+                ToolIcon({ PaperclipIcon(it, Modifier.size(22.dp)) }, active = docs.isNotEmpty()) { documentPicker.launch() }
+                ToolIcon({ LinkIcon(it, Modifier.size(22.dp)) }, active = links.isNotEmpty()) { links.add("") }
+                ToolIcon({ ChartIcon(it, Modifier.size(22.dp)) }, active = pollEnabled) { pollEnabled = true }
                 Spacer(Modifier.weight(1f))
                 Text(
                     DamoimStrings.WRITE_TEMP_SAVE,
@@ -375,8 +365,8 @@ fun PostWriteScreen(
                 onPhoto = { sheet = null; photoPicker.launch() },
                 onCamera = { sheet = null; cameraLauncher.launch() },
                 onDocument = { sheet = null; documentPicker.launch() },
-                onLink = { attach = AttachMode.LINK; sheet = null },
-                onPoll = { attach = AttachMode.POLL; sheet = null },
+                onLink = { links.add(""); sheet = null },
+                onPoll = { pollEnabled = true; sheet = null },
                 onDismiss = { sheet = null },
             )
             WriteSheet.PollDeadline -> DatePickerSheet(
