@@ -58,7 +58,9 @@ import com.preat.peekaboo.image.picker.toImageBitmap
  */
 @Composable
 fun ProfileSetupRoute(
-    viewModel: ProfileSetupViewModel = viewModel { ProfileSetupViewModel(AppGraph.updateProfileUseCase) },
+    viewModel: ProfileSetupViewModel = viewModel {
+        ProfileSetupViewModel(AppGraph.updateProfileUseCase, AppGraph.uploadProfileImageUseCase)
+    },
     onNavigateStart: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -69,7 +71,10 @@ fun ProfileSetupRoute(
         selectionMode = SelectionMode.Single,
         scope = scope,
         onResult = { byteArrays ->
-            byteArrays.firstOrNull()?.let { pickedPhoto = it.toImageBitmap() }
+            byteArrays.firstOrNull()?.let { bytes ->
+                pickedPhoto = bytes.toImageBitmap()      // 즉시 미리보기
+                viewModel.onPhotoPicked(bytes, null)     // 저장 시 S3 업로드용 바이트 보관
+            }
         },
     )
 

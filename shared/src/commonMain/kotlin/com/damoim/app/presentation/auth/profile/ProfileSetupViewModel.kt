@@ -4,7 +4,9 @@ import androidx.lifecycle.viewModelScope
 import com.damoim.app.core.mvi.BaseViewModel
 import com.damoim.app.core.mvi.UiSideEffect
 import com.damoim.app.core.mvi.UiState
+import com.damoim.app.core.result.DataResult
 import com.damoim.app.domain.usecase.UpdateProfileUseCase
+import com.damoim.app.domain.usecase.UploadProfileImageUseCase
 import kotlinx.coroutines.launch
 
 data class ProfileSetupUiState(
@@ -26,9 +28,20 @@ sealed interface ProfileSetupSideEffect : UiSideEffect {
  */
 class ProfileSetupViewModel(
     private val updateProfile: UpdateProfileUseCase,
+    private val uploadProfileImage: UploadProfileImageUseCase,
 ) : BaseViewModel<ProfileSetupUiState, ProfileSetupSideEffect>(ProfileSetupUiState()) {
 
     // 프리필 없음 — 이름은 항상 빈칸에서 시작해 사용자가 직접 입력한다.
+
+    // 선택한 프로필 사진 바이트(저장 시 업로드). null이면 사진 없음.
+    private var pickedBytes: ByteArray? = null
+    private var pickedContentType: String? = null
+
+    /** 프로필 사진 선택 — 바이트 보관(제출 시 S3 업로드). */
+    fun onPhotoPicked(bytes: ByteArray, contentType: String?) {
+        pickedBytes = bytes
+        pickedContentType = contentType
+    }
 
     fun onNicknameChange(value: String) {
         // 최대 글자수를 넘겨 입력되지 않도록 캡 (카운터 n/10과 일치)
@@ -56,7 +69,19 @@ class ProfileSetupViewModel(
         if (!currentState.canSubmit) return
         setState { copy(isSaving = true, errorMessage = null) }
         viewModelScope.launch {
-            val result = updateProfile(currentState.nickname, formattedContact())
+            // 사진을 골랐으면 먼저 S3 업로드 → key. 실패 시 저장 중단.
+            var imageKey: String? = null
+            val bytes = pickedBytes
+            if (bytes != null) {
+                when (val up = uploadProfileImage(bytes, pickedContentType)) {
+                    is DataResult.Success -> imageKey = up.data
+                    is DataResult.Failure -> {
+                        setState { copy(isSaving = false, errorMessage = up.error.message) }
+                        return@launch
+                    }
+                }
+            }
+            val result = updateProfile(currentState.nickname, formattedContact(), null, imageKey)
             handleResult(
                 result = result,
                 onSuccess = {
