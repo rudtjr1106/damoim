@@ -46,11 +46,12 @@ expect fun rememberShareText(): (String) -> Unit
 enum class BillingResult { SUCCESS, FAILURE, CANCELLED }
 
 /**
- * 구독 인앱 결제 런처. 반환 람다를 호출하면(가격 라벨 전달) 네이티브 인앱 결제 UI가 뜨고
- * 결과를 [onResult]로 돌려준다. 데모는 모의 결제(성공/실패/취소 선택), 배포 시 Play Billing/StoreKit으로 교체.
+ * 구독 인앱 결제 런처. 반환 람다를 호출하면([productId]로 스토어 상품 지정) 네이티브 결제가 시작되고
+ * 결과를 [onResult]로 돌려준다. iOS=StoreKit(SKPaymentQueue), Android=Play Billing(현재 모의).
+ * [priceLabel]은 표시용(스토어가 실제 가격을 보여주므로 iOS에선 미사용).
  */
 @Composable
-expect fun rememberSubscriptionBilling(): (priceLabel: String, onResult: (BillingResult) -> Unit) -> Unit
+expect fun rememberSubscriptionBilling(): (productId: String, priceLabel: String, onResult: (BillingResult) -> Unit) -> Unit
 
 /** 이메일 작성기 열기(수신자·제목·본문). Android=ACTION_SENDTO(mailto), iOS=mailto URL. */
 @Composable

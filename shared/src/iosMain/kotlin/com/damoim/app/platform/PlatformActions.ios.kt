@@ -7,11 +7,22 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
 import platform.Foundation.NSData
+import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSFileSize
 import platform.Foundation.NSNumber
 import platform.Foundation.NSURL
 import platform.Foundation.dataWithContentsOfURL
+import platform.StoreKit.SKPayment
+import platform.StoreKit.SKPaymentQueue
+import platform.StoreKit.SKPaymentTransaction
+import platform.StoreKit.SKPaymentTransactionObserverProtocol
+import platform.StoreKit.SKPaymentTransactionState
+import platform.StoreKit.SKProduct
+import platform.StoreKit.SKProductsRequest
+import platform.StoreKit.SKProductsRequestDelegateProtocol
+import platform.StoreKit.SKProductsResponse
+import platform.StoreKit.SKRequest
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 import platform.UIKit.UIDocumentPickerDelegateProtocol
@@ -154,10 +165,80 @@ actual fun rememberShareText(): (String) -> Unit = remember {
     }
 }
 
+/**
+ * StoreKit 1(SKPaymentQueue) 기반 인앱 구독 결제. 앱 전역 단일 트랜잭션 옵저버로 결제 상태를 관찰한다.
+ * (StoreKit 2는 Swift async/await 전용이라 Kotlin/Native에서 호출 불가 → StoreKit 1 사용.)
+ *
+ * ⚠️ 실동작 요건: ①App Store Connect에 [productId]로 자동갱신 구독 상품 등록 ②샌드박스 테스터로 실기기 검증
+ * ③보안상 결제 영수증을 서버가 App Store로 재검증(현재 서버 subscribe는 tier만 신뢰 — 하드닝 2차).
+ */
+private object StoreKitBilling : NSObject(), SKPaymentTransactionObserverProtocol, SKProductsRequestDelegateProtocol {
+    private const val ERROR_PAYMENT_CANCELLED = 2L  // SKErrorPaymentCancelled
+
+    private var callback: ((BillingResult) -> Unit)? = null
+    private var productsRequest: SKProductsRequest? = null
+    private var observerAdded = false
+
+    fun purchase(productId: String, onResult: (BillingResult) -> Unit) {
+        if (!SKPaymentQueue.canMakePayments()) { onResult(BillingResult.FAILURE); return }
+        if (callback != null) { onResult(BillingResult.FAILURE); return }  // 이미 진행 중
+        callback = onResult
+        if (!observerAdded) {
+            SKPaymentQueue.defaultQueue().addTransactionObserver(this)
+            observerAdded = true
+        }
+        // 1) 상품 조회 → didReceiveResponse에서 결제 시작
+        val request = SKProductsRequest(productIdentifiers = setOf(productId))
+        request.delegate = this
+        productsRequest = request
+        request.start()
+    }
+
+    // SKProductsRequestDelegate — 상품 조회 응답
+    override fun productsRequest(request: SKProductsRequest, didReceiveResponse: SKProductsResponse) {
+        productsRequest = null
+        val product = didReceiveResponse.products.firstOrNull() as? SKProduct
+        if (product == null) { finish(BillingResult.FAILURE); return }  // 미등록 상품
+        // 2) 결제 큐에 추가 → 이후 paymentQueue:updatedTransactions:로 상태 통보
+        SKPaymentQueue.defaultQueue().addPayment(SKPayment.paymentWithProduct(product))
+    }
+
+    // SKRequestDelegate — 상품 조회 실패
+    override fun request(request: SKRequest, didFailWithError: NSError) {
+        productsRequest = null
+        finish(BillingResult.FAILURE)
+    }
+
+    // SKPaymentTransactionObserver — 결제 상태 변화
+    override fun paymentQueue(queue: SKPaymentQueue, updatedTransactions: List<*>) {
+        updatedTransactions.forEach { any ->
+            val tx = any as? SKPaymentTransaction ?: return@forEach
+            when (tx.transactionState) {
+                SKPaymentTransactionState.SKPaymentTransactionStatePurchased,
+                SKPaymentTransactionState.SKPaymentTransactionStateRestored -> {
+                    queue.finishTransaction(tx)  // ⚠️ 서버 영수증 검증 후 finish가 이상적(현재 즉시)
+                    finish(BillingResult.SUCCESS)
+                }
+                SKPaymentTransactionState.SKPaymentTransactionStateFailed -> {
+                    val cancelled = tx.error?.code == ERROR_PAYMENT_CANCELLED
+                    queue.finishTransaction(tx)
+                    finish(if (cancelled) BillingResult.CANCELLED else BillingResult.FAILURE)
+                }
+                else -> Unit  // Purchasing/Deferred — 진행 중, 대기
+            }
+        }
+    }
+
+    private fun finish(result: BillingResult) {
+        val cb = callback
+        callback = null
+        cb?.invoke(result)
+    }
+}
+
 @Composable
-actual fun rememberSubscriptionBilling(): (String, (BillingResult) -> Unit) -> Unit = remember {
-    // iOS StoreKit 연동은 추후 — 데모는 성공 처리
-    { _, onResult -> onResult(BillingResult.SUCCESS) }
+actual fun rememberSubscriptionBilling(): (String, String, (BillingResult) -> Unit) -> Unit = remember {
+    { productId, _, onResult -> StoreKitBilling.purchase(productId, onResult) }
 }
 
 @Composable

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.domain.model.BillingProducts
 import com.damoim.app.domain.model.PlanTier
 import com.damoim.app.domain.model.SubscriptionPlan
 import com.damoim.app.platform.BillingResult
@@ -52,7 +53,7 @@ fun PlanRoute(
         state = state,
         onBack = onBack,
         onStart = { plan ->
-            billing("${plan.priceLabel} / 월") { result ->
+            billing(BillingProducts.forTier(plan.tier), "${plan.priceLabel} / 월") { result ->
                 when (result) {
                     BillingResult.SUCCESS -> { viewModel.subscribe(plan.tier); onPaySuccess() }
                     BillingResult.FAILURE -> onPayFail()

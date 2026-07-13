@@ -96,14 +96,14 @@ private fun formatSize(bytes: Long): String = when {
 }
 
 @Composable
-actual fun rememberSubscriptionBilling(): (String, (BillingResult) -> Unit) -> Unit {
+actual fun rememberSubscriptionBilling(): (String, String, (BillingResult) -> Unit) -> Unit {
     val context = LocalContext.current
     return remember(context) {
-        { priceLabel: String, onResult: (BillingResult) -> Unit ->
-            // 실제 배포 시 Google Play BillingClient.launchBillingFlow로 교체. 데모는 모의 결제 다이얼로그.
+        { productId: String, priceLabel: String, onResult: (BillingResult) -> Unit ->
+            // 실제 배포 시 Google Play BillingClient.launchBillingFlow(productId)로 교체. 데모는 모의 다이얼로그.
             android.app.AlertDialog.Builder(context)
                 .setTitle("인앱 결제 (모의)")
-                .setMessage("다모임 프리미엄 구독\n$priceLabel\n\n실제 결제는 스토어 등록 후 연동됩니다.")
+                .setMessage("다모임 프리미엄 구독\n$priceLabel\n상품: $productId\n\n실제 결제는 Play Console 등록 후 연동됩니다.")
                 .setPositiveButton("결제 성공") { _, _ -> onResult(BillingResult.SUCCESS) }
                 .setNeutralButton("결제 실패") { _, _ -> onResult(BillingResult.FAILURE) }
                 .setNegativeButton("취소") { _, _ -> onResult(BillingResult.CANCELLED) }
