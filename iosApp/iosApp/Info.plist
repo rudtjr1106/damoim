@@ -4,5 +4,7 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>게시글에 사진을 촬영해 첨부하거나 프로필 사진을 찍기 위해 카메라를 사용합니다.</string>
 </dict>
 </plist>
