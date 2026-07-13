@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,9 +65,9 @@ fun JoinManageScreen(
     onSelectTab: (JoinManageTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
-    Column(Modifier.fillMaxSize().background(colors.surfaceInput).safeDrawingPadding()) {
-        // 헤더 + 탭 (흰 배경)
-        Column(Modifier.fillMaxWidth().background(colors.surface)) {
+    Column(Modifier.fillMaxSize().background(colors.surfaceInput)) {
+        // 헤더 + 탭 (흰 배경) — 흰 헤더가 상태바 뒤까지 채우고 인셋은 안쪽에서 처리(상태바 색 일치)
+        Column(Modifier.fillMaxWidth().background(colors.surface).windowInsetsPadding(WindowInsets.statusBars)) {
             TitleTopBar(DamoimStrings.JOINMANAGE_TITLE, onBack)
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
@@ -77,7 +80,7 @@ fun JoinManageScreen(
         }
 
         Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             when (state.tab) {
