@@ -40,6 +40,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -77,8 +79,15 @@ fun DamoimBottomSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = DamoimTheme.colors
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    // 시트가 뜨면 입력 포커스를 해제해 소프트 키보드를 내린다(입력 중 시트/다이얼로그 진입 시 키보드 잔류 방지).
+    LaunchedEffect(Unit) {
+        focusManager.clearFocus(force = true)
+        keyboard?.hide()
+        visible = true
+    }
     Box(modifier.fillMaxSize()) {
         AnimatedVisibility(visible, enter = fadeIn(tween(180)), exit = fadeOut(tween(150))) {
             Box(Modifier.fillMaxSize().background(colors.scrim).noRippleClick(onDismiss))
@@ -111,8 +120,15 @@ fun DamoimDialog(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = DamoimTheme.colors
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    // 다이얼로그가 뜨면 입력 포커스를 해제해 소프트 키보드를 내린다.
+    LaunchedEffect(Unit) {
+        focusManager.clearFocus(force = true)
+        keyboard?.hide()
+        visible = true
+    }
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AnimatedVisibility(visible, enter = fadeIn(tween(180)), exit = fadeOut(tween(150))) {
             Box(Modifier.fillMaxSize().background(colors.scrim).noRippleClick(onDismiss))
