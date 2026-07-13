@@ -78,20 +78,32 @@ class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
             .also { RemoteBus.invalidate(DataTopic.BOARD) }
     }
 
-    /** draft의 이미지/문서를 presigned PUT으로 S3에 올리고 AttachmentInputDto(storageKey) 목록을 만든다. 실패 시 null. */
+    /**
+     * draft의 이미지/문서 첨부를 AttachmentInputDto(storageKey) 목록으로. 새로 고른 것(bytes)은 presigned PUT으로
+     * S3 업로드, 기존 것(storageKey만, 수정 프리필)은 그대로 재참조. 업로드 실패 시 null.
+     */
     private suspend fun uploadMedia(draft: PostDraft): List<AttachmentInputDto>? {
         val out = mutableListOf<AttachmentInputDto>()
         draft.images.forEachIndexed { i, img ->
-            val bytes = img.bytes ?: return@forEachIndexed // 기존 이미지(수정 프리필)는 재업로드 안 함
-            val key = uploadOne("image_$i", img.contentType, bytes, AttachmentTypes.IMAGE) ?: return null
+            val bytes = img.bytes
+            val key = when {
+                bytes != null -> uploadOne("image_$i", img.contentType, bytes, AttachmentTypes.IMAGE) ?: return null
+                img.storageKey != null -> img.storageKey    // 기존 이미지 재참조(재업로드 안 함)
+                else -> return@forEachIndexed
+            }
             out += AttachmentInputDto(type = AttachmentTypes.IMAGE, storageKey = key)
         }
         draft.docs.forEach { doc ->
-            val bytes = doc.bytes ?: return@forEach
-            val key = uploadOne(doc.name, doc.contentType, bytes, AttachmentTypes.FILE_DOC) ?: return null
+            val bytes = doc.bytes
+            val key = when {
+                bytes != null -> uploadOne(doc.name, doc.contentType, bytes, AttachmentTypes.FILE_DOC) ?: return null
+                doc.storageKey != null -> doc.storageKey
+                else -> return@forEach
+            }
+            val size = bytes?.size?.toLong() ?: parseSizeToBytes(doc.sizeLabel)  // 서버가 S3 실크기로 교정
             out += AttachmentInputDto(
                 type = AttachmentTypes.FILE_DOC, storageKey = key,
-                fileName = doc.name, fileSizeBytes = bytes.size.toLong(),
+                fileName = doc.name, fileSizeBytes = size,
             )
         }
         return out
@@ -106,9 +118,13 @@ class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
         return if (RawHttp.put(presign.uploadUrl, bytes, contentType)) presign.storageKey else null
     }
 
-    override suspend fun updatePost(postId: Long, draft: PostDraft): DataResult<Unit> =
-        api.patchUnit(ApiRoutes.Board.post(postId), draft.toUpdateRequest())
+    override suspend fun updatePost(postId: Long, draft: PostDraft): DataResult<Unit> {
+        // 첨부 전체 집합을 만들어(기존=재참조, 새 것=업로드) 서버가 교체하게 한다.
+        val attachments = uploadMedia(draft)
+            ?: return DataResult.Failure(DataError(ErrorCodes.UPLOAD_FAILED, "첨부 업로드에 실패했어요"))
+        return api.patchUnit(ApiRoutes.Board.post(postId), draft.toUpdateRequest(attachments))
             .also { RemoteBus.invalidate(DataTopic.BOARD) }
+    }
 
     override suspend fun deletePost(postId: Long): DataResult<Unit> =
         api.deleteUnit(ApiRoutes.Board.post(postId)).also { RemoteBus.invalidate(DataTopic.BOARD) }

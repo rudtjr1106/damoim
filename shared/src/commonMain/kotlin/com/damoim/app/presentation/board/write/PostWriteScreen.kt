@@ -158,13 +158,14 @@ fun PostWriteScreen(
     // 수정 모드는 기존 이미지(url)를 프리필. 임시저장은 미디어를 보존하지 않아 여기선 비어 있음.
     val photos = remember(prefill, prefillDraft) {
         mutableStateListOf<DraftImage>().apply {
-            prefill?.attachments?.filterIsInstance<PostAttachment.Image>()?.forEach { add(DraftImage(url = it.url)) }
+            prefill?.attachments?.filterIsInstance<PostAttachment.Image>()
+                ?.forEach { add(DraftImage(url = it.url, storageKey = it.storageKey)) }
         }
     }
     val docs = remember(prefill, prefillDraft) {
         mutableStateListOf<DraftDocFile>().apply {
             prefill?.attachments?.filterIsInstance<PostAttachment.FileDoc>()
-                ?.forEach { add(DraftDocFile(name = it.name, sizeLabel = it.size, url = it.url)) }
+                ?.forEach { add(DraftDocFile(name = it.name, sizeLabel = it.size, url = it.url, storageKey = it.storageKey)) }
         }
     }
     var linkUrl by remember(prefill, prefillDraft) {

@@ -38,10 +38,10 @@ data class BoardPost(
 
 /** 게시글 첨부. 이미지/파일/링크(og 미리보기) 3종. */
 sealed interface PostAttachment {
-    /** 사진. [url]=서버 presigned view URL(원격), [localKey]=업로드 전 로컬 미리보기(ImageStore 키). */
-    data class Image(val url: String? = null, val localKey: String? = null) : PostAttachment
-    /** 문서 파일. 예: "OT_일정표.pdf" · "1.2MB". [url]=서버 다운로드 URL. */
-    data class FileDoc(val name: String, val size: String, val url: String? = null) : PostAttachment
+    /** 사진. [url]=presigned view URL, [storageKey]=수정 시 재참조용 S3 키, [localKey]=업로드 전 로컬 미리보기. */
+    data class Image(val url: String? = null, val storageKey: String? = null, val localKey: String? = null) : PostAttachment
+    /** 문서 파일. [url]=다운로드 URL, [storageKey]=수정 시 재참조용 S3 키. */
+    data class FileDoc(val name: String, val size: String, val url: String? = null, val storageKey: String? = null) : PostAttachment
     /** 링크 미리보기(og). [url]=전체 URL(클릭 시 웹 이동), title/domain은 표시용. */
     data class Link(val title: String, val domain: String, val url: String = "") : PostAttachment
 }
@@ -132,6 +132,7 @@ data class DraftImage(
     val bytes: ByteArray? = null,
     val contentType: String? = null,
     val url: String? = null,
+    val storageKey: String? = null,   // 기존(이미 업로드된) 이미지 — 수정 시 재참조
     val localKey: String? = null,
 )
 
@@ -142,6 +143,7 @@ data class DraftDocFile(
     val bytes: ByteArray? = null,
     val contentType: String? = null,
     val url: String? = null,
+    val storageKey: String? = null,   // 기존(이미 업로드된) 문서 — 수정 시 재참조
 )
 
 /** 작성 중 링크 첨부. [url]=전체 URL(웹 이동), title/domain은 표시용. */

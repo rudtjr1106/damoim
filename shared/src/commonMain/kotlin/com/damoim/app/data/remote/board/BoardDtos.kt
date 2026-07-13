@@ -82,6 +82,7 @@ data class UpdatePostRequestDto(
     val category: String,
     val title: String,
     val content: String,
+    val attachments: List<AttachmentInputDto> = emptyList(),
 )
 
 @Serializable
@@ -133,6 +134,7 @@ data class AttachmentResponseDto(
     val linkTitle: String? = null,
     val linkDomain: String? = null,
     val linkUrl: String? = null,
+    val storageKey: String? = null,   // IMAGE/FILE_DOC — 수정 시 기존 첨부 재참조용
 )
 
 @Serializable
@@ -291,8 +293,8 @@ internal fun List<PostSummaryResponseDto>.toDomainList(): List<BoardPost> =
     mapIndexed { index, dto -> dto.toDomain(orderKey = (size - index).toLong()) }
 
 internal fun AttachmentResponseDto.toDomain(): PostAttachment = when (type) {
-    AttachmentTypes.IMAGE -> PostAttachment.Image(url = imageUrl)
-    AttachmentTypes.FILE_DOC -> PostAttachment.FileDoc(name = fileName ?: "", size = fileSize ?: "", url = fileUrl)
+    AttachmentTypes.IMAGE -> PostAttachment.Image(url = imageUrl, storageKey = storageKey)
+    AttachmentTypes.FILE_DOC -> PostAttachment.FileDoc(name = fileName ?: "", size = fileSize ?: "", url = fileUrl, storageKey = storageKey)
     else -> PostAttachment.Link(title = linkTitle ?: "", domain = linkDomain ?: "", url = linkUrl ?: "")
 }
 
@@ -420,8 +422,17 @@ internal fun PostDraft.toCreateRequest(attachments: List<AttachmentInputDto>): C
         recruit = recruitInput(),
     )
 
-internal fun PostDraft.toUpdateRequest(): UpdatePostRequestDto =
-    UpdatePostRequestDto(category = category.name, title = title, content = content)
+/**
+ * PostDraft → 수정 요청. 첨부는 [attachments](기존은 storageKey 재참조, 새 것만 실업로드 키) + 링크로
+ * 전체 집합을 보내 서버가 교체한다.
+ */
+internal fun PostDraft.toUpdateRequest(attachments: List<AttachmentInputDto>): UpdatePostRequestDto =
+    UpdatePostRequestDto(
+        category = category.name,
+        title = title,
+        content = content,
+        attachments = attachments + listOfNotNull(link?.toInput()),
+    )
 
 /** 임시저장 — 미디어(바이트)는 서버에 올리지 않고 링크/투표/모집만 저장. */
 internal fun PostDraft.toDraftRequest(): DraftRequestDto = DraftRequestDto(
