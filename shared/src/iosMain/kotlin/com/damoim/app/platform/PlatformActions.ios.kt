@@ -2,13 +2,20 @@ package com.damoim.app.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.damoim.app.domain.model.ResourceDraft
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
 import platform.Foundation.NSData
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileSize
+import platform.Foundation.NSNumber
 import platform.Foundation.NSURL
+import platform.Foundation.dataWithContentsOfURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
+import platform.UIKit.UIDocumentPickerDelegateProtocol
+import platform.UIKit.UIDocumentPickerViewController
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
 import platform.UIKit.UIImagePickerController
@@ -16,6 +23,10 @@ import platform.UIKit.UIImagePickerControllerDelegateProtocol
 import platform.UIKit.UIImagePickerControllerOriginalImage
 import platform.UIKit.UIImagePickerControllerSourceType
 import platform.UIKit.UINavigationControllerDelegateProtocol
+import platform.UniformTypeIdentifiers.UTType
+import platform.UniformTypeIdentifiers.UTTypeData
+import platform.UniformTypeIdentifiers.UTTypePDF
+import platform.UniformTypeIdentifiers.UTTypePlainText
 import platform.darwin.NSObject
 import platform.posix.memcpy
 
@@ -77,14 +88,61 @@ actual fun rememberCameraLauncher(onResult: (ByteArray?) -> Unit): CameraLaunche
     }
 }
 
+/**
+ * UIDocumentPickerViewController 델리게이트. asCopy로 앱 tmp에 복사된 파일을 읽어 바이트로 반환한다.
+ * (asCopy=true라 보안 스코프 접근 없이 바로 읽힘.) 상한 초과·읽기 실패는 null(호출부가 취소처럼 처리).
+ */
+private class DocPickerDelegate(
+    private val onResult: (PickedDocument?) -> Unit,
+) : NSObject(), UIDocumentPickerDelegateProtocol {
+    override fun documentPicker(controller: UIDocumentPickerViewController, didPickDocumentsAtURLs: List<*>) {
+        val url = didPickDocumentsAtURLs.firstOrNull() as? NSURL
+        onResult(url?.let { readPickedDocument(it) })
+    }
+
+    override fun documentPickerWasCancelled(controller: UIDocumentPickerViewController) {
+        onResult(null)
+    }
+}
+
+/** 선택 파일 → PickedDocument. 전체 로드 전 파일 크기를 선확인(OOM 방지), 상한(25MB) 초과·실패면 null. */
+@OptIn(ExperimentalForeignApi::class)
+private fun readPickedDocument(url: NSURL): PickedDocument? {
+    val path = url.path ?: return null
+    val size = (NSFileManager.defaultManager.attributesOfItemAtPath(path, null)?.get(NSFileSize) as? NSNumber)
+        ?.longLongValue ?: -1L
+    if (size < 0 || size > ResourceDraft.MAX_UPLOAD_BYTES) return null
+    val data = NSData.dataWithContentsOfURL(url) ?: return null
+    if (data.length.toLong() > ResourceDraft.MAX_UPLOAD_BYTES) return null
+    val name = url.lastPathComponent ?: "문서"
+    return PickedDocument(name = name, sizeLabel = formatFileSize(size), bytes = data.toByteArray(), contentType = null)
+}
+
+private fun formatFileSize(bytes: Long): String = when {
+    bytes >= 1_048_576 -> { val mb = bytes * 10 / 1_048_576; "${mb / 10}.${mb % 10}MB" }
+    bytes >= 1024 -> "${bytes / 1024}KB"
+    bytes > 0 -> "${bytes}B"
+    else -> ""
+}
+
 @Composable
-actual fun rememberDocumentPickerLauncher(onResult: (PickedDocument?) -> Unit): DocumentPickerLauncher =
-    remember {
-        object : DocumentPickerLauncher {
-            // iOS 문서 피커(UIDocumentPickerViewController) 연동은 추후
-            override fun launch() = onResult(null)
+actual fun rememberDocumentPickerLauncher(onResult: (PickedDocument?) -> Unit): DocumentPickerLauncher = remember {
+    object : DocumentPickerLauncher {
+        // 콜백까지 델리게이트를 살려두는 강한 참조.
+        private var delegate: DocPickerDelegate? = null
+
+        override fun launch() {
+            val root = UIApplication.sharedApplication.keyWindow?.rootViewController
+            if (root == null) { onResult(null); return }
+            val d = DocPickerDelegate(onResult)
+            delegate = d
+            val types: List<UTType> = listOf(UTTypePDF, UTTypePlainText, UTTypeData)
+            val picker = UIDocumentPickerViewController(forOpeningContentTypes = types, asCopy = true)
+            picker.delegate = d
+            root.presentViewController(picker, animated = true, completion = null)
         }
     }
+}
 
 @Composable
 actual fun rememberShareText(): (String) -> Unit = remember {
