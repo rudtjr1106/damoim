@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 data class ProfileEditUiState(
     val name: String = "",
     val contact: String = "",
-    val email: String = "",
     val bio: String = "",          // 한 줄 소개 — 현재는 표시용(AuthUser 스키마 미확장, 서버 도입 시 저장)
     val profileImageUrl: String? = null, // 현재 저장된 프로필 사진(없으면 이니셜 아바타)
     val isSaving: Boolean = false,
@@ -50,7 +49,6 @@ class ProfileEditViewModel(
                         copy(
                             name = user.nickname,
                             contact = user.contact ?: "",
-                            email = user.email ?: "",
                             profileImageUrl = user.profileImageUrl,
                         )
                     }

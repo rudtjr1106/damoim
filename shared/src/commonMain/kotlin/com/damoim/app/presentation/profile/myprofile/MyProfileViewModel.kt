@@ -20,7 +20,6 @@ import kotlinx.coroutines.launch
 data class MyProfileUiState(
     val name: String = "",
     val initials: String = "",
-    val email: String = "",
     val cohortShort: String = "",
     val cohortLabel: String = "",
     val role: MemberRole = MemberRole.MEMBER,
@@ -55,7 +54,6 @@ class MyProfileViewModel(
                 MyProfileUiState(
                     name = me?.name ?: ctx.name,
                     initials = me?.initials ?: "",
-                    email = me?.email ?: "",
                     cohortShort = cohort?.short ?: "",
                     cohortLabel = cohort?.label ?: "",
                     role = me?.role ?: MemberRole.MEMBER,

@@ -487,7 +487,6 @@ object DamoimStrings {
 
     // 20 내 프로필
     const val MY_PROFILE_TITLE = "내 프로필"
-    const val PROFILE_INFO_EMAIL = "이메일"
     const val PROFILE_INFO_COHORT = "내 기수"
     const val PROFILE_INFO_LINKED = "연동 계정"
     const val PROFILE_LINKED_KAKAO = "카카오"
@@ -506,7 +505,6 @@ object DamoimStrings {
     // 45 프로필 수정
     const val PROFILE_EDIT_TITLE = "프로필 수정"
     const val PROFILE_EDIT_SAVE = "저장"
-    const val PROFILE_EMAIL_LOCKED = "카카오 계정 이메일은 변경할 수 없어요"
     const val PROFILE_CONTACT_HELPER = "동아리장과 운영진에게만 공개돼요"
     const val PROFILE_BIO_LABEL = "한 줄 소개"
     const val PROFILE_BIO_PLACEHOLDER = "나를 소개하는 한 마디"

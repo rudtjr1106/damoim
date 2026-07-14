@@ -45,7 +45,6 @@ import com.damoim.app.domain.usecase.UpdateProfileUseCase
 import com.damoim.app.presentation.board.InitialAvatar
 import com.damoim.app.presentation.component.CameraIcon
 import com.damoim.app.presentation.component.DamoimTextField
-import com.damoim.app.presentation.component.KakaoBubbleIcon
 import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.PhoneNumberVisualTransformation
 import com.damoim.app.presentation.component.noRippleClick
@@ -95,7 +94,7 @@ fun ProfileEditRoute(
 
 @Composable
 fun ProfileEditScreen(
-    state: ProfileEditUiState = ProfileEditUiState("이서연", "01012345678", "seoyeon@kakao.com"),
+    state: ProfileEditUiState = ProfileEditUiState("이서연", "01012345678"),
     pickedPhoto: ImageBitmap? = null,
     onCancel: () -> Unit = {},
     onNameChange: (String) -> Unit = {},
@@ -153,18 +152,6 @@ fun ProfileEditScreen(
             // 한 줄 소개
             Field(DamoimStrings.PROFILE_BIO_LABEL) {
                 DamoimTextField(state.bio, onBioChange, placeholder = DamoimStrings.PROFILE_BIO_PLACEHOLDER, cornerRadius = 14.dp)
-            }
-            // 이메일 — 카카오 연동값(수정 불가) + 칩
-            Field(DamoimStrings.PROFILE_INFO_EMAIL, helper = DamoimStrings.PROFILE_EMAIL_LOCKED) {
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.surfaceInput).padding(horizontal = 16.dp, vertical = 15.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(state.email, style = DamoimTheme.typography.body, color = colors.textMuted, modifier = Modifier.weight(1f))
-                    Box(Modifier.size(20.dp).clip(RoundedCornerShape(6.dp)).background(colors.kakao), contentAlignment = Alignment.Center) {
-                        KakaoBubbleIcon(colors.onKakao, Modifier.size(12.dp))
-                    }
-                }
             }
         }
     }

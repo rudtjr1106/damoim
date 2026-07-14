@@ -108,7 +108,7 @@ fun MyProfileRoute(
 
 @Composable
 fun MyProfileScreen(
-    state: MyProfileUiState = MyProfileUiState("이서연", "서연", "seoyeon@kakao.com", "24기", "2024학년 1기 (24기)", MemberRole.MEMBER, "2024.09.15", "코딩하는 사람들"),
+    state: MyProfileUiState = MyProfileUiState("이서연", "서연", "24기", "2024학년 1기 (24기)", MemberRole.MEMBER, "2024.09.15", "코딩하는 사람들"),
     onBack: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onSwitchClub: (Long) -> Unit = {},
@@ -191,7 +191,6 @@ private fun Hero(state: MyProfileUiState, onEdit: () -> Unit) {
 private fun InfoCard(state: MyProfileUiState) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(18.dp)).clip(RoundedCornerShape(18.dp)).background(colors.surface).padding(horizontal = 18.dp, vertical = 6.dp)) {
-        InfoRow(DamoimStrings.PROFILE_INFO_EMAIL, state.email)
         InfoRow(DamoimStrings.PROFILE_INFO_COHORT, state.cohortLabel, valueColor = colors.primaryDark)
         InfoRow(DamoimStrings.MEMBER_INFO_JOINED, state.joinedLabel)
         LinkedRow()

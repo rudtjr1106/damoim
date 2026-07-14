@@ -268,7 +268,6 @@ internal fun MemberResponseDto.toDomain(): Member = Member(
     cohortId = cohortId,
     role = memberRole(role),
     status = memberStatus(status),
-    email = email,
     joinedLabel = joinedLabel,
     isMe = isMe,
 )

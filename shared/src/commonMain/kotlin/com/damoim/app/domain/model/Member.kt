@@ -15,7 +15,6 @@ data class Member(
     val cohortId: Long,                // Cohort.id — 항상 해석 가능한 FK
     val role: MemberRole,
     val status: MemberStatus = MemberStatus.ACTIVE,
-    val email: String = "",
     val joinedLabel: String = "",      // "2024.09.15" (사전 계산 문자열)
     val isMe: Boolean = false,
 )

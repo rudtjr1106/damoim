@@ -174,8 +174,8 @@ private fun MemberEmpty(onShareCode: () -> Unit) {
 }
 
 internal fun previewMembers(): List<Member> = listOf(
-    Member(501, "이서연", "서연", 24, MemberRole.MEMBER, email = "seoyeon@kakao.com", joinedLabel = "2024.09.15", isMe = true),
-    Member(502, "김민준", "민준", 23, MemberRole.LEADER, email = "minjun@kakao.com"),
+    Member(501, "이서연", "서연", 24, MemberRole.MEMBER, joinedLabel = "2024.09.15", isMe = true),
+    Member(502, "김민준", "민준", 23, MemberRole.LEADER),
     Member(503, "최유진", "유진", 23, MemberRole.STAFF),
     Member(504, "박준혁", "준혁", 25, MemberRole.MEMBER, com.damoim.app.domain.model.MemberStatus.DORMANT),
     Member(505, "정하늘", "하늘", 25, MemberRole.MEMBER),

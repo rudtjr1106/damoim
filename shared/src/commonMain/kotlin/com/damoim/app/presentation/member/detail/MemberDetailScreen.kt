@@ -155,8 +155,6 @@ private fun ProfileBlock(detail: MemberDetail) {
                 Text(m.name, style = DamoimTheme.typography.titleLarge, color = colors.textPrimary)
                 if (m.role == MemberRole.LEADER) CrownIcon(colors.primary, Modifier.size(16.dp))
             }
-            Spacer(Modifier.height(4.dp))
-            Text(m.email, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Normal), color = colors.textMuted)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             DetailBadge(detail.cohortLabel.substringAfterLast('(').removeSuffix(")").ifBlank { detail.cohortLabel }, emphasized = true)
@@ -205,7 +203,7 @@ private fun ActionRow(icon: @Composable () -> Unit, title: String, trailing: Str
 }
 
 internal fun previewDetail() = MemberDetail(
-    member = com.damoim.app.domain.model.Member(501, "이서연", "서연", 24, MemberRole.MEMBER, email = "seoyeon@kakao.com", joinedLabel = "2024.09.15"),
+    member = com.damoim.app.domain.model.Member(501, "이서연", "서연", 24, MemberRole.MEMBER, joinedLabel = "2024.09.15"),
     cohortLabel = "2024학년 1기 (24기)", postCount = 14, eventCount = 8, lastActiveLabel = "1시간 전",
 )
 
