@@ -55,7 +55,6 @@ import com.damoim.app.presentation.component.DamoimDialog
 import com.damoim.app.presentation.component.DialogButton
 import com.damoim.app.presentation.component.DownloadIcon
 import com.damoim.app.presentation.component.EditIcon
-import com.damoim.app.presentation.component.LinkIcon
 import com.damoim.app.presentation.component.MegaphoneIcon
 import com.damoim.app.presentation.component.ReplyIcon
 import com.damoim.app.presentation.component.ShareIcon
@@ -67,7 +66,7 @@ import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 import kotlinx.coroutines.launch
 
-// ── 54 게시글 ⋯ 메뉴 (내 글: 수정/공유/링크/고정/삭제 · 남의 글: 공유/링크/신고) ──
+// ── 54 게시글 ⋯ 메뉴 (내 글: 수정/공유/고정/삭제 · 남의 글: 공유/신고) ──
 @Composable
 internal fun PostMenuSheet(
     post: BoardPost?,
@@ -76,7 +75,6 @@ internal fun PostMenuSheet(
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onShare: () -> Unit,
-    onCopyLink: () -> Unit,
     onPin: () -> Unit,
     onDelete: () -> Unit,
     onReport: () -> Unit,
@@ -93,7 +91,6 @@ internal fun PostMenuSheet(
             Column {
                 if (isMyPost) SheetActionRow(DamoimStrings.MENU_EDIT, onEdit, icon = { EditIcon(colors.textSecondary) })
                 SheetActionRow(DamoimStrings.MENU_SHARE, onShare, icon = { ShareIcon(colors.textSecondary) })
-                SheetActionRow(DamoimStrings.MENU_COPY_LINK, onCopyLink, icon = { LinkIcon(colors.textSecondary, Modifier.size(19.dp)) }, showDivider = isMyPost || isLeader || !isMyPost)
                 if (isLeader) {
                     SheetActionRow(DamoimStrings.MENU_PIN, onPin, icon = { MegaphoneIcon(colors.textSecondary, Modifier.size(19.dp)) }, trailing = {
                         Text(DamoimStrings.ADMIN_BADGE, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold), color = colors.textDisabled, modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(colors.surfaceVariant).padding(horizontal = 8.dp, vertical = 4.dp))

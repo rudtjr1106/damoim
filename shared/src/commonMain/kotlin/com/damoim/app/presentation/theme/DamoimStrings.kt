@@ -281,7 +281,7 @@ object DamoimStrings {
     const val MENU_COPY_LINK = "링크 복사"
     const val MENU_PIN = "상단 고정"
     const val MENU_DELETE = "삭제하기"
-    const val POST_MENU_NOTE = "다른 회원의 글에는 공유하기 · 링크 복사 · 신고하기만 표시돼요"
+    const val POST_MENU_NOTE = "다른 회원의 글에는 공유하기 · 신고하기만 표시돼요"
 
     // 55 댓글 메뉴
     const val CMENU_REPLY = "답글 달기"

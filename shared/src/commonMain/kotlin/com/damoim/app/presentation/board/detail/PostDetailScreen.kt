@@ -229,11 +229,6 @@ fun PostDetailScreen(
                     overlay = null
                     detail?.post?.let { share("[다모임] ${it.title}\nhttps://damoim.app/post/${it.id}") }
                 },
-                onCopyLink = {
-                    overlay = null
-                    clipboard.setText(AnnotatedString("https://damoim.app/post/${detail?.post?.id}"))
-                    onToast(DamoimStrings.TOAST_POST_LINK_COPIED)
-                },
                 onPin = { overlay = null; onTogglePin() },
                 onDelete = { overlay = DetailOverlay.DeleteConfirm },
                 onReport = { overlay = DetailOverlay.Report },

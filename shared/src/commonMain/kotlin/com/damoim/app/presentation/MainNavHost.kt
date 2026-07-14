@@ -3,6 +3,7 @@ package com.damoim.app.presentation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -11,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
+import com.damoim.app.core.deeplink.DeepLinks
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.ClubRole
@@ -122,6 +124,18 @@ fun MainNavHost(
         MainTab.SCHEDULE -> resetTo(MainDestination.ScheduleHome)
         MainTab.SETTINGS -> resetTo(MainDestination.SettingsHome)
         else -> { toast = DamoimStrings.TOAST_COMING_SOON }
+    }
+
+    // 공유 딥링크(https://damoim.app/post/{id}) — 보류값이 있으면 소비하고 게시글 상세로.
+    LaunchedEffect(Unit) {
+        DeepLinks.pendingPostId.collect { postId ->
+            if (postId != null) {
+                DeepLinks.consumePost()
+                if (backStack.last() != MainDestination.PostDetail(postId)) {
+                    navigate(MainDestination.PostDetail(postId))
+                }
+            }
+        }
     }
 
     // 시스템 뒤로가기: 스택이 있으면 pop, 탭 루트(게시판/회원)에선 홈 탭으로 (홈에선 기본 동작=앱 나가기)
