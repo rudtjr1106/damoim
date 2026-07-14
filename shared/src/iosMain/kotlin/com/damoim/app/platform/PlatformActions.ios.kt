@@ -6,8 +6,15 @@ import com.damoim.app.domain.model.PurchaseProof
 import com.damoim.app.domain.model.ResourceDraft
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.useContents
 import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import platform.CoreGraphics.CGRectMake
+import platform.CoreGraphics.CGSizeMake
 import platform.Foundation.NSData
+import platform.Foundation.dataWithBytes
 import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSFileSize
@@ -26,8 +33,12 @@ import platform.StoreKit.SKProductsResponse
 import platform.StoreKit.SKRequest
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
+import platform.UIKit.UIColor
 import platform.UIKit.UIDocumentPickerDelegateProtocol
 import platform.UIKit.UIDocumentPickerViewController
+import platform.UIKit.UIGraphicsBeginImageContextWithOptions
+import platform.UIKit.UIGraphicsEndImageContext
+import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
 import platform.UIKit.UIImagePickerController
@@ -35,6 +46,7 @@ import platform.UIKit.UIImagePickerControllerDelegateProtocol
 import platform.UIKit.UIImagePickerControllerOriginalImage
 import platform.UIKit.UIImagePickerControllerSourceType
 import platform.UIKit.UINavigationControllerDelegateProtocol
+import platform.UIKit.UIRectFill
 import platform.UniformTypeIdentifiers.UTType
 import platform.UniformTypeIdentifiers.UTTypeData
 import platform.UniformTypeIdentifiers.UTTypePDF
@@ -275,3 +287,29 @@ actual fun rememberEmailComposer(): (String, String, String) -> Unit = remember 
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
     // iOS는 시스템 뒤로가기 제스처가 없어 no-op (화면 내 뒤로 버튼으로 처리)
 }
+
+@OptIn(ExperimentalForeignApi::class)
+actual suspend fun compressImage(bytes: ByteArray, maxDimension: Int, quality: Int): ByteArray =
+    withContext(Dispatchers.Default) {
+        if (bytes.isEmpty()) return@withContext bytes
+        val data = bytes.usePinned { pinned ->
+            NSData.dataWithBytes(pinned.addressOf(0), bytes.size.convert())
+        }
+        val image = UIImage.imageWithData(data) ?: return@withContext bytes  // 이미지 아님
+        val w = image.size.useContents { width }
+        val h = image.size.useContents { height }
+        if (w <= 0.0 || h <= 0.0) return@withContext bytes
+        val scale = minOf(maxDimension / w, maxDimension / h, 1.0)
+        if (scale >= 1.0 && bytes.size <= COMPRESS_SKIP_BYTES) return@withContext bytes  // 이미 작음
+        // scale 인자 1.0 고정 — 0.0(기기 스케일)이면 레티나에서 2~3배 픽셀로 커진다.
+        UIGraphicsBeginImageContextWithOptions(CGSizeMake(w * scale, h * scale), true, 1.0)
+        UIColor.whiteColor.setFill()  // 알파(PNG 투명)는 흰 배경으로
+        UIRectFill(CGRectMake(0.0, 0.0, w * scale, h * scale))
+        image.drawInRect(CGRectMake(0.0, 0.0, w * scale, h * scale))  // EXIF 방향 반영해 업라이트로
+        val resized = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        val jpeg = (resized ?: image).let { UIImageJPEGRepresentation(it, quality / 100.0) }
+            ?: return@withContext bytes
+        val out = jpeg.toByteArray()
+        if (out.size < bytes.size || scale < 1.0) out else bytes
+    }

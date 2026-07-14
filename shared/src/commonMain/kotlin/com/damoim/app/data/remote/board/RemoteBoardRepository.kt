@@ -20,6 +20,7 @@ import com.damoim.app.domain.model.PostDetail
 import com.damoim.app.domain.model.PostDraft
 import com.damoim.app.domain.repository.BoardHomeData
 import com.damoim.app.domain.repository.BoardRepository
+import com.damoim.app.platform.compressImage
 import com.damoim.app.domain.repository.SearchResults
 import com.damoim.app.domain.repository.SearchSuggestions
 import kotlinx.coroutines.CoroutineScope
@@ -87,7 +88,12 @@ class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
         draft.images.forEachIndexed { i, img ->
             val bytes = img.bytes
             val key = when {
-                bytes != null -> uploadOne("image_$i", img.contentType, bytes, AttachmentTypes.IMAGE) ?: return null
+                bytes != null -> {
+                    // 이미지 첨부만 업로드 전 축소·재압축(문서 첨부는 원본 보존).
+                    val optimized = compressImage(bytes)
+                    val type = if (optimized === bytes) img.contentType else "image/jpeg"
+                    uploadOne("image_$i", type, optimized, AttachmentTypes.IMAGE) ?: return null
+                }
                 img.storageKey != null -> img.storageKey    // 기존 이미지 재참조(재업로드 안 함)
                 else -> return@forEachIndexed
             }

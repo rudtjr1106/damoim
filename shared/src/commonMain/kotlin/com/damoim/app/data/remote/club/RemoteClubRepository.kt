@@ -23,6 +23,7 @@ import com.damoim.app.domain.model.Member
 import com.damoim.app.domain.model.MemberDetail
 import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.domain.repository.ClubRepository
+import com.damoim.app.platform.compressImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -88,16 +89,19 @@ class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
     }
 
     override suspend fun uploadClubImage(bytes: ByteArray, contentType: String?): DataResult<String> {
+        // 업로드 전 클라이언트 축소·재압축 — 재인코딩됐으면 image/jpeg로 선언(presign·PUT 일치 필수).
+        val optimized = compressImage(bytes)
+        val type = if (optimized === bytes) contentType else "image/jpeg"
         // 1) 업로드 URL 발급(상한 검증) → 2) S3에 직접 PUT → storageKey 반환. (프로필 사진과 동일 패턴)
         val presign = api.postData<ClubImageUploadResponseDto>(
             ApiRoutes.Clubs.ME_IMAGE,
-            ClubImageUploadRequestDto(contentType = contentType, sizeBytes = bytes.size.toLong()),
+            ClubImageUploadRequestDto(contentType = type, sizeBytes = optimized.size.toLong()),
         )
         val upload = when (presign) {
             is DataResult.Success -> presign.data
             is DataResult.Failure -> return presign
         }
-        return if (RawHttp.put(upload.uploadUrl, bytes, contentType)) {
+        return if (RawHttp.put(upload.uploadUrl, optimized, type)) {
             DataResult.Success(upload.storageKey)
         } else {
             DataResult.Failure(DataError(ErrorCodes.UPLOAD_FAILED, "이미지 업로드에 실패했어요"))

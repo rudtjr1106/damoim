@@ -62,3 +62,14 @@ expect fun rememberEmailComposer(): (address: String, subject: String, body: Str
 /** 시스템 뒤로가기 처리. [enabled]일 때 뒤로가기를 가로채 [onBack]을 실행한다(iOS는 no-op). */
 @Composable
 expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)
+
+/**
+ * 업로드 전 이미지 최적화 — 최대 변을 [maxDimension]px로 축소하고 JPEG(q=[quality])로 재압축한다.
+ * 이미 충분히 작으면(치수·용량 모두) 원본 인스턴스를 그대로 반환 — 호출부는 `결과 === 원본`으로
+ * contentType 유지 여부를 판단한다(재인코딩됐으면 "image/jpeg"). 디코드 실패(비이미지·손상)나
+ * 재압축이 오히려 커지는 경우도 원본 반환(업로드는 계속 진행).
+ */
+expect suspend fun compressImage(bytes: ByteArray, maxDimension: Int = 1280, quality: Int = 85): ByteArray
+
+/** [compressImage]가 재인코딩을 생략하는 용량 하한 — 이보다 작고 치수도 상한 이내면 그대로 둔다. */
+const val COMPRESS_SKIP_BYTES: Int = 300 * 1024

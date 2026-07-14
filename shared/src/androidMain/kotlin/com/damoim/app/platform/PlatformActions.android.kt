@@ -150,3 +150,49 @@ actual fun rememberShareText(): (String) -> Unit {
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
     androidx.activity.compose.BackHandler(enabled = enabled, onBack = onBack)
 }
+
+actual suspend fun compressImage(bytes: ByteArray, maxDimension: Int, quality: Int): ByteArray =
+    withContext(Dispatchers.Default) {
+        runCatching {
+            // 1) 경계만 디코드해 크기 파악(전체 디코드 없이 — 고해상 원본 OOM 방지).
+            val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext bytes  // 이미지 아님
+            if (bounds.outWidth <= maxDimension && bounds.outHeight <= maxDimension && bytes.size <= COMPRESS_SKIP_BYTES) {
+                return@withContext bytes  // 이미 작음 — 재인코딩 열화·낭비 방지
+            }
+            // 2) inSampleSize(2의 거듭제곱)로 근사 축소 디코드 후, 정확한 치수로 한 번 더 보정.
+            var sample = 1
+            while (bounds.outWidth / (sample * 2) >= maxDimension || bounds.outHeight / (sample * 2) >= maxDimension) sample *= 2
+            val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }
+            val decoded = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                ?: return@withContext bytes
+            val scale = minOf(maxDimension.toFloat() / decoded.width, maxDimension.toFloat() / decoded.height, 1f)
+            val scaled = if (scale < 1f) {
+                Bitmap.createScaledBitmap(
+                    decoded,
+                    (decoded.width * scale).toInt().coerceAtLeast(1),
+                    (decoded.height * scale).toInt().coerceAtLeast(1),
+                    true,
+                )
+            } else {
+                decoded
+            }
+            // 3) 알파(PNG 투명)는 JPEG에서 검정으로 눌리므로 흰 배경에 합성 후 인코딩.
+            val opaque = if (scaled.hasAlpha()) {
+                Bitmap.createBitmap(scaled.width, scaled.height, Bitmap.Config.ARGB_8888).also { canvasBmp ->
+                    android.graphics.Canvas(canvasBmp).apply {
+                        drawColor(android.graphics.Color.WHITE)
+                        drawBitmap(scaled, 0f, 0f, null)
+                    }
+                }
+            } else {
+                scaled
+            }
+            val out = java.io.ByteArrayOutputStream().use { s ->
+                opaque.compress(Bitmap.CompressFormat.JPEG, quality, s)
+                s.toByteArray()
+            }
+            if (out.size < bytes.size) out else bytes  // 오히려 커지면 원본 유지
+        }.getOrDefault(bytes)
+    }
