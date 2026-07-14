@@ -27,6 +27,7 @@ import com.damoim.app.domain.model.Member
 import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.domain.model.MemberStatus
 import com.damoim.app.presentation.component.CrownIcon
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
@@ -38,20 +39,22 @@ fun memberRoleLabel(role: MemberRole): String = when (role) {
     MemberRole.MEMBER -> DamoimStrings.ROLE_MEMBER
 }
 
-/** 이니셜 원형 아바타. 휴면 회원은 회색(surfaceVariant/textMuted), 활동 회원은 primaryContainerHigh/primaryDeep. */
+/** 회원 원형 아바타 — 프로필 사진이 있으면 실사진, 없으면 이니셜(휴면=회색, 활동=primaryContainerHigh/primaryDeep). */
 @Composable
 fun MemberAvatar(member: Member, size: Dp, fontSize: androidx.compose.ui.unit.TextUnit = 13.sp) {
     val colors = DamoimTheme.colors
     val dormant = member.status == MemberStatus.DORMANT
-    Box(
-        modifier = Modifier.size(size).clip(CircleShape).background(if (dormant) colors.surfaceVariant else colors.primaryContainerHigh),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            member.initials,
-            style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = fontSize),
-            color = if (dormant) colors.textMuted else colors.primaryDeep,
-        )
+    NetworkAvatar(url = member.profileImageUrl, size = size) {
+        Box(
+            modifier = Modifier.size(size).clip(CircleShape).background(if (dormant) colors.surfaceVariant else colors.primaryContainerHigh),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                member.initials,
+                style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.ExtraBold, fontSize = fontSize),
+                color = if (dormant) colors.textMuted else colors.primaryDeep,
+            )
+        }
     }
 }
 

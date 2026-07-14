@@ -17,7 +17,8 @@ data class ProfileEditUiState(
     val profileImageUrl: String? = null, // 현재 저장된 프로필 사진(없으면 이니셜 아바타)
     val isSaving: Boolean = false,
 ) : UiState {
-    val canSave: Boolean get() = name.isNotBlank() && !isSaving
+    // 연락처도 필수(UpdateProfileUseCase 계약) — 빠지면 S3 업로드 후 저장이 조용히 실패하던 버그의 원인.
+    val canSave: Boolean get() = name.isNotBlank() && contact.isNotBlank() && !isSaving
 }
 
 sealed interface ProfileEditSideEffect : UiSideEffect {
@@ -90,7 +91,12 @@ class ProfileEditViewModel(
             }
             val result = updateProfile(currentState.name.trim(), currentState.contact, null, imageKey)
             setState { copy(isSaving = false) }
-            handleResult(result, onSuccess = { dirty = false; pickedBytes = null; sendEffect(ProfileEditSideEffect.Saved) })
+            handleResult(
+                result,
+                onSuccess = { dirty = false; pickedBytes = null; sendEffect(ProfileEditSideEffect.Saved) },
+                // 실패를 조용히 삼키면 "업로드만 되고 안 바뀜"으로 보인다 — 반드시 사용자에게 알린다.
+                onFailure = { sendEffect(ProfileEditSideEffect.Toast(it.message)) },
+            )
         }
     }
 }

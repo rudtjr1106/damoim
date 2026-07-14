@@ -17,6 +17,7 @@ data class Member(
     val status: MemberStatus = MemberStatus.ACTIVE,
     val joinedLabel: String = "",      // "2024.09.15" (사전 계산 문자열)
     val isMe: Boolean = false,
+    val profileImageUrl: String? = null,  // 프로필 사진(없으면 이니셜 아바타)
 )
 
 /** 18 회원 상세 — 명부 회원 + 활동 요약. */

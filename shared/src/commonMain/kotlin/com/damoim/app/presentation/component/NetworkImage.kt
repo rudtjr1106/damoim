@@ -81,7 +81,8 @@ fun NetworkImage(
 }
 
 /**
- * 원형 프로필 아바타. [url]이 있으면 네트워크 이미지, 없으면 [fallback](보통 이니셜 아바타)을 렌더한다.
+ * 원형 프로필 아바타. [url]이 있으면 네트워크 이미지, 없거나 **로드 실패**(만료된 presigned URL 등)면
+ * [fallback](보통 이니셜 아바타)을 렌더한다 — 회색 빈 원이 영구히 남는 것을 방지.
  */
 @Composable
 fun NetworkAvatar(
@@ -92,12 +93,31 @@ fun NetworkAvatar(
 ) {
     if (url.isNullOrBlank()) {
         fallback()
-    } else {
-        NetworkImage(
-            url = url,
-            modifier = modifier.size(size).clip(CircleShape),
-            cornerRadius = size,
+        return
+    }
+    var bitmap by remember(url) { mutableStateOf(NetworkImageCache[url]) }
+    var failed by remember(url) { mutableStateOf(false) }
+    LaunchedEffect(url) {
+        if (bitmap == null) {
+            val bytes = RawHttp.getBytes(url)
+            val bmp = bytes?.let { withContext(Dispatchers.Default) { runCatching { it.toImageBitmap() }.getOrNull() } }
+            if (bmp != null) {
+                NetworkImageCache.put(url, bmp)
+                bitmap = bmp
+            } else {
+                failed = true
+            }
+        }
+    }
+    val loaded = bitmap
+    when {
+        loaded != null -> Image(
+            bitmap = loaded,
+            contentDescription = null,
             contentScale = ContentScale.Crop,
+            modifier = modifier.size(size).clip(CircleShape),
         )
+        failed -> fallback()
+        else -> Box(modifier.size(size).clip(CircleShape).background(DamoimTheme.colors.surfaceInput))
     }
 }

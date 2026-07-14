@@ -166,6 +166,7 @@ data class MemberResponseDto(
     val email: String = "",
     val joinedLabel: String = "",
     val isMe: Boolean = false,
+    val profileImageUrl: String? = null,
 )
 
 @Serializable
@@ -270,6 +271,7 @@ internal fun MemberResponseDto.toDomain(): Member = Member(
     status = memberStatus(status),
     joinedLabel = joinedLabel,
     isMe = isMe,
+    profileImageUrl = profileImageUrl,
 )
 
 internal fun MemberDetailResponseDto.toDomain(): MemberDetail = MemberDetail(
