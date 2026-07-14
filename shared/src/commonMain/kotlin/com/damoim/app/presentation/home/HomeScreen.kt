@@ -80,6 +80,7 @@ fun HomeRoute(
     onNavigateArchive: () -> Unit = {},
     onComingSoon: (String) -> Unit = {},
     onOpenSchedule: (Long) -> Unit = {},
+    onOpenPost: (Long) -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -94,6 +95,7 @@ fun HomeRoute(
             }
         },
         onOpenSchedule = onOpenSchedule,
+        onOpenPost = onOpenPost,
         onQuickAction = { label ->
             when (label) {
                 DamoimStrings.QA_CODE -> onNavigateClubSettings()
@@ -117,6 +119,7 @@ fun HomeScreen(
     onQuickAction: (String) -> Unit = {},
     onSeeAll: (String) -> Unit = {},
     onOpenSchedule: (Long) -> Unit = {},
+    onOpenPost: (Long) -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
@@ -135,7 +138,7 @@ fun HomeScreen(
                         ScheduleSection(summary.schedules, onOpenSchedule) { onSeeAll(DamoimStrings.HOME_SECTION_SCHEDULE) }
                     }
                     if (summary.boardPreviews.isNotEmpty()) {
-                        BoardSection(summary.boardPreviews) { onSeeAll(DamoimStrings.HOME_SECTION_BOARD) }
+                        BoardSection(summary.boardPreviews, onOpenPost) { onSeeAll(DamoimStrings.HOME_SECTION_BOARD) }
                     }
                     Spacer(Modifier.height(8.dp))
                 }
@@ -334,22 +337,22 @@ private fun ScheduleCard(s: UpcomingSchedule, onClick: () -> Unit) {
 }
 
 @Composable
-private fun BoardSection(previews: List<BoardPreview>, onSeeAll: () -> Unit) {
+private fun BoardSection(previews: List<BoardPreview>, onOpenPost: (Long) -> Unit, onSeeAll: () -> Unit) {
     SectionHeader(DamoimStrings.HOME_SECTION_BOARD, onSeeAll, Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp))
     Column(
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        previews.forEach { BoardRow(it) }
+        previews.forEach { p -> BoardRow(p) { onOpenPost(p.id) } }
     }
 }
 
 @Composable
-private fun BoardRow(preview: BoardPreview) {
+private fun BoardRow(preview: BoardPreview, onClick: () -> Unit = {}) {
     val colors = DamoimTheme.colors
     val isNotice = preview.category == BoardCategory.NOTICE
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(1.dp, colors.divider, RoundedCornerShape(14.dp)).padding(horizontal = 14.dp, vertical = 13.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(1.dp, colors.divider, RoundedCornerShape(14.dp)).noRippleClick(onClick).padding(horizontal = 14.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -400,9 +403,9 @@ internal fun previewSummary(role: ClubRole) = HomeSummary(
         UpcomingSchedule(2, "D-10", "6.14 토", "신입 환영 MT", "1박 2일 · 가평", false),
     ),
     boardPreviews = buildList {
-        add(BoardPreview(BoardCategory.NOTICE, "신입 회원 환영 OT 일정 안내", 5))
-        add(BoardPreview(BoardCategory.FREE, "동아리 MT 후기 공유해요", 12))
-        if (role == ClubRole.LEADER) add(BoardPreview(BoardCategory.RECRUIT, "2025 하반기 신입 부원 모집", 3))
+        add(BoardPreview(101, BoardCategory.NOTICE, "신입 회원 환영 OT 일정 안내", 5))
+        add(BoardPreview(102, BoardCategory.FREE, "동아리 MT 후기 공유해요", 12))
+        if (role == ClubRole.LEADER) add(BoardPreview(103, BoardCategory.RECRUIT, "2025 하반기 신입 부원 모집", 3))
     },
     hasUnreadNotification = role == ClubRole.LEADER,
 )

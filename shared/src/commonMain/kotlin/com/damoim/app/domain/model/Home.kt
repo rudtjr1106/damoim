@@ -35,8 +35,9 @@ data class UpcomingSchedule(
     val primary: Boolean,
 )
 
-/** 게시판 미리보기 행. */
+/** 게시판 미리보기 행. [id]로 상세(14) 진입. */
 data class BoardPreview(
+    val id: Long,
     val category: BoardCategory,
     val title: String,
     val commentCount: Int,

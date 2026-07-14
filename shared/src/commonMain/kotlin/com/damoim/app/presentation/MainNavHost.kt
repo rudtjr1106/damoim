@@ -151,6 +151,7 @@ fun MainNavHost(
                     }
                 },
                 onOpenSchedule = { navigate(MainDestination.EventDetail(it)) },
+                onOpenPost = { navigate(MainDestination.PostDetail(it)) },
                 onTabSelect = { tab -> onTab(tab) },
             )
 
