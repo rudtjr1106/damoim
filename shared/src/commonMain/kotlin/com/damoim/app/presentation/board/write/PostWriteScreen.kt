@@ -56,7 +56,6 @@ import com.damoim.app.domain.model.RecruitDraft
 import com.damoim.app.platform.PlatformBackHandler
 import com.damoim.app.platform.rememberCameraLauncher
 import com.damoim.app.platform.rememberDocumentPickerLauncher
-import com.damoim.app.presentation.board.PhotoPlaceholder
 import com.damoim.app.presentation.board.boardCategoryLabel
 import com.damoim.app.presentation.component.CalendarIcon
 import com.damoim.app.presentation.component.CameraIcon
@@ -473,39 +472,25 @@ private fun DocAttach(docs: List<DraftDocFile>, onAdd: () -> Unit, onRemove: (In
     }
 }
 
-// 34/LINK — URL 입력 → og 미리보기 생성
+// 34/LINK — URL 입력 행(미리보기 이미지 없음 — 링크만 첨부). X로 이 링크를 제거한다.
 @Composable
 private fun LinkAttach(url: String, onUrlChange: (String) -> Unit, onClear: () -> Unit) {
     val colors = DamoimTheme.colors
-    val host = url.substringAfter("://").substringBefore("/").ifBlank { "" }
-    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (url.isNotBlank()) {
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, colors.divider, RoundedCornerShape(16.dp))) {
-                Box(Modifier.fillMaxWidth().height(96.dp)) {
-                    PhotoPlaceholder(Modifier.fillMaxWidth().height(96.dp), cornerRadius = 0.dp, label = "og-image preview")
-                    Box(
-                        Modifier.align(Alignment.TopEnd).padding(8.dp).size(24.dp).clip(RoundedCornerShape(999.dp)).background(colors.scrim)
-                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClear),
-                        contentAlignment = Alignment.Center,
-                    ) { CloseIcon(colors.surface, Modifier.size(11.dp)) }
-                }
-                Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(host.ifBlank { url }, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary, maxLines = 1)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        LinkIcon(colors.textMuted, Modifier.size(12.dp))
-                        Text(host, style = DamoimTheme.typography.caption, color = colors.textMuted)
-                    }
-                }
-            }
-        }
-        // URL 입력줄
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(colors.surfaceInput).padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+        Row(
+            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(colors.surfaceInput).padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             LinkIcon(colors.textMuted, Modifier.size(14.dp))
             Box(Modifier.weight(1f)) {
                 if (url.isEmpty()) Text(DamoimStrings.ATTACH_LINK_DESC, style = DamoimTheme.typography.caption, color = colors.textDisabled)
                 BasicTextField(url, onUrlChange, singleLine = true, textStyle = DamoimTheme.typography.caption.copy(color = colors.textTertiary), cursorBrush = SolidColor(colors.primary), modifier = Modifier.fillMaxWidth())
             }
-            if (url.isNotBlank()) Text("미리보기 생성됨", style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold), color = colors.primary)
+            Box(
+                Modifier.size(22.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClear),
+                contentAlignment = Alignment.Center,
+            ) { CloseIcon(colors.textDisabled, Modifier.size(13.dp)) }
         }
     }
 }
