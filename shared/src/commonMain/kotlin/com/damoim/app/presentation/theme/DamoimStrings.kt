@@ -679,6 +679,7 @@ object DamoimStrings {
 
     // 26 설정 홈
     const val SETTINGS_HOME_TITLE = "설정"
+    const val SETTINGS_SEC_ME = "내 정보"
     const val SETTINGS_SEC_CLUB = "동아리 관리"
     const val SETTINGS_SEC_SUBSCRIPTION = "구독"
     const val SETTINGS_SEC_ETC = "기타"

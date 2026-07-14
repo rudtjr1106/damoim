@@ -45,6 +45,7 @@ fun SettingsHomeRoute(
     viewModel: SettingsHomeViewModel = viewModel(key = "settingsHome") {
         SettingsHomeViewModel(AppGraph.getClubInfoUseCase, AppGraph.subscriptionUseCase)
     },
+    onOpenMyProfile: () -> Unit = {},
     onOpenClubSettings: () -> Unit = {},
     onOpenAdmin: () -> Unit = {},
     onOpenPlan: () -> Unit = {},
@@ -55,12 +56,24 @@ fun SettingsHomeRoute(
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
-    SettingsHomeScreen(state, onOpenClubSettings, onOpenAdmin, onOpenPlan, onOpenSubscription, onOpenNotif, onOpenInquiry, onOpenBlocked, onTabSelect)
+    SettingsHomeScreen(
+        state = state,
+        onOpenMyProfile = onOpenMyProfile,
+        onOpenClubSettings = onOpenClubSettings,
+        onOpenAdmin = onOpenAdmin,
+        onOpenPlan = onOpenPlan,
+        onOpenSubscription = onOpenSubscription,
+        onOpenNotif = onOpenNotif,
+        onOpenInquiry = onOpenInquiry,
+        onOpenBlocked = onOpenBlocked,
+        onTabSelect = onTabSelect,
+    )
 }
 
 @Composable
 fun SettingsHomeScreen(
     state: SettingsHomeUiState = SettingsHomeUiState(clubName = "코딩하는 사람들", memberCount = 38, joinCode = "DM29AX", overLimit = true, memberUsed = 38),
+    onOpenMyProfile: () -> Unit = {},
     onOpenClubSettings: () -> Unit = {},
     onOpenAdmin: () -> Unit = {},
     onOpenPlan: () -> Unit = {},
@@ -107,6 +120,9 @@ fun SettingsHomeScreen(
                 }
             }
 
+            SettingsSection(DamoimStrings.SETTINGS_SEC_ME) {
+                SettingsRow(DamoimStrings.MY_PROFILE_TITLE, onOpenMyProfile, showDivider = false)
+            }
             SettingsSection(DamoimStrings.SETTINGS_SEC_CLUB) {
                 SettingsRow(DamoimStrings.SETTINGS_CLUB_INFO, onOpenClubSettings)
                 SettingsRow(DamoimStrings.SETTINGS_JOIN_CODE, onOpenClubSettings, trailing = {

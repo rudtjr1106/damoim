@@ -120,7 +120,7 @@ fun MainNavHost(
     fun onTab(tab: MainTab) = when (tab) {
         MainTab.HOME -> resetTo(MainDestination.Home)
         MainTab.BOARD -> resetTo(MainDestination.BoardHome)
-        MainTab.MEMBERS -> resetTo(if (role == ClubRole.LEADER) MainDestination.MemberManage else MainDestination.MyProfile)
+        MainTab.MEMBERS -> resetTo(if (role == ClubRole.LEADER) MainDestination.MemberManage else MainDestination.MemberList())
         MainTab.SCHEDULE -> resetTo(MainDestination.ScheduleHome)
         MainTab.SETTINGS -> resetTo(MainDestination.SettingsHome)
         else -> { toast = DamoimStrings.TOAST_COMING_SOON }
@@ -139,7 +139,7 @@ fun MainNavHost(
     }
 
     // 시스템 뒤로가기: 스택이 있으면 pop, 탭 루트(게시판/회원)에선 홈 탭으로 (홈에선 기본 동작=앱 나가기)
-    val atTabRoot = backStack.last() == MainDestination.BoardHome || backStack.last() == MainDestination.MemberManage || backStack.last() == MainDestination.MyProfile || backStack.last() == MainDestination.ScheduleHome || backStack.last() == MainDestination.SettingsHome
+    val atTabRoot = backStack.last() == MainDestination.BoardHome || backStack.last() == MainDestination.MemberManage || backStack.last() is MainDestination.MemberList || backStack.last() == MainDestination.ScheduleHome || backStack.last() == MainDestination.SettingsHome
     com.damoim.app.platform.PlatformBackHandler(
         enabled = backStack.size > 1 || atTabRoot,
     ) {
@@ -240,7 +240,8 @@ fun MainNavHost(
 
             is MainDestination.MemberList -> MemberListRoute(
                 initialCohortId = current.cohortId,
-                onBack = { back() },
+                // 회원 탭 루트(일반회원)로 쓰일 땐 뒤로가기=홈 탭, 푸시됐을 땐 pop
+                onBack = { if (backStack.size > 1) back() else resetTo(MainDestination.Home) },
                 onOpenMember = { id -> navigate(MainDestination.MemberDetail(id)) },
                 onShareCode = { navigate(MainDestination.ClubSettings) },
             )
@@ -317,6 +318,7 @@ fun MainNavHost(
             )
 
             MainDestination.SettingsHome -> SettingsHomeRoute(
+                onOpenMyProfile = { navigate(MainDestination.MyProfile) },
                 onOpenClubSettings = { navigate(MainDestination.ClubSettings) },
                 onOpenAdmin = { navigate(MainDestination.Admin) },
                 onOpenPlan = { navigate(MainDestination.Plan) },
