@@ -36,8 +36,12 @@ fun RootNavHost() {
         flow = if (!AppGraph.isLoggedIn) {
             AppFlow.Auth(AuthDestination.Login)                     // 미로그인 → 로그인
         } else {
-            val ctx = AppGraph.observeMyContextUseCase().first()
+            val ctx = AppGraph.observeMyContextUseCase().first()   // /me·/members/me 조회(실패 시 401→refresh)
             when {
+                // 저장 토큰은 있었지만 서버가 인증을 거부(계정 삭제·DB 초기화·재사용 폐기 등) →
+                // refreshTokens가 refresh 실패로 토큰을 폐기한 상태. 온보딩이 아니라 로그인으로 보낸다.
+                // (네트워크 오류/오프라인이면 토큰은 유지되므로 이 분기에 걸리지 않고 아래로 진행)
+                !AppGraph.isLoggedIn -> AppFlow.Auth(AuthDestination.Login)
                 ctx.needsProfileSetup -> AppFlow.Auth(AuthDestination.ProfileSetup) // 프로필 미완료 → 31
                 ctx.role != null -> AppFlow.Main(ctx.role)          // 활성 동아리 있음 → 홈
                 else -> AppFlow.Auth(AuthDestination.Start)         // 로그인·프로필 O, 동아리 X → 온보딩
