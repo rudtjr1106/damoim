@@ -287,8 +287,9 @@ private fun RecruitBody(posts: List<BoardPost>, onOpenPost: (Long) -> Unit) {
 @Composable
 private fun RecruitCard(post: BoardPost, onClick: () -> Unit) {
     val colors = DamoimTheme.colors
-    val recruit = post.recruit ?: return
-    val closed = recruit.status == RecruitStatus.CLOSED
+    // recruit는 목록 피드에서 채워지지만, 없어도(레거시/누락) 카드가 통째로 사라지지 않게 방어한다.
+    val recruit = post.recruit
+    val closed = recruit?.status == RecruitStatus.CLOSED
     Column(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(18.dp)).background(colors.surface)
@@ -298,13 +299,15 @@ private fun RecruitCard(post: BoardPost, onClick: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (closed) {
-                SolidBadge(DamoimStrings.RECRUIT_CLOSED, bg = colors.surfaceDim, textColor = colors.textMuted)
-            } else {
-                SolidBadge(DamoimStrings.RECRUIT_OPEN, bg = colors.primary)
-                if (recruit.dday != null) {
-                    Text(recruit.dday, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold), color = colors.primaryDark)
+            when {
+                closed -> SolidBadge(DamoimStrings.RECRUIT_CLOSED, bg = colors.surfaceDim, textColor = colors.textMuted)
+                recruit != null -> {
+                    SolidBadge(DamoimStrings.RECRUIT_OPEN, bg = colors.primary)
+                    if (recruit.dday != null) {
+                        Text(recruit.dday, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold), color = colors.primaryDark)
+                    }
                 }
+                else -> SolidBadge(DamoimStrings.RECRUIT_OPEN, bg = colors.primary)
             }
             Text(
                 "${post.authorName} · ${post.timeLabel}",
@@ -318,7 +321,7 @@ private fun RecruitCard(post: BoardPost, onClick: () -> Unit) {
         if (post.preview.isNotEmpty() && !closed) {
             Text(post.preview, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Normal), color = colors.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        RecruitProgress(recruit.current, recruit.capacity, closed)
+        if (recruit != null) RecruitProgress(recruit.current, recruit.capacity, closed)
     }
 }
 

@@ -121,6 +121,7 @@ data class PostSummaryResponseDto(
     val hasThumbnail: Boolean = false,
     val thumbnailUrl: String? = null,
     val readRate: Int? = null,
+    val recruit: RecruitResponseDto? = null,
 )
 
 @Serializable
@@ -287,6 +288,7 @@ internal fun PostSummaryResponseDto.toDomain(orderKey: Long): BoardPost = BoardP
     hasThumbnail = hasThumbnail,
     thumbnailUrl = thumbnailUrl,
     readRate = readRate,
+    recruit = recruit?.toDomain(),
 )
 
 internal fun List<PostSummaryResponseDto>.toDomainList(): List<BoardPost> =
