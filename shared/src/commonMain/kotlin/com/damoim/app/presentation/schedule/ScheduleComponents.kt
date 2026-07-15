@@ -32,6 +32,7 @@ import com.damoim.app.domain.model.ScheduleAccent
 import com.damoim.app.presentation.component.ChevronRightIcon
 import com.damoim.app.presentation.component.ClockIcon
 import com.damoim.app.presentation.component.LocationIcon
+import com.damoim.app.presentation.component.DamoimFab
 import com.damoim.app.presentation.component.PlusIcon
 import com.damoim.app.presentation.component.koreanWeekday
 import com.damoim.app.presentation.component.noRippleClick
@@ -115,15 +116,10 @@ fun EventStatusBadge(status: EventStatus) {
     )
 }
 
-// ── + FAB (일정 등록) ──
+// ── + FAB (일정 등록) — 게시판과 동일한 공용 FAB(플로팅 느낌) ──
 @Composable
-fun ScheduleFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = DamoimTheme.colors
-    Box(
-        modifier.size(56.dp).clip(CircleShape).background(colors.primary).noRippleClick(onClick),
-        contentAlignment = Alignment.Center,
-    ) { PlusIcon(colors.onPrimary, Modifier.size(24.dp)) }
-}
+fun ScheduleFab(onClick: () -> Unit, modifier: Modifier = Modifier) =
+    DamoimFab(onClick, modifier)
 
 // ── 21 캘린더 ──
 @Composable

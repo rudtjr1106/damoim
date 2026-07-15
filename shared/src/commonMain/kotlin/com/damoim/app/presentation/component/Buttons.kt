@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -19,12 +20,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 import org.jetbrains.compose.resources.painterResource
 import damoim.shared.generated.resources.Res
 import damoim.shared.generated.resources.ic_kakao_login
+
+/**
+ * 공용 플로팅 액션 버튼(+). 게시판·일정 등에서 동일한 모양으로 쓴다.
+ * 그림자는 은은하게(6dp) — 과한 그림자 대신 살짝 떠 보이는 정도.
+ */
+@Composable
+fun DamoimFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = DamoimTheme.colors
+    Box(
+        modifier = modifier
+            .size(56.dp)
+            .shadow(6.dp, CircleShape)
+            .clip(CircleShape)
+            .background(colors.primary)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { PlusIcon(tint = colors.onPrimary, modifier = Modifier.size(24.dp)) }
+}
 
 /**
  * 풀폭 기본 CTA 버튼. (디자인: primary 배경, radius 14, 15/700 흰 텍스트)

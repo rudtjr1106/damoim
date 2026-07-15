@@ -50,6 +50,7 @@ import com.damoim.app.presentation.component.CommentIcon
 import com.damoim.app.presentation.component.HeartIcon
 import com.damoim.app.presentation.component.MainTab
 import com.damoim.app.presentation.component.MegaphoneIcon
+import com.damoim.app.presentation.component.DamoimFab
 import com.damoim.app.presentation.component.PlusIcon
 import com.damoim.app.presentation.component.SearchIcon
 import com.damoim.app.presentation.theme.DamoimStrings
@@ -243,18 +244,8 @@ private fun FeedRow(post: BoardPost, isLast: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun WriteFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = DamoimTheme.colors
-    Box(
-        modifier = modifier
-            .size(56.dp)
-            .shadow(14.dp, CircleShape)
-            .clip(CircleShape)
-            .background(colors.primary)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) { PlusIcon(tint = colors.onPrimary, modifier = Modifier.size(24.dp)) }
-}
+private fun WriteFab(onClick: () -> Unit, modifier: Modifier = Modifier) =
+    DamoimFab(onClick, modifier)
 
 /** 41 게시판 빈 상태 (홈 피드 영역 대체). */
 @Composable
