@@ -24,7 +24,9 @@ data class BoardListUiState(
     val displayed: List<BoardPost>
         get() {
             val filtered = if (category == BoardCategory.RECRUIT && recruitOpenOnly) {
-                posts.filter { it.recruit?.status == RecruitStatus.OPEN }
+                // '모집중만' = 마감(CLOSED)만 숨긴다. recruit 정보가 없는(null) 글은 상태 불명이라
+                // 숨기지 않는다 — 예전처럼 == OPEN 으로 걸면 recruit가 비면 전부 사라져 필터가 깨졌음.
+                posts.filter { it.recruit?.status != RecruitStatus.CLOSED }
             } else posts
             return when (sort) {
                 BoardSort.RECENT -> filtered.sortedByDescending { it.createdAt }
