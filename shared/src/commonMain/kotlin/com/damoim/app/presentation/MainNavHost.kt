@@ -14,6 +14,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import com.damoim.app.core.deeplink.DeepLinks
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.presentation.board.detail.PostDetailRoute
@@ -136,6 +138,13 @@ fun MainNavHost(
                 }
             }
         }
+    }
+
+    // 화면 (재)진입 시 그 화면이 의존하는 topic만 무효화 → 재조회(뒤로 갔다 돌아와도 최신 데이터).
+    // backStack.last()가 바뀔 때마다(A→B→A 되돌아오기 포함) 재실행된다.
+    LaunchedEffect(backStack.last()) {
+        val topics = topicsFor(backStack.last())
+        if (topics.isNotEmpty()) RemoteBus.invalidate(*topics.toTypedArray())
     }
 
     // 시스템 뒤로가기: 스택이 있으면 pop, 탭 루트(게시판/회원)에선 홈 탭으로 (홈에선 기본 동작=앱 나가기)
@@ -387,4 +396,43 @@ fun MainNavHost(
 
         DamoimToastHost(message = toast, onDismiss = { toast = null })
     }
+}
+
+/**
+ * 각 목적지가 의존하는 데이터 topic. 화면 (재)진입 시 이 topic만 무효화해 재조회한다.
+ * (매핑 근거: 화면 VM → UseCase → repository observe* 의 reactiveFlow(topics))
+ * 폼/일회성 화면(작성·등록·수정·업로드·문의·결제결과)은 진입 시 fresh 조회하므로 빈 집합.
+ */
+private fun topicsFor(d: MainDestination): Set<DataTopic> = when (d) {
+    MainDestination.Home -> setOf(DataTopic.CLUB, DataTopic.MEMBER, DataTopic.NOTIFICATION, DataTopic.SCHEDULE, DataTopic.BOARD)
+    MainDestination.BoardHome -> setOf(DataTopic.BOARD)
+    is MainDestination.BoardList -> setOf(DataTopic.BOARD)
+    is MainDestination.PostDetail -> setOf(DataTopic.BOARD)
+    is MainDestination.PostWrite -> emptySet()
+    MainDestination.Search -> setOf(DataTopic.BOARD)
+    MainDestination.Archive -> setOf(DataTopic.RESOURCE)
+    is MainDestination.ResourceDetail -> setOf(DataTopic.RESOURCE)
+    MainDestination.ResourceUpload -> emptySet()
+    MainDestination.MemberManage -> setOf(DataTopic.MEMBER, DataTopic.CLUB)
+    is MainDestination.MemberList -> setOf(DataTopic.MEMBER, DataTopic.CLUB)
+    is MainDestination.MemberDetail -> setOf(DataTopic.MEMBER)
+    MainDestination.CohortManage -> setOf(DataTopic.CLUB, DataTopic.MEMBER)
+    MainDestination.MyProfile -> setOf(DataTopic.CLUB, DataTopic.MEMBER)
+    MainDestination.ProfileEdit -> emptySet()
+    MainDestination.ScheduleHome -> setOf(DataTopic.SCHEDULE)
+    is MainDestination.ScheduleRegister -> emptySet()
+    is MainDestination.EventDetail -> setOf(DataTopic.SCHEDULE)
+    is MainDestination.Applicants -> setOf(DataTopic.SCHEDULE)
+    MainDestination.MyApplications -> setOf(DataTopic.SCHEDULE)
+    MainDestination.SettingsHome -> setOf(DataTopic.CLUB, DataTopic.SETTINGS)
+    MainDestination.Plan -> setOf(DataTopic.SETTINGS)
+    MainDestination.SubscriptionManage -> setOf(DataTopic.SETTINGS)
+    is MainDestination.PaymentResult -> emptySet()
+    MainDestination.Admin -> setOf(DataTopic.SETTINGS, DataTopic.MEMBER)
+    MainDestination.NotifSettings -> setOf(DataTopic.SETTINGS)
+    MainDestination.Inquiry -> emptySet()
+    MainDestination.Blocked -> setOf(DataTopic.SETTINGS)
+    MainDestination.ClubSettings -> setOf(DataTopic.CLUB)
+    MainDestination.JoinManage -> setOf(DataTopic.CLUB)
+    MainDestination.Notification -> setOf(DataTopic.NOTIFICATION)
 }
