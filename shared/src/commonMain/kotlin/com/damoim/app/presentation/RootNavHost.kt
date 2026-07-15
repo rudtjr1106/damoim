@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.data.remote.core.SessionEvents
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.presentation.auth.AuthDestination
 import com.damoim.app.presentation.auth.AuthNavHost
@@ -47,6 +48,12 @@ fun RootNavHost() {
                 else -> AppFlow.Auth(AuthDestination.Start)         // 로그인·프로필 O, 동아리 X → 온보딩
             }
         }
+    }
+
+    // 실행 중 세션 만료(서버가 토큰 거부 → refresh 실패로 폐기) → 즉시 로그인으로.
+    // 로그인 성공 후 지난 신호가 되살아나지 않도록 SessionEvents는 replay=0.
+    LaunchedEffect(Unit) {
+        SessionEvents.expired.collect { flow = AppFlow.Auth(AuthDestination.Login) }
     }
 
     when (val current = flow) {

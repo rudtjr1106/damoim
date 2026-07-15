@@ -76,6 +76,7 @@ fun buildHttpClient(): HttpClient = HttpClient {
                 val refresh = RemoteEnv.tokenStore.load()?.refreshToken
                 if (refresh.isNullOrBlank()) {
                     RemoteEnv.tokenStore.clear()
+                    SessionEvents.notifyExpired()   // 실행 중이면 로그인 화면으로
                     return@refreshTokens null
                 }
                 val pair = runCatching {
@@ -94,6 +95,7 @@ fun buildHttpClient(): HttpClient = HttpClient {
                 } else {
                     // 리프레시 실패(만료/재사용 탐지 폐기) → 토큰 폐기. 이후 요청은 401 → 재로그인 유도.
                     RemoteEnv.tokenStore.clear()
+                    SessionEvents.notifyExpired()   // 실행 중이면 로그인 화면으로
                     null
                 }
             }
