@@ -9,7 +9,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -26,18 +25,31 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * 원격 이미지 URL → [ImageBitmap] 인메모리 캐시(세션 지속). presigned URL은 서명 쿼리(`?...`)가
- * 매 발급마다 바뀌므로 **경로 부분만** 키로 삼아 같은 오브젝트 재조회 시 캐시가 적중하게 한다.
- * ImageStore(로컬 비트맵)를 대체하는 원격 로더 캐시.
+ * 원격 이미지 URL → [ImageBitmap] 인메모리 캐시. presigned URL은 서명 쿼리(`?...`)가 매 발급마다
+ * 바뀌므로 **경로 부분만** 키로 삼아 같은 오브젝트 재조회 시 캐시가 적중하게 한다.
+ *
+ * 상한 있는 대략적 LRU(최대 [MAX_ENTRIES]) — 전엔 무제한이라 세션 내내 본 이미지가 전부 메모리에
+ * 쌓여 앱이 무거워졌다. put 시 재삽입으로 최신화하고, 초과분은 가장 오래된 항목부터 제거한다.
+ * 접근은 모두 컴포지션(Main) 스레드에서만 이뤄진다(디코드는 Default에서 하고 put은 Main으로 복귀).
  */
 object NetworkImageCache {
-    private val cache = mutableStateMapOf<String, ImageBitmap>()
+    private const val MAX_ENTRIES = 80
+    private val cache = LinkedHashMap<String, ImageBitmap>()
 
     /** presigned 서명 쿼리를 제외한 안정 키(오브젝트 경로). */
     private fun keyOf(url: String): String = url.substringBefore("?")
 
     operator fun get(url: String): ImageBitmap? = cache[keyOf(url)]
-    fun put(url: String, bmp: ImageBitmap) { cache[keyOf(url)] = bmp }
+
+    fun put(url: String, bmp: ImageBitmap) {
+        val key = keyOf(url)
+        cache.remove(key)          // 재삽입 → 최근 사용으로 갱신(뒤로 이동)
+        cache[key] = bmp
+        while (cache.size > MAX_ENTRIES) {
+            val it = cache.keys.iterator()
+            if (it.hasNext()) { it.next(); it.remove() } else break
+        }
+    }
 }
 
 /**

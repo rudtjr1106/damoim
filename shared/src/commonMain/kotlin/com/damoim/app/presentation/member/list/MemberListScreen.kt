@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -88,6 +89,9 @@ fun MemberListScreen(
                 SearchField(state.query, onQuery)
                 FilterRow(state, onFilter)
                 Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
+                // displayed는 계산 getter(2중 필터) — 한 번만 계산해 재사용(매 리컴포지션 O(N²) 방지)
+                val displayed = remember(state.all, state.query, state.filter, state.cohorts) { state.displayed }
+                val lastIndex = displayed.lastIndex
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
                 if (state.isSearchEmpty) {
                     Text(
@@ -98,9 +102,9 @@ fun MemberListScreen(
                         textAlign = TextAlign.Center,
                     )
                 }
-                state.displayed.forEachIndexed { i, m ->
+                displayed.forEachIndexed { i, m ->
                     MemberRow(m, state.cohortShort(m.cohortId), onClick = { onOpenMember(m.id) })
-                    if (i != state.displayed.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))
+                    if (i != lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))
                 }
                     Spacer(Modifier.height(20.dp))
                 }

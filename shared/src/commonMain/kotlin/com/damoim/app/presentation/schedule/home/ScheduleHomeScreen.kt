@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -175,8 +176,10 @@ private fun CalendarView(
 @Composable
 private fun ListView(state: ScheduleHomeUiState, onOpenSchedule: (Long) -> Unit, onAddCalendar: (Long) -> Unit) {
     val colors = DamoimTheme.colors
+    // listGroups()는 4중 filter+sort — 매 리컴포지션 재계산 방지(스케줄/오늘 바뀔 때만)
+    val groups = remember(state.schedules, state.today) { state.listGroups() }
     Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        state.listGroups().forEach { (header, items) ->
+        groups.forEach { (header, items) ->
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(header, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 0.6.sp), color = colors.textMuted)
                 items.forEach { s ->
