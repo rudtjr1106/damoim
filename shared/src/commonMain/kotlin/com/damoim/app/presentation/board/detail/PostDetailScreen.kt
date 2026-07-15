@@ -626,7 +626,8 @@ private fun CommentItem(comment: Comment, onReply: () -> Unit, onLongPress: () -
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(comment.authorName, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary)
                 if (comment.isAuthor) Text(DamoimStrings.BOARD_AUTHOR_BADGE, style = DamoimTheme.typography.labelSmall, color = colors.primaryDark, modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(colors.primaryContainer).padding(horizontal = 6.dp, vertical = 2.dp))
-                else Text(comment.timeLabel, style = DamoimTheme.typography.label, color = colors.textDisabled)
+                // 작성 시간은 작성자 뱃지 유무와 무관하게 항상 표시
+                Text(comment.timeLabel, style = DamoimTheme.typography.label, color = colors.textDisabled)
             }
             Text(comment.content, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Normal), color = colors.textSecondary)
             if (!comment.isReply) {
