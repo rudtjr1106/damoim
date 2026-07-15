@@ -64,7 +64,9 @@ import com.preat.peekaboo.image.picker.toImageBitmap
  */
 @Composable
 fun ClubCreateRoute(
-    viewModel: ClubCreateViewModel = viewModel { ClubCreateViewModel(AppGraph.createClubUseCase) },
+    viewModel: ClubCreateViewModel = viewModel {
+        ClubCreateViewModel(AppGraph.createClubUseCase, AppGraph.uploadClubImageUseCase, AppGraph.updateClubUseCase)
+    },
     onBack: () -> Unit = {},
     onCreated: () -> Unit = {},
     onError: (String) -> Unit = {},
@@ -72,8 +74,11 @@ fun ClubCreateRoute(
     val state by viewModel.uiState.collectAsState()
     var logo by remember { mutableStateOf<ImageBitmap?>(null) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val picker = rememberImagePickerLauncher(SelectionMode.Single, scope) { bytes ->
-        bytes.firstOrNull()?.let { logo = it.toImageBitmap() }
+    val picker = rememberImagePickerLauncher(SelectionMode.Single, scope) { arr ->
+        arr.firstOrNull()?.let { bytes ->
+            logo = bytes.toImageBitmap()          // 즉시 미리보기
+            viewModel.onPhotoPicked(bytes, null)  // 생성 후 S3 업로드용 바이트 보관
+        }
     }
 
     LaunchedEffect(viewModel) {
