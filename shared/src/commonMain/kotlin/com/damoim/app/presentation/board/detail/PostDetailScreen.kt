@@ -74,6 +74,7 @@ import com.damoim.app.presentation.component.HeartIcon
 import com.damoim.app.presentation.component.LinkIcon
 import com.damoim.app.presentation.component.ListIcon
 import com.damoim.app.presentation.component.MoreIcon
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.PaperclipIcon
 import com.damoim.app.presentation.component.SendIcon
@@ -471,7 +472,7 @@ private fun AuthorRow(post: BoardPost) {
     val bordered = post.poll == null
     Column {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(bottom = if (bordered) 14.dp else 0.dp)) {
-            InitialAvatar(post.authorInitials, size = 38.dp)
+            NetworkAvatar(url = post.authorImageUrl, size = 38.dp) { InitialAvatar(post.authorInitials, size = 38.dp) }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(post.authorName, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary)
@@ -620,7 +621,7 @@ private fun CommentItem(comment: Comment, onReply: () -> Unit, onLongPress: () -
             .combinedClickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {}, onLongClick = onLongPress),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        InitialAvatar(comment.authorInitials, size = 32.dp, fontSize = 10.sp)
+        NetworkAvatar(url = comment.authorImageUrl, size = 32.dp) { InitialAvatar(comment.authorInitials, size = 32.dp, fontSize = 10.sp) }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(comment.authorName, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary)
@@ -733,7 +734,7 @@ fun PostErrorScreen(onBack: () -> Unit) {
 // ── 프리뷰 ──
 internal fun previewNoticeDetail(): PostDetail = PostDetail(
     post = BoardPost(id = 101, category = BoardCategory.NOTICE, title = "신입 회원 환영 OT 일정 안내", content = "안녕하세요, 회장 김민준입니다.\n\n6월 14일(토) 신입 회원 환영 OT를 진행합니다.", authorId = 2001, authorName = "김민준", authorInitials = "민준", dateLabel = "2025.06.01", timeLabel = "6.01", viewCount = 128, likeCount = 14, commentCount = 3, isPinned = true, isAuthorLeader = true, readRate = 82, attachments = listOf(PostAttachment.FileDoc("OT_일정표.pdf", "1.2MB"))),
-    comments = listOf(Comment(1, "이서연", "서연", "1시간 전", "참석합니다! 신입분들 환영해요 🎉"), Comment(3, "김민준", "민준", "35분 전", "네! 줌 링크 공유드릴게요.", isReply = true, isAuthor = true, parentId = 1)),
+    comments = listOf(Comment(1, "이서연", "서연", timeLabel = "1시간 전", content = "참석합니다! 신입분들 환영해요 🎉"), Comment(3, "김민준", "민준", timeLabel = "35분 전", content = "네! 줌 링크 공유드릴게요.", isReply = true, isAuthor = true, parentId = 1)),
 )
 
 @Preview

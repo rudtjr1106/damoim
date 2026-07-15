@@ -49,6 +49,7 @@ import com.damoim.app.domain.model.ReportReason
 import com.damoim.app.presentation.board.InitialAvatar
 import com.damoim.app.presentation.board.boardCategoryLabel
 import com.damoim.app.presentation.component.CloseIcon
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.CopyIcon
 import com.damoim.app.presentation.component.DamoimBottomSheet
 import com.damoim.app.presentation.component.DamoimDialog
@@ -117,7 +118,7 @@ internal fun CommentMenuSheet(comment: Comment, onDismiss: () -> Unit, onReply: 
     DamoimBottomSheet(onDismiss = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.primaryContainer).padding(horizontal = 14.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                InitialAvatar(comment.authorInitials, size = 30.dp, fontSize = 9.sp)
+                NetworkAvatar(url = comment.authorImageUrl, size = 30.dp) { InitialAvatar(comment.authorInitials, size = 30.dp, fontSize = 9.sp) }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(comment.authorName, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary)
                     Text(comment.content, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Normal), color = colors.textSecondary, maxLines = 2)

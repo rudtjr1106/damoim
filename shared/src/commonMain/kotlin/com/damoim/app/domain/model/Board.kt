@@ -18,6 +18,7 @@ data class BoardPost(
     val authorId: Long = 0,               // 작성자 식별(내 글 여부 판정 — ⋯메뉴 분기)
     val authorName: String,
     val authorInitials: String,           // 아바타 이니셜 "민준"
+    val authorImageUrl: String? = null,   // 작성자 프로필 사진(없으면 이니셜)
     val authorGisu: String? = null,       // "24기"
     val timeLabel: String,                // "10분 전"
     val dateLabel: String? = null,        // 상세: "2025.06.01"
@@ -96,6 +97,7 @@ data class Comment(
     val id: Long,
     val authorName: String,
     val authorInitials: String,
+    val authorImageUrl: String? = null,   // 작성자 프로필 사진(없으면 이니셜)
     val timeLabel: String,
     val content: String,
     val isReply: Boolean = false,
