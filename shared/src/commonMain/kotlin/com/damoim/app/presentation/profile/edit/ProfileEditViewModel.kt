@@ -17,8 +17,8 @@ data class ProfileEditUiState(
     val profileImageUrl: String? = null, // 현재 저장된 프로필 사진(없으면 이니셜 아바타)
     val isSaving: Boolean = false,
 ) : UiState {
-    // 연락처도 필수(UpdateProfileUseCase 계약) — 빠지면 S3 업로드 후 저장이 조용히 실패하던 버그의 원인.
-    val canSave: Boolean get() = name.isNotBlank() && contact.isNotBlank() && !isSaving
+    // 이름만 필수 — 연락처 없이 사진/이름만 바꿔도 저장(업로드한 이미지 키 반영)이 되게 한다.
+    val canSave: Boolean get() = name.isNotBlank() && !isSaving
 }
 
 sealed interface ProfileEditSideEffect : UiSideEffect {
