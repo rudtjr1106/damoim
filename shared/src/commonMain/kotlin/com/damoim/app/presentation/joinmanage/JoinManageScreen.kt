@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.domain.model.JoinApplicant
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.TitleTopBar
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
@@ -112,8 +113,10 @@ private fun ProcessedCard(item: com.damoim.app.domain.model.ProcessedApplicant) 
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).padding(18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(46.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
-            Text(item.applicant.initial, style = DamoimTheme.typography.titleMedium.copy(fontSize = 15.sp), color = colors.primaryDeep)
+        NetworkAvatar(url = item.applicant.imageUrl, size = 46.dp) {
+            Box(Modifier.size(46.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+                Text(item.applicant.initial, style = DamoimTheme.typography.titleMedium.copy(fontSize = 15.sp), color = colors.primaryDeep)
+            }
         }
         Spacer(Modifier.size(12.dp))
         Column(Modifier.weight(1f)) {
@@ -140,8 +143,10 @@ private fun ApplicantCard(applicant: JoinApplicant, onDecide: (JoinApplicant, Bo
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(46.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
-                Text(applicant.initial, style = DamoimTheme.typography.titleMedium.copy(fontSize = 15.sp), color = colors.primaryDeep)
+            NetworkAvatar(url = applicant.imageUrl, size = 46.dp) {
+                Box(Modifier.size(46.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+                    Text(applicant.initial, style = DamoimTheme.typography.titleMedium.copy(fontSize = 15.sp), color = colors.primaryDeep)
+                }
             }
             Spacer(Modifier.size(12.dp))
             Column(Modifier.weight(1f)) {

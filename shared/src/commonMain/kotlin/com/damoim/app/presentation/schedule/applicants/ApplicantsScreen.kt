@@ -42,6 +42,7 @@ import com.damoim.app.domain.model.EventApplicant
 import com.damoim.app.domain.model.EventStatus
 import com.damoim.app.presentation.component.BackChevronIcon
 import com.damoim.app.presentation.component.DamoimBottomSheet
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.SheetCloseButton
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.schedule.ddayText
@@ -139,8 +140,10 @@ private fun ApplicantCard(a: EventApplicant, onClick: () -> Unit) {
             .then(if (canceled) Modifier else Modifier.noRippleClick(onClick)).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(Modifier.size(42.dp).clip(CircleShape).background(if (canceled) colors.surfaceDim else colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
-            Text(a.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = if (canceled) colors.textMuted else colors.primaryDeep)
+        NetworkAvatar(url = a.imageUrl, size = 42.dp) {
+            Box(Modifier.size(42.dp).clip(CircleShape).background(if (canceled) colors.surfaceDim else colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+                Text(a.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = if (canceled) colors.textMuted else colors.primaryDeep)
+            }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(a.name, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp), color = colors.textPrimary)
@@ -164,8 +167,10 @@ private fun ApplicantAnswersSheet(a: EventApplicant, onDismiss: () -> Unit) {
     DamoimBottomSheet(onDismiss = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 44.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(42.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
-                    Text(a.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = colors.primaryDeep)
+                NetworkAvatar(url = a.imageUrl, size = 42.dp) {
+                    Box(Modifier.size(42.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+                        Text(a.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = colors.primaryDeep)
+                    }
                 }
                 Column {
                     Text(a.name, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 17.sp), color = colors.textPrimary)

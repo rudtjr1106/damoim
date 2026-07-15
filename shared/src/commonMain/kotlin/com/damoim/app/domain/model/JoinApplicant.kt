@@ -9,6 +9,7 @@ data class JoinApplicant(
     val appliedDate: String,         // "6.03 신청"
     val timeAgo: String,             // "방금 전"
     val message: String? = null,     // 신청 메시지 (없을 수 있음)
+    val imageUrl: String? = null,    // 프로필 사진 URL (없으면 이니셜 아바타)
 )
 
 /** 처리 완료된 신청 (09 '처리 완료' 탭). */

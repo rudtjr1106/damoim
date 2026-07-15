@@ -437,7 +437,7 @@ private fun ApplicantStack(recruit: RecruitInfo) {
     val extra = (recruit.current - shown.size).coerceAtLeast(0)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy((-9).dp)) {
-            shown.forEach { a -> RingAvatar(a.initials, a.colorIndex) }
+            shown.forEach { a -> RingAvatar(a.initials, a.colorIndex, a.imageUrl) }
             if (extra > 0) {
                 Box(Modifier.size(30.dp).clip(CircleShape).background(colors.surface).padding(2.dp).clip(CircleShape).background(Color(0xFFEEF1F7)), contentAlignment = Alignment.Center) {
                     Text("+$extra", style = DamoimTheme.typography.labelSmall, color = colors.textMuted)
@@ -454,15 +454,19 @@ private fun ApplicantStack(recruit: RecruitInfo) {
 }
 
 @Composable
-private fun RingAvatar(initials: String, colorIndex: Int) {
+private fun RingAvatar(initials: String, colorIndex: Int, imageUrl: String? = null) {
     val colors = DamoimTheme.colors
     val (bg, fg) = when (colorIndex % 3) {
         0 -> colors.primaryContainerHigh to colors.primaryDeep
         1 -> Color(0xFFBFE0F2) to Color(0xFF1E6C93)
         else -> Color(0xFFC6E7CB) to Color(0xFF2E7D4A)
     }
-    Box(Modifier.size(30.dp).clip(CircleShape).background(colors.surface).padding(2.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
-        Text(initials, style = DamoimTheme.typography.labelSmall, color = fg)
+    Box(Modifier.size(30.dp).clip(CircleShape).background(colors.surface).padding(2.dp), contentAlignment = Alignment.Center) {
+        NetworkAvatar(url = imageUrl, size = 26.dp) {
+            Box(Modifier.size(26.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
+                Text(initials, style = DamoimTheme.typography.labelSmall, color = fg)
+            }
+        }
     }
 }
 

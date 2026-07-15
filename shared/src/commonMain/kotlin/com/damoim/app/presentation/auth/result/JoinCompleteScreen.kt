@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.damoim.app.domain.model.Club
 import com.damoim.app.presentation.component.CheckIcon
+import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.PrimaryButton
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
@@ -101,11 +102,15 @@ internal fun ClubSummaryCard(club: Club) {
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color(club.emblemColor)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(club.name.take(1), style = DamoimTheme.typography.titleMedium, color = colors.onPrimary)
+        if (!club.imageUrl.isNullOrBlank()) {
+            NetworkImage(url = club.imageUrl, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)), cornerRadius = 14.dp)
+        } else {
+            Box(
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color(club.emblemColor)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(club.name.take(1), style = DamoimTheme.typography.titleMedium, color = colors.onPrimary)
+            }
         }
         Spacer(Modifier.size(12.dp))
         Column(Modifier.weight(1f)) {

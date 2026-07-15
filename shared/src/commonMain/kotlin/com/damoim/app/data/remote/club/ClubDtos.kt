@@ -91,6 +91,7 @@ data class ClubSummaryDto(
     val name: String,
     val category: String,
     val emblemColor: Long = 0xFF2F6DD3,
+    val imageUrl: String? = null,
 )
 
 @Serializable
@@ -146,6 +147,7 @@ data class ApplicantResponseDto(
     val appliedDate: String,
     val timeAgo: String,
     val message: String? = null,
+    val imageUrl: String? = null,
 )
 
 @Serializable
@@ -215,6 +217,7 @@ internal fun ClubSummaryDto.toDomain(): Club = Club(
     memberCount = 0,
     joinCode = "",
     emblemColor = emblemColor,
+    imageUrl = imageUrl,
 )
 
 internal fun CohortResponseDto.toDomain(): Cohort = Cohort(id = id, label = label, short = short, memberCount = memberCount)
@@ -249,6 +252,7 @@ internal fun ApplicantResponseDto.toDomain(): JoinApplicant = JoinApplicant(
     appliedDate = appliedDate,
     timeAgo = timeAgo,
     message = message,
+    imageUrl = imageUrl,
 )
 
 internal fun ProcessedApplicantResponseDto.toDomain(): ProcessedApplicant = ProcessedApplicant(

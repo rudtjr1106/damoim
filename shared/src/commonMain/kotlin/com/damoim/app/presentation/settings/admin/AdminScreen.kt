@@ -36,6 +36,7 @@ import com.damoim.app.domain.model.AdminMember
 import com.damoim.app.domain.model.PermissionType
 import com.damoim.app.presentation.component.InfoIcon
 import com.damoim.app.presentation.component.MoreIcon
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.PlusIcon
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.settings.DamoimSwitch
@@ -121,8 +122,10 @@ private fun AdminCard(admin: AdminMember, onToggle: (PermissionType) -> Unit, on
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.size(44.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
-                Text(admin.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 13.sp), color = colors.primaryDeep)
+            NetworkAvatar(url = admin.imageUrl, size = 44.dp) {
+                Box(Modifier.size(44.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+                    Text(admin.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 13.sp), color = colors.primaryDeep)
+                }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(admin.name, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp), color = colors.textPrimary)

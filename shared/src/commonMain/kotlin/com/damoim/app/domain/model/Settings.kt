@@ -55,6 +55,7 @@ data class AdminMember(
     val cohortLabel: String,         // "23기"
     val title: String,               // "부회장" / "총무"
     val permissions: Set<PermissionType>,
+    val imageUrl: String? = null,
 )
 
 // ══════════ 차단 관리(83) ══════════
@@ -65,6 +66,7 @@ data class BlockedUser(
     val initials: String,
     val blockedLabel: String,        // "2026.06.18 차단"
     val isWithdrawn: Boolean = false,
+    val imageUrl: String? = null,
 )
 
 // ══════════ 알림 설정(65) ══════════

@@ -34,6 +34,7 @@ import com.damoim.app.presentation.component.DamoimBottomSheet
 import com.damoim.app.presentation.component.DamoimDialog
 import com.damoim.app.presentation.component.DialogButton
 import com.damoim.app.presentation.component.EditIcon
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.PersonMinusIcon
 import com.damoim.app.presentation.component.SheetActionRow
 import com.damoim.app.presentation.component.SheetCloseButton
@@ -58,8 +59,10 @@ internal fun AdminAddSheet(assignable: List<Member>, onSelect: (Long) -> Unit, o
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     assignable.forEach { m ->
                         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.surfaceInput).noRippleClick { onSelect(m.id) }.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.size(40.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
-                                Text(m.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = colors.primaryDeep)
+                            NetworkAvatar(url = m.profileImageUrl, size = 40.dp) {
+                                Box(Modifier.size(40.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+                                    Text(m.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = colors.primaryDeep)
+                                }
                             }
                             Text(m.name, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
                         }
@@ -78,8 +81,10 @@ internal fun AdminMenuSheet(admin: AdminMember, onChangeTitle: () -> Unit, onDet
     DamoimBottomSheet(onDismiss = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 44.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.surfaceInput).padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(40.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
-                    Text(admin.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = colors.primaryDeep)
+                NetworkAvatar(url = admin.imageUrl, size = 40.dp) {
+                    Box(Modifier.size(40.dp).clip(CircleShape).background(colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+                        Text(admin.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = colors.primaryDeep)
+                    }
                 }
                 Column {
                     Text(admin.name, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp), color = colors.textPrimary)

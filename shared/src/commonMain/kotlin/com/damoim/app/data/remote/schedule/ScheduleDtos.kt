@@ -75,6 +75,7 @@ data class ApplicantResponseDto(
     val status: String = "APPLIED",
     val appliedLabel: String = "",
     val answers: List<QuestionAnswerDto> = emptyList(),
+    val imageUrl: String? = null,
 )
 
 @Serializable
@@ -163,6 +164,7 @@ internal fun ApplicantResponseDto.toDomain(): EventApplicant = EventApplicant(
     status = applicantStatusOf(status),
     appliedLabel = appliedLabel.ifBlank { "방금 전" },
     answers = answers.map { it.toDomain() },
+    imageUrl = imageUrl,
 )
 
 internal fun EventResponseDto.toDomain(): EventInfo = EventInfo(

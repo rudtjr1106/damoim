@@ -86,8 +86,8 @@ data class RecruitInfo(
 
 enum class RecruitStatus { OPEN, CLOSED }  // 모집중 / 마감
 
-/** 모집 신청자(84 아바타 스택). colorIndex는 아바타 배경색 변형용(0~2). */
-data class RecruitApplicant(val initials: String, val colorIndex: Int = 0)
+/** 모집 신청자(84 아바타 스택). colorIndex는 아바타 배경색 변형용(0~2). imageUrl 있으면 사진. */
+data class RecruitApplicant(val initials: String, val colorIndex: Int = 0, val name: String = "", val imageUrl: String? = null)
 
 /** 신고 사유(82). 라벨은 DamoimStrings.reportReasonLabel로 매핑. */
 enum class ReportReason { SPAM, ABUSE, SEXUAL, FRAUD, PRIVACY, ETC }

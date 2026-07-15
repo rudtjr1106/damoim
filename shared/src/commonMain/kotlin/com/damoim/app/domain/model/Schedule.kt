@@ -83,6 +83,7 @@ data class EventApplicant(
     val status: ApplicantStatus = ApplicantStatus.APPLIED,
     val appliedLabel: String = "방금 전",
     val answers: List<QuestionAnswer> = emptyList(),   // G2 신청자 응답 상세
+    val imageUrl: String? = null,      // 신청자 프로필 사진(없으면 이니셜)
 )
 
 /** 폼 응답 한 줄(질문→답). */

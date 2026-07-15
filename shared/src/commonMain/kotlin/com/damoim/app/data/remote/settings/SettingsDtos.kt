@@ -90,6 +90,7 @@ data class AdminMemberResponseDto(
     val cohortLabel: String = "",
     val title: String = "운영진",
     val permissions: List<String> = emptyList(),
+    val imageUrl: String? = null,
 )
 
 @Serializable
@@ -98,6 +99,7 @@ data class AdminCandidateResponseDto(
     val name: String = "",
     val initials: String = "",
     val cohortLabel: String = "",
+    val imageUrl: String? = null,
 )
 
 @Serializable
@@ -107,6 +109,7 @@ data class BlockedUserResponseDto(
     val initials: String = "",
     val blockedLabel: String = "",
     val isWithdrawn: Boolean = false,
+    val imageUrl: String? = null,
 )
 
 @Serializable
@@ -153,6 +156,7 @@ internal fun AdminMemberResponseDto.toDomain(): AdminMember = AdminMember(
     cohortLabel = cohortLabel,
     title = title,
     permissions = permissions.mapNotNull { p -> runCatching { PermissionType.valueOf(p) }.getOrNull() }.toSet(),
+    imageUrl = imageUrl,
 )
 
 /** 운영진 후보 → Member(손실 매핑): 서버가 name/initials만 제공, cohortId 등은 기본값. */
@@ -163,6 +167,7 @@ internal fun AdminCandidateResponseDto.toMember(): Member = Member(
     cohortId = 0L, // 서버가 cohortId 미전송(cohortLabel만) — 후보 피커는 이름/이니셜만 표시
     role = MemberRole.MEMBER,
     status = MemberStatus.ACTIVE,
+    profileImageUrl = imageUrl,
 )
 
 internal fun BlockedUserResponseDto.toDomain(): BlockedUser = BlockedUser(
@@ -171,6 +176,7 @@ internal fun BlockedUserResponseDto.toDomain(): BlockedUser = BlockedUser(
     initials = initials,
     blockedLabel = blockedLabel,
     isWithdrawn = isWithdrawn,
+    imageUrl = imageUrl,
 )
 
 internal fun NotifSettingsResponseDto.toDomain(): NotifSettings = NotifSettings(

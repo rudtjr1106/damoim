@@ -44,6 +44,7 @@ import com.damoim.app.presentation.component.CalendarIcon
 import com.damoim.app.presentation.component.ClockIcon
 import com.damoim.app.presentation.component.LocationIcon
 import com.damoim.app.presentation.component.MoreIcon
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.schedule.ApplyFormSheet
 import com.damoim.app.presentation.schedule.EventConfirmDialog
@@ -174,7 +175,7 @@ fun EventDetailScreen(
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val shown = event.activeApplicants.take(3)
-                            shown.forEachIndexed { i, a -> Box(Modifier.offset(x = (i * -8).dp)) { MiniAvatar(a.initials) } }
+                            shown.forEachIndexed { i, a -> Box(Modifier.offset(x = (i * -8).dp)) { MiniAvatar(a.initials, imageUrl = a.imageUrl) } }
                             val extra = event.appliedCount - shown.size
                             if (extra > 0) Box(Modifier.offset(x = (shown.size * -8).dp)) { MiniAvatar("+$extra", muted = true) }
                         }
@@ -273,11 +274,13 @@ private fun InfoRow(icon: @Composable () -> Unit, label: String, value: String, 
 }
 
 @Composable
-internal fun MiniAvatar(text: String, muted: Boolean = false) {
+internal fun MiniAvatar(text: String, muted: Boolean = false, imageUrl: String? = null) {
     val colors = DamoimTheme.colors
     Box(Modifier.size(32.dp).clip(CircleShape).background(colors.surface).padding(2.dp)) {
-        Box(Modifier.fillMaxSize().clip(CircleShape).background(if (muted) colors.surfaceDim else colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
-            Text(text, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp), color = if (muted) colors.textMuted else colors.primaryDeep)
+        NetworkAvatar(url = imageUrl, size = 28.dp) {
+            Box(Modifier.fillMaxSize().clip(CircleShape).background(if (muted) colors.surfaceDim else colors.primaryContainerHigh), contentAlignment = Alignment.Center) {
+                Text(text, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp), color = if (muted) colors.textMuted else colors.primaryDeep)
+            }
         }
     }
 }

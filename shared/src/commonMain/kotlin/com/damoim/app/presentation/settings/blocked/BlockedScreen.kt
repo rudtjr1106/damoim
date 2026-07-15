@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.domain.model.BlockedUser
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.UserSingleIcon
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.settings.SettingsTopBar
@@ -77,9 +78,11 @@ fun BlockedScreen(
 private fun BlockedCard(u: BlockedUser, onUnblock: () -> Unit) {
     val colors = DamoimTheme.colors
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, colors.divider, RoundedCornerShape(16.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.size(42.dp).clip(CircleShape).background(colors.surfaceDim), contentAlignment = Alignment.Center) {
-            if (u.isWithdrawn) UserSingleIcon(colors.textMuted, Modifier.size(20.dp))
-            else Text(u.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = colors.textMuted)
+        NetworkAvatar(url = u.imageUrl, size = 42.dp) {
+            Box(Modifier.size(42.dp).clip(CircleShape).background(colors.surfaceDim), contentAlignment = Alignment.Center) {
+                if (u.isWithdrawn) UserSingleIcon(colors.textMuted, Modifier.size(20.dp))
+                else Text(u.initials, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 12.sp), color = colors.textMuted)
+            }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(u.name, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp), color = colors.textPrimary)

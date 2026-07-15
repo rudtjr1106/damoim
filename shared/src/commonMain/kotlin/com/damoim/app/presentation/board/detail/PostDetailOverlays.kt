@@ -266,8 +266,8 @@ internal fun RosterSheet(recruit: com.damoim.app.domain.model.RecruitInfo?, onDi
             val applicants = recruit?.applicants.orEmpty()
             applicants.forEachIndexed { i, applicant ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    InitialAvatar(applicant.initials, size = 38.dp)
-                    Text(applicant.initials, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.textPrimary, modifier = Modifier.weight(1f))
+                    NetworkAvatar(url = applicant.imageUrl, size = 38.dp) { InitialAvatar(applicant.initials, size = 38.dp) }
+                    Text(applicant.name.ifBlank { applicant.initials }, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.textPrimary, modifier = Modifier.weight(1f))
                     Text("${i + 1}번째 신청", style = DamoimTheme.typography.caption, color = colors.textMuted)
                 }
                 if (i != applicants.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))

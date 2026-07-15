@@ -12,6 +12,7 @@ import com.damoim.app.domain.model.PollOption
 import com.damoim.app.domain.model.PostAttachment
 import com.damoim.app.domain.model.PostDetail
 import com.damoim.app.domain.model.PostDraft
+import com.damoim.app.domain.model.RecruitApplicant
 import com.damoim.app.domain.model.RecruitDraft
 import com.damoim.app.domain.model.RecruitInfo
 import com.damoim.app.domain.model.RecruitStatus
@@ -164,6 +165,14 @@ data class RecruitResponseDto(
     val dday: String? = null,
     val method: String? = null,
     val appliedByMe: Boolean = false,
+    val applicants: List<RecruitApplicantResponseDto> = emptyList(),
+)
+
+@Serializable
+data class RecruitApplicantResponseDto(
+    val name: String = "",
+    val initials: String = "",
+    val imageUrl: String? = null,
 )
 
 @Serializable
@@ -319,7 +328,9 @@ internal fun RecruitResponseDto.toDomain(): RecruitInfo = RecruitInfo(
     capacity = capacity,
     deadlineLabel = deadlineLabel,
     method = method,
-    applicants = emptyList(), // 서버가 아바타 스택 데이터를 내리지 않음(알려진 갭)
+    applicants = applicants.mapIndexed { i, a ->
+        RecruitApplicant(initials = a.initials, colorIndex = i % 3, name = a.name, imageUrl = a.imageUrl)
+    },
     appliedByMe = appliedByMe,
 )
 
