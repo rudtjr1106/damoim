@@ -40,9 +40,7 @@ import com.damoim.app.presentation.component.ListIcon
 import com.damoim.app.presentation.component.MainTab
 import com.damoim.app.presentation.component.PeopleIcon
 import com.damoim.app.presentation.component.PersonPlusIcon
-import com.damoim.app.presentation.component.UserSingleIcon
 import com.damoim.app.presentation.component.noRippleClick
-import com.damoim.app.presentation.member.memberRoleLabel
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
@@ -58,11 +56,10 @@ fun MemberManageRoute(
     onOpenList: () -> Unit = {},
     onOpenJoinManage: () -> Unit = {},
     onOpenCohorts: () -> Unit = {},
-    onOpenProfile: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
-    MemberManageScreen(state, onOpenList, onOpenJoinManage, onOpenCohorts, onOpenProfile, onTabSelect)
+    MemberManageScreen(state, onOpenList, onOpenJoinManage, onOpenCohorts, onTabSelect)
 }
 
 @Composable
@@ -71,7 +68,6 @@ fun MemberManageScreen(
     onOpenList: () -> Unit = {},
     onOpenJoinManage: () -> Unit = {},
     onOpenCohorts: () -> Unit = {},
-    onOpenProfile: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
@@ -103,7 +99,6 @@ fun MemberManageScreen(
                     HubCard({ PeopleIcon(colors.primaryDark, Modifier.size(20.dp)) }, DamoimStrings.MEMBER_HUB_LIST, DamoimStrings.memberHubListSub(state.totalCount), onClick = onOpenList)
                     HubCard({ PersonPlusIcon(colors.primaryDark, Modifier.size(20.dp)) }, DamoimStrings.MEMBER_HUB_JOIN, DamoimStrings.memberHubJoinSub(state.pendingCount), badge = state.pendingCount, onClick = onOpenJoinManage)
                     HubCard({ ListIcon(colors.primaryDark, Modifier.size(20.dp)) }, DamoimStrings.MEMBER_HUB_COHORT, DamoimStrings.memberHubCohortSub(state.cohortRange), onClick = onOpenCohorts)
-                    HubCard({ UserSingleIcon(colors.primaryDark, Modifier.size(20.dp)) }, DamoimStrings.MEMBER_HUB_PROFILE, DamoimStrings.memberHubProfileSub(state.myName, state.myCohortShort, memberRoleLabel(state.myRole)), onClick = onOpenProfile)
                 }
             }
         }

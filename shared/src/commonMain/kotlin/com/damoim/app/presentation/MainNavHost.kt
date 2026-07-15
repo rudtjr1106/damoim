@@ -234,7 +234,6 @@ fun MainNavHost(
                 onOpenList = { navigate(MainDestination.MemberList()) },
                 onOpenJoinManage = { navigate(MainDestination.JoinManage) },
                 onOpenCohorts = { navigate(MainDestination.CohortManage) },
-                onOpenProfile = { navigate(MainDestination.MyProfile) },
                 onTabSelect = { tab -> onTab(tab) },
             )
 
