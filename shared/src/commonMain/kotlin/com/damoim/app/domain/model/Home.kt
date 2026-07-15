@@ -35,12 +35,13 @@ data class UpcomingSchedule(
     val primary: Boolean,
 )
 
-/** 게시판 미리보기 행. [id]로 상세(14) 진입. */
+/** 게시판 미리보기 행. [id]로 상세(14) 진입. [isPinned]=필독(홈에서 우선·특별 표시). */
 data class BoardPreview(
     val id: Long,
     val category: BoardCategory,
     val title: String,
     val commentCount: Int,
+    val isPinned: Boolean = false,
 )
 
 enum class BoardCategory { NOTICE, FREE, RECRUIT }

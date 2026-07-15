@@ -129,7 +129,7 @@ data class UpcomingScheduleDto(
 )
 
 @Serializable
-data class BoardPreviewDto(val id: Long = 0, val category: String, val title: String, val commentCount: Int = 0)
+data class BoardPreviewDto(val id: Long = 0, val category: String, val title: String, val commentCount: Int = 0, val isPinned: Boolean = false)
 
 @Serializable
 data class ApplicantsBoardResponseDto(
@@ -237,7 +237,7 @@ internal fun HomeSummaryResponseDto.toDomain(): HomeSummary = HomeSummary(
     schedules = schedules.map {
         UpcomingSchedule(it.id, it.dday, it.date, it.title, it.subtitle, it.primary)
     },
-    boardPreviews = boardPreviews.map { BoardPreview(it.id, boardCategory(it.category), it.title, it.commentCount) },
+    boardPreviews = boardPreviews.map { BoardPreview(it.id, boardCategory(it.category), it.title, it.commentCount, it.isPinned) },
     hasUnreadNotification = hasUnreadNotification,
 )
 

@@ -341,7 +341,8 @@ private fun BoardSection(previews: List<BoardPreview>, onOpenPost: (Long) -> Uni
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        previews.forEach { p -> BoardRow(p) { onOpenPost(p.id) } }
+        // 필독 먼저(홈 우선순위) — 서버 정렬 + 클라에서도 안전하게 보장
+        previews.sortedByDescending { it.isPinned }.forEach { p -> BoardRow(p) { onOpenPost(p.id) } }
     }
 }
 
@@ -349,18 +350,36 @@ private fun BoardSection(previews: List<BoardPreview>, onOpenPost: (Long) -> Uni
 private fun BoardRow(preview: BoardPreview, onClick: () -> Unit = {}) {
     val colors = DamoimTheme.colors
     val isNotice = preview.category == BoardCategory.NOTICE
+    val pinned = preview.isPinned
     Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(1.dp, colors.divider, RoundedCornerShape(14.dp)).noRippleClick(onClick).padding(horizontal = 14.dp, vertical = 13.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+            // 필독은 특별하게: 강조 배경 + primary 테두리(일반 글은 옅은 divider 테두리)
+            .then(
+                if (pinned) Modifier.background(colors.primaryContainer).border(1.5.dp, colors.primary, RoundedCornerShape(14.dp))
+                else Modifier.border(1.dp, colors.divider, RoundedCornerShape(14.dp)),
+            )
+            .noRippleClick(onClick).padding(horizontal = 14.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            categoryLabel(preview.category),
-            style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold),
-            color = if (isNotice) colors.onPrimary else colors.primaryDark,
-            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(if (isNotice) colors.primary else colors.primaryContainer).padding(horizontal = 9.dp, vertical = 4.dp),
-        )
+        if (pinned) {
+            MegaphoneIcon(colors.primaryDark, Modifier.size(15.dp))
+            Spacer(Modifier.width(7.dp))
+            Text(
+                DamoimStrings.BOARD_PINNED,
+                style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold),
+                color = colors.onPrimary,
+                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(colors.primary).padding(horizontal = 9.dp, vertical = 4.dp),
+            )
+        } else {
+            Text(
+                categoryLabel(preview.category),
+                style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold),
+                color = if (isNotice) colors.onPrimary else colors.primaryDark,
+                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(if (isNotice) colors.primary else colors.primaryContainer).padding(horizontal = 9.dp, vertical = 4.dp),
+            )
+        }
         Spacer(Modifier.width(10.dp))
-        Text(preview.title, style = DamoimTheme.typography.bodySmall, color = colors.textPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(preview.title, style = DamoimTheme.typography.bodySmall.copy(fontWeight = if (pinned) FontWeight.Bold else FontWeight.Normal), color = colors.textPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.width(10.dp))
         Text(preview.commentCount.toString(), style = DamoimTheme.typography.label, color = colors.textDisabled)
     }
@@ -393,7 +412,7 @@ internal fun previewSummary(role: ClubRole) = HomeSummary(
         UpcomingSchedule(2, "D-10", "6.14 토", "신입 환영 MT", "1박 2일 · 가평", false),
     ),
     boardPreviews = buildList {
-        add(BoardPreview(101, BoardCategory.NOTICE, "신입 회원 환영 OT 일정 안내", 5))
+        add(BoardPreview(101, BoardCategory.NOTICE, "신입 회원 환영 OT 일정 안내", 5, isPinned = true))
         add(BoardPreview(102, BoardCategory.FREE, "동아리 MT 후기 공유해요", 12))
         if (role == ClubRole.LEADER) add(BoardPreview(103, BoardCategory.RECRUIT, "2025 하반기 신입 부원 모집", 3))
     },
