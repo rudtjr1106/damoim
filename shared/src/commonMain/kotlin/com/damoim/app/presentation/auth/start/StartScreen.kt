@@ -38,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.damoim.app.presentation.component.ChevronRightIcon
+import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.DamoimLogoBadge
 import com.damoim.app.presentation.component.LockIcon
 import com.damoim.app.presentation.component.PeopleIcon
@@ -58,6 +59,7 @@ fun StartRoute(
     )
     StartScreen(
         userName = ctx.name,
+        profileImageUrl = ctx.profileImageUrl,
         onJoinWithCode = onJoinWithCode,
         onCreateClub = onCreateClub,
     )
@@ -70,6 +72,7 @@ fun StartRoute(
 @Composable
 fun StartScreen(
     userName: String = DamoimStrings.PREVIEW_USER_NAME,
+    profileImageUrl: String? = null,
     onJoinWithCode: () -> Unit = {},
     onCreateClub: () -> Unit = {},
 ) {
@@ -91,15 +94,17 @@ fun StartScreen(
                 Spacer(Modifier.width(8.dp))
                 Text(DamoimStrings.APP_NAME, style = DamoimTheme.typography.titleMedium, color = colors.textPrimary)
             }
-            Box(
-                modifier = Modifier.size(34.dp).clip(CircleShape).background(colors.primaryContainerHigh),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    userName.take(2),
-                    style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold),
-                    color = colors.primaryDeep,
-                )
+            NetworkAvatar(url = profileImageUrl, size = 34.dp) {
+                Box(
+                    modifier = Modifier.size(34.dp).clip(CircleShape).background(colors.primaryContainerHigh),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        userName.take(2),
+                        style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold),
+                        color = colors.primaryDeep,
+                    )
+                }
             }
         }
 

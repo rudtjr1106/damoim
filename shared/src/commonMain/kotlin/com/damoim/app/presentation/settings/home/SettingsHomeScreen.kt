@@ -32,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.presentation.component.BottomNavBar
 import com.damoim.app.presentation.component.ChevronRightIcon
+import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.MainTab
 import com.damoim.app.presentation.component.WarningIcon
 import com.damoim.app.presentation.component.noRippleClick
@@ -94,8 +95,12 @@ fun SettingsHomeScreen(
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             // 동아리 카드
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).noRippleClick(onOpenClubSettings).padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Box(Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
-                    Text(state.clubInitial, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 20.sp), color = colors.onPrimary)
+                if (!state.clubImageUrl.isNullOrBlank()) {
+                    NetworkImage(url = state.clubImageUrl, modifier = Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)), cornerRadius = 18.dp)
+                } else {
+                    Box(Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
+                        Text(state.clubInitial, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 20.sp), color = colors.onPrimary)
+                    }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(state.clubName, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.textPrimary)

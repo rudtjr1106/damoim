@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.damoim.app.domain.model.ClubMembership
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.presentation.component.CheckIcon
+import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.DamoimBottomSheet
 import com.damoim.app.presentation.component.DamoimDialog
 import com.damoim.app.presentation.component.DialogButton
@@ -80,8 +81,12 @@ private fun ClubRow(membership: ClubMembership, current: Boolean, onClick: () ->
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(if (current) colors.primary else colors.accentSky), contentAlignment = Alignment.Center) {
-            Text(club.name.take(1), style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp), color = colors.onPrimary)
+        if (!club.imageUrl.isNullOrBlank()) {
+            NetworkImage(url = club.imageUrl, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)), cornerRadius = 16.dp)
+        } else {
+            Box(Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(if (current) colors.primary else colors.accentSky), contentAlignment = Alignment.Center) {
+                Text(club.name.take(1), style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp), color = colors.onPrimary)
+            }
         }
         Column(Modifier.weight(1f)) {
             Text(club.name, style = DamoimTheme.typography.body.copy(fontWeight = if (current) FontWeight.ExtraBold else FontWeight.Bold, fontSize = 15.sp), color = colors.textPrimary)

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 data class SettingsHomeUiState(
     val clubName: String = "",
     val clubInitial: String = "동",
+    val clubImageUrl: String? = null,
     val memberCount: Int = 0,
     val joinCode: String = "",
     val planName: String = "무료 플랜",
@@ -35,6 +36,7 @@ class SettingsHomeViewModel(
                     copy(
                         clubName = club?.name ?: "",
                         clubInitial = club?.name?.take(1) ?: "동",
+                        clubImageUrl = club?.imageUrl,
                         memberCount = club?.memberCount ?: sub.memberUsed,
                         joinCode = club?.joinCode ?: "",
                         planName = sub.planName,
