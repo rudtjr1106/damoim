@@ -103,7 +103,6 @@ fun HomeRoute(
                 else -> onComingSoon(label)
             }
         },
-        onSeeAll = onComingSoon,
         onTabSelect = onTabSelect,
     )
 }
@@ -117,7 +116,6 @@ fun HomeScreen(
     onBellClick: () -> Unit = {},
     onAlertClick: () -> Unit = {},
     onQuickAction: (String) -> Unit = {},
-    onSeeAll: (String) -> Unit = {},
     onOpenSchedule: (Long) -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
@@ -135,10 +133,10 @@ fun HomeScreen(
                     summary.alert?.let { AlertCard(it, onAlertClick) }
                     QuickActions(summary.role, onQuickAction)
                     if (summary.schedules.isNotEmpty()) {
-                        ScheduleSection(summary.schedules, onOpenSchedule) { onSeeAll(DamoimStrings.HOME_SECTION_SCHEDULE) }
+                        ScheduleSection(summary.schedules, onOpenSchedule)
                     }
                     if (summary.boardPreviews.isNotEmpty()) {
-                        BoardSection(summary.boardPreviews, onOpenPost) { onSeeAll(DamoimStrings.HOME_SECTION_BOARD) }
+                        BoardSection(summary.boardPreviews, onOpenPost)
                     }
                     Spacer(Modifier.height(8.dp))
                 }
@@ -299,8 +297,8 @@ private fun quickActionsFor(role: ClubRole): List<QuickAction> {
 }
 
 @Composable
-private fun ScheduleSection(schedules: List<UpcomingSchedule>, onOpen: (Long) -> Unit, onSeeAll: () -> Unit) {
-    SectionHeader(DamoimStrings.HOME_SECTION_SCHEDULE, onSeeAll, Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp))
+private fun ScheduleSection(schedules: List<UpcomingSchedule>, onOpen: (Long) -> Unit) {
+    SectionHeader(DamoimStrings.HOME_SECTION_SCHEDULE, Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp))
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -337,8 +335,8 @@ private fun ScheduleCard(s: UpcomingSchedule, onClick: () -> Unit) {
 }
 
 @Composable
-private fun BoardSection(previews: List<BoardPreview>, onOpenPost: (Long) -> Unit, onSeeAll: () -> Unit) {
-    SectionHeader(DamoimStrings.HOME_SECTION_BOARD, onSeeAll, Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp))
+private fun BoardSection(previews: List<BoardPreview>, onOpenPost: (Long) -> Unit) {
+    SectionHeader(DamoimStrings.HOME_SECTION_BOARD, Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp))
     Column(
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -369,16 +367,8 @@ private fun BoardRow(preview: BoardPreview, onClick: () -> Unit = {}) {
 }
 
 @Composable
-private fun SectionHeader(title: String, onSeeAll: () -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-        Text(title, style = DamoimTheme.typography.titleMedium, color = DamoimTheme.colors.textPrimary)
-        Text(
-            DamoimStrings.HOME_SEE_ALL,
-            style = DamoimTheme.typography.caption.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
-            color = DamoimTheme.colors.primary,
-            modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onSeeAll),
-        )
-    }
+private fun SectionHeader(title: String, modifier: Modifier = Modifier) {
+    Text(title, style = DamoimTheme.typography.titleMedium, color = DamoimTheme.colors.textPrimary, modifier = modifier.fillMaxWidth())
 }
 
 private fun categoryLabel(c: BoardCategory) = when (c) {
