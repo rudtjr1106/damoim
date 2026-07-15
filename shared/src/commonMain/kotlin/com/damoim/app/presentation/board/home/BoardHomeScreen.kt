@@ -107,7 +107,7 @@ fun BoardHomeScreen(
                 }
             }
             if (state.home != null && !state.isEmpty) {
-                WriteFab(onWrite, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp))
+                WriteFab(onWrite, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 24.dp))
             }
         }
         BottomNavBar(selected = MainTab.BOARD, onSelect = onTabSelect)
