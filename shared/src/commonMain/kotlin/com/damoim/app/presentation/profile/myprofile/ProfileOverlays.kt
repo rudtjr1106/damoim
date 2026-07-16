@@ -81,12 +81,16 @@ private fun ClubRow(membership: ClubMembership, current: Boolean, onClick: () ->
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        if (!club.imageUrl.isNullOrBlank()) {
-            NetworkImage(url = club.imageUrl, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)), cornerRadius = 16.dp)
-        } else {
+        // 이미지 URL이 있어도 로드에 실패하면(서버에 바이트 없음 등) 이니셜로 폴백한다
+        val clubInitialBox: @Composable () -> Unit = {
             Box(Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(if (current) colors.primary else colors.accentSky), contentAlignment = Alignment.Center) {
                 Text(club.name.take(1), style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp), color = colors.onPrimary)
             }
+        }
+        if (!club.imageUrl.isNullOrBlank()) {
+            NetworkImage(url = club.imageUrl, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)), cornerRadius = 16.dp, fallback = clubInitialBox)
+        } else {
+            clubInitialBox()
         }
         Column(Modifier.weight(1f)) {
             Text(club.name, style = DamoimTheme.typography.body.copy(fontWeight = if (current) FontWeight.ExtraBold else FontWeight.Bold, fontSize = 15.sp), color = colors.textPrimary)

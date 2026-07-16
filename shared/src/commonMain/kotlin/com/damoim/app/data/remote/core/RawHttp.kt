@@ -28,5 +28,10 @@ object RawHttp {
 
     /** presigned GET — 이미지 바이트를 내려받는다(렌더용). 실패 시 null. */
     suspend fun getBytes(url: String): ByteArray? =
-        runCatching { client.get(url).readRawBytes() }.getOrNull()
+        runCatching {
+            // Ktor는 expectSuccess=false가 기본이라 404도 예외가 아니다 — 상태를 직접 봐야
+            // 오류 본문을 이미지 바이트로 착각하지 않는다(키가 소실된 옛 이미지 = 404).
+            val response = client.get(url)
+            if (response.status.isSuccess()) response.readRawBytes() else null
+        }.getOrNull()
 }

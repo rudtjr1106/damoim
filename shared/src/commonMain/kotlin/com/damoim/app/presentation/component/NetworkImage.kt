@@ -55,6 +55,9 @@ object NetworkImageCache {
 /**
  * URL 이미지를 비동기로 받아 렌더한다. 로딩 전/실패 시 회색 플레이스홀더.
  * [localKey]가 주어지면(업로드 전 방금 고른 사진) ImageStore 로컬 비트맵을 우선 표시한다.
+ * [fallback]이 주어지면 **로드 실패**(서버에 바이트가 없거나 만료된 URL 등) 시 회색 박스 대신 이를
+ * 렌더한다 — URL은 비어있지 않은데 바이트가 없는 경우 빈 회색 박스가 영구히 남는 것을 방지.
+ * (실패는 캐시하지 않으므로 다시 업로드하면 즉시 정상 렌더된다.)
  */
 @Composable
 fun NetworkImage(
@@ -63,32 +66,34 @@ fun NetworkImage(
     cornerRadius: Dp = 12.dp,
     contentScale: ContentScale = ContentScale.Crop,
     localKey: String? = null,
+    fallback: (@Composable () -> Unit)? = null,
 ) {
     val colors = DamoimTheme.colors
     val localBitmap = localKey?.let { ImageStore[it] }
     var remote by remember(url) { mutableStateOf(url?.let { NetworkImageCache[it] }) }
+    var failed by remember(url) { mutableStateOf(false) }
     LaunchedEffect(url) {
         if (url != null && !url.isBlank() && remote == null) {
             val bytes = RawHttp.getBytes(url)
-            if (bytes != null) {
-                val bmp = withContext(Dispatchers.Default) { runCatching { bytes.toImageBitmap() }.getOrNull() }
-                if (bmp != null) {
-                    NetworkImageCache.put(url, bmp)
-                    remote = bmp
-                }
+            val bmp = bytes?.let { withContext(Dispatchers.Default) { runCatching { it.toImageBitmap() }.getOrNull() } }
+            if (bmp != null) {
+                NetworkImageCache.put(url, bmp)
+                remote = bmp
+            } else {
+                failed = true
             }
         }
     }
     val bitmap = localBitmap ?: remote
-    if (bitmap != null) {
-        Image(
+    when {
+        bitmap != null -> Image(
             bitmap = bitmap,
             contentDescription = null,
             contentScale = contentScale,
             modifier = modifier.clip(RoundedCornerShape(cornerRadius)),
         )
-    } else {
-        Box(modifier.clip(RoundedCornerShape(cornerRadius)).background(colors.surfaceInput))
+        failed && fallback != null -> fallback()
+        else -> Box(modifier.clip(RoundedCornerShape(cornerRadius)).background(colors.surfaceInput))
     }
 }
 

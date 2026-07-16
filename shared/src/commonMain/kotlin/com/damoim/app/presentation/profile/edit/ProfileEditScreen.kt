@@ -116,13 +116,17 @@ fun ProfileEditScreen(
         // 아바타 + 카메라 배지 (28sp, 배지 원 밖 2dp)
         Box(Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 20.dp), contentAlignment = Alignment.Center) {
             Box {
+                // 사진 URL이 있어도 로드에 실패하면(서버에 바이트 없음 등) 이니셜 아바타로 폴백한다
+                val initialAvatar: @Composable () -> Unit = {
+                    InitialAvatar(state.name.takeLast(2).ifBlank { DamoimStrings.PROFILE_AVATAR_FALLBACK }, size = 96.dp, fontSize = 28.sp)
+                }
                 when {
                     pickedPhoto != null ->
                         Image(pickedPhoto, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(96.dp).clip(CircleShape))
                     !state.profileImageUrl.isNullOrBlank() ->
-                        NetworkImage(url = state.profileImageUrl, modifier = Modifier.size(96.dp).clip(CircleShape), cornerRadius = 96.dp)
+                        NetworkImage(url = state.profileImageUrl, modifier = Modifier.size(96.dp).clip(CircleShape), cornerRadius = 96.dp, fallback = initialAvatar)
                     else ->
-                        InitialAvatar(state.name.takeLast(2).ifBlank { DamoimStrings.PROFILE_AVATAR_FALLBACK }, size = 96.dp, fontSize = 28.sp)
+                        initialAvatar()
                 }
                 Box(
                     Modifier.align(Alignment.BottomEnd).offset(x = 2.dp, y = 2.dp).size(32.dp).clip(CircleShape).background(colors.primary).border(2.5.dp, colors.surface, CircleShape).noRippleClick(onPickPhoto),

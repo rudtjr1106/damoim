@@ -138,15 +138,19 @@ fun ClubSettingsScreen(
                 Spacer(Modifier.height(16.dp))
                 // 로고 (대표 이미지 / 이니셜 + 편집 배지)
                 Box(Modifier.size(92.dp).align(Alignment.CenterHorizontally)) {
+                    // 이미지 URL이 있어도 로드에 실패하면(서버에 바이트 없음 등) 이니셜로 폴백한다
+                    val clubInitialBox: @Composable () -> Unit = {
+                        Box(Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
+                            Text(state.clubInitial, style = DamoimTheme.typography.display.copy(fontSize = 34.sp), color = colors.onPrimary)
+                        }
+                    }
                     when {
                         pickedPhoto != null ->
                             Image(pickedPhoto, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)))
                         !state.imageUrl.isNullOrBlank() ->
-                            NetworkImage(url = state.imageUrl, modifier = Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)), cornerRadius = 30.dp)
+                            NetworkImage(url = state.imageUrl, modifier = Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)), cornerRadius = 30.dp, fallback = clubInitialBox)
                         else ->
-                            Box(Modifier.size(92.dp).clip(RoundedCornerShape(30.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
-                                Text(state.clubInitial, style = DamoimTheme.typography.display.copy(fontSize = 34.sp), color = colors.onPrimary)
-                            }
+                            clubInitialBox()
                     }
                     Box(
                         modifier = Modifier.align(Alignment.BottomEnd).offset(x = 4.dp, y = 4.dp).size(32.dp).clip(CircleShape).background(colors.surface)

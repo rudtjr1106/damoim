@@ -95,12 +95,16 @@ fun SettingsHomeScreen(
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             // 동아리 카드
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).noRippleClick(onOpenClubSettings).padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                if (!state.clubImageUrl.isNullOrBlank()) {
-                    NetworkImage(url = state.clubImageUrl, modifier = Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)), cornerRadius = 18.dp)
-                } else {
+                // 이미지 URL이 있어도 로드에 실패하면(서버에 바이트 없음 등) 이니셜로 폴백한다
+                val clubInitialBox: @Composable () -> Unit = {
                     Box(Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
                         Text(state.clubInitial, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 20.sp), color = colors.onPrimary)
                     }
+                }
+                if (!state.clubImageUrl.isNullOrBlank()) {
+                    NetworkImage(url = state.clubImageUrl, modifier = Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)), cornerRadius = 18.dp, fallback = clubInitialBox)
+                } else {
+                    clubInitialBox()
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(state.clubName, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.textPrimary)

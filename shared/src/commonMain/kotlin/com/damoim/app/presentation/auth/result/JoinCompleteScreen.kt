@@ -102,15 +102,19 @@ internal fun ClubSummaryCard(club: Club) {
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (!club.imageUrl.isNullOrBlank()) {
-            NetworkImage(url = club.imageUrl, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)), cornerRadius = 14.dp)
-        } else {
+        // 이미지 URL이 있어도 로드에 실패하면(서버에 바이트 없음 등) 엠블럼 이니셜로 폴백한다
+        val emblem: @Composable () -> Unit = {
             Box(
                 modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color(club.emblemColor)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(club.name.take(1), style = DamoimTheme.typography.titleMedium, color = colors.onPrimary)
             }
+        }
+        if (!club.imageUrl.isNullOrBlank()) {
+            NetworkImage(url = club.imageUrl, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)), cornerRadius = 14.dp, fallback = emblem)
+        } else {
+            emblem()
         }
         Spacer(Modifier.size(12.dp))
         Column(Modifier.weight(1f)) {
