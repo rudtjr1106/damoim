@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.domain.model.AppNotification
+import com.damoim.app.domain.model.NotificationTargetType
 import com.damoim.app.domain.model.NotificationType
 import com.damoim.app.presentation.component.BellIcon
 import com.damoim.app.presentation.component.CalendarIcon
@@ -38,6 +39,7 @@ import com.damoim.app.presentation.component.KakaoBubbleIcon
 import com.damoim.app.presentation.component.MegaphoneIcon
 import com.damoim.app.presentation.component.PersonPlusIcon
 import com.damoim.app.presentation.component.TitleTopBar
+import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
@@ -46,9 +48,17 @@ import com.damoim.app.presentation.theme.DamoimTheme
 fun NotificationRoute(
     viewModel: NotificationViewModel = viewModel { NotificationViewModel(AppGraph.getNotificationsUseCase, AppGraph.markNotificationsReadUseCase) },
     onBack: () -> Unit = {},
+    onOpenPost: (Long) -> Unit = {},
+    onOpenSchedule: (Long) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
-    NotificationScreen(state = state, onBack = onBack, onMarkAllRead = viewModel::onMarkAllRead)
+    NotificationScreen(
+        state = state,
+        onBack = onBack,
+        onMarkAllRead = viewModel::onMarkAllRead,
+        onOpenPost = onOpenPost,
+        onOpenSchedule = onOpenSchedule,
+    )
 }
 
 @Composable
@@ -56,6 +66,8 @@ fun NotificationScreen(
     state: NotificationUiState = NotificationUiState(isLoading = false, notifications = previewNotifications()),
     onBack: () -> Unit = {},
     onMarkAllRead: () -> Unit = {},
+    onOpenPost: (Long) -> Unit = {},
+    onOpenSchedule: (Long) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     val empty = state.notifications.isEmpty() && !state.isLoading
@@ -72,18 +84,31 @@ fun NotificationScreen(
             EmptyNotifications(Modifier.weight(1f))
         } else {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                state.notifications.forEach { NotificationRow(it) }
+                state.notifications.forEach { n ->
+                    NotificationRow(n) {
+                        val id = n.targetId
+                        when (n.targetType) {
+                            NotificationTargetType.POST -> if (id != null) onOpenPost(id)
+                            NotificationTargetType.SCHEDULE -> if (id != null) onOpenSchedule(id)
+                            null -> Unit   // 가입 승인 등 이동 대상 없음
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun NotificationRow(n: AppNotification) {
+private fun NotificationRow(n: AppNotification, onClick: () -> Unit = {}) {
     val colors = DamoimTheme.colors
+    // 이동 대상이 있는 알림만 클릭 가능(가입 승인 등은 눌러도 반응 없음)
+    val hasTarget = n.targetType != null && n.targetId != null
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth().background(if (n.isUnread) colors.surfaceVariant else colors.surface).padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth()
+                .then(if (hasTarget) Modifier.noRippleClick(onClick) else Modifier)
+                .background(if (n.isUnread) colors.surfaceVariant else colors.surface).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.Top,
         ) {
             Box(
@@ -137,10 +162,10 @@ private fun EmptyNotifications(modifier: Modifier) {
 
 internal fun previewNotifications() = listOf(
     AppNotification(1, NotificationType.JOIN_APPROVED, "가입 신청이 승인되었어요. 코딩하는 사람들에 오신 것을 환영합니다! 🎉", "방금 전", true),
-    AppNotification(2, NotificationType.NOTICE, "새 공지: 신입 회원 환영 OT 일정 안내", "1시간 전", true),
-    AppNotification(3, NotificationType.COMMENT, "박준혁님이 회원님의 글에 댓글을 남겼어요: \"혹시 온라인 참여도...\"", "어제", false),
-    AppNotification(4, NotificationType.SCHEDULE, "정기 월례회의가 내일 오전 10시에 시작돼요", "어제", false),
-    AppNotification(5, NotificationType.VOTE, "MT 날짜 투표가 곧 마감돼요 (D-2)", "2일 전", false),
+    AppNotification(2, NotificationType.NOTICE, "새 공지: 신입 회원 환영 OT 일정 안내", "1시간 전", true, targetType = NotificationTargetType.POST, targetId = 101),
+    AppNotification(3, NotificationType.COMMENT, "박준혁님이 회원님의 글에 댓글을 남겼어요: \"혹시 온라인 참여도...\"", "어제", false, targetType = NotificationTargetType.POST, targetId = 102),
+    AppNotification(4, NotificationType.SCHEDULE, "정기 월례회의가 내일 오전 10시에 시작돼요", "어제", false, targetType = NotificationTargetType.SCHEDULE, targetId = 201),
+    AppNotification(5, NotificationType.VOTE, "MT 날짜 투표가 곧 마감돼요 (D-2)", "2일 전", false, targetType = NotificationTargetType.POST, targetId = 103),
 )
 
 @Preview

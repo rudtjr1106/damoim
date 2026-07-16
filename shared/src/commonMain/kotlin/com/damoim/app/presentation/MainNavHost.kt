@@ -391,6 +391,8 @@ fun MainNavHost(
 
             MainDestination.Notification -> NotificationRoute(
                 onBack = { back() },
+                onOpenPost = { navigate(MainDestination.PostDetail(it)) },
+                onOpenSchedule = { navigate(MainDestination.EventDetail(it)) },
             )
         }
 
