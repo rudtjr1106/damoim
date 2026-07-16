@@ -30,6 +30,13 @@ interface ClubRepository {
     /** 현재 세션 역할. 세션이 없으면 null. */
     fun observeRole(): Flow<ClubRole?>
 
+    /**
+     * 현재 세션 역할을 **일회성으로** 조회한다(동아리 없으면 null). 라우팅 판정 전용.
+     * [observeRole]은 공유 flow라 직전 세션의 값이 replay될 수 있어(로그아웃 → 재로그인),
+     * 시작 화면 판정처럼 한 번의 정확한 답이 필요한 곳은 캐시를 우회해 서버에 직접 묻는다.
+     */
+    suspend fun fetchMyRole(): ClubRole?
+
     /** 홈 요약 (화면 05/06). 회원 수·신청 대기·게시판 미리보기가 실시간 반영된다. */
     fun observeHomeSummary(): Flow<HomeSummary?>
 

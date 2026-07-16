@@ -19,6 +19,7 @@ import com.damoim.app.domain.repository.SettingsRepository
 import com.damoim.app.domain.usecase.AdminPermissionUseCase
 import com.damoim.app.domain.usecase.BlockedUserUseCase
 import com.damoim.app.domain.usecase.ClubSessionUseCase
+import com.damoim.app.domain.usecase.FetchMyRoleUseCase
 import com.damoim.app.domain.usecase.LogoutUseCase
 import com.damoim.app.domain.usecase.NotifSettingsUseCase
 import com.damoim.app.domain.usecase.SubscriptionUseCase
@@ -94,6 +95,7 @@ object AppGraph {
     val getAuthUserUseCase get() = GetAuthUserUseCase(authRepository)
     val submitJoinCodeUseCase get() = SubmitJoinCodeUseCase(clubRepository)
     val enterClubUseCase get() = EnterClubUseCase(clubRepository)
+    val fetchMyRoleUseCase get() = FetchMyRoleUseCase(clubRepository)
 
     // B. 홈·동아리 관리
     val createClubUseCase get() = CreateClubUseCase(clubRepository)

@@ -25,10 +25,12 @@ import com.damoim.app.presentation.component.DamoimToastHost
  * - 동아리 생성(07) 완료 → 동아리장(LEADER)으로 홈 진입
  * - 가입 코드 제출 결과: APPROVED → 일반회원(MEMBER) 홈, PENDING → 04 대기(홈 진입 없음), REJECTED → 38
  * - [start]로 시작 화면을 지정한다: Login(미로그인) / Start(로그인됐지만 동아리 없음 → 재로그인 없이 생성·가입).
+ * - 로그인(01) 성공은 [onLoggedIn]으로 올려 RootNavHost가 (프로필/동아리 유무)로 재판정한다.
  */
 @Composable
 fun AuthNavHost(
     start: AuthDestination = AuthDestination.Login,
+    onLoggedIn: () -> Unit = {},
     onEnterClub: (ClubRole) -> Unit = {},
 ) {
     val backStack: SnapshotStateList<AuthDestination> =
@@ -45,8 +47,7 @@ fun AuthNavHost(
     Box(Modifier.fillMaxSize()) {
         when (val current = backStack.last()) {
             AuthDestination.Login -> LoginRoute(
-                onNavigateProfileSetup = { resetTo(AuthDestination.ProfileSetup) },
-                onNavigateStart = { resetTo(AuthDestination.Start) },
+                onLoggedIn = onLoggedIn,   // 판정(31/홈/32)은 RootNavHost가 담당
                 onShowError = { toast = it },
             )
 

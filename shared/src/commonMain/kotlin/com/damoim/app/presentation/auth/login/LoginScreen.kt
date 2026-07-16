@@ -29,13 +29,12 @@ import com.damoim.app.presentation.theme.DamoimTheme
 
 /**
  * 화면 01 로그인/온보딩 — Route(상태·이벤트·네비게이션).
- * 카카오 로그인을 직접 수행하고 결과에 따라 프로필 설정/시작하기로 이동한다.
+ * 카카오 로그인을 직접 수행하고, 성공은 [onLoggedIn]으로 올려 상위가 다음 화면을 판정한다.
  */
 @Composable
 fun LoginRoute(
     viewModel: LoginViewModel = viewModel { LoginViewModel(AppGraph.loginWithKakaoUseCase) },
-    onNavigateProfileSetup: () -> Unit = {},
-    onNavigateStart: () -> Unit = {},
+    onLoggedIn: () -> Unit = {},
     onShowError: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -43,8 +42,7 @@ fun LoginRoute(
     LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {
-                LoginSideEffect.NavigateToProfileSetup -> onNavigateProfileSetup()
-                LoginSideEffect.NavigateToStart -> onNavigateStart()
+                LoginSideEffect.LoggedIn -> onLoggedIn()
                 is LoginSideEffect.ShowError -> onShowError(effect.message)
             }
         }

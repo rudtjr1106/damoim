@@ -8,6 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.damoim.app.core.di.AppGraph
@@ -17,6 +18,7 @@ import com.damoim.app.presentation.auth.AuthDestination
 import com.damoim.app.presentation.auth.AuthNavHost
 import com.damoim.app.presentation.theme.DamoimTheme
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /** 앱 루트 플로우: 인증(로그인/프로필설정/온보딩) · 메인(홈). */
 private sealed interface AppFlow {
@@ -26,29 +28,41 @@ private sealed interface AppFlow {
 }
 
 /**
+ * (로그인 여부, 프로필 완료 여부, 활성 동아리 여부)로 시작 플로우를 판정한다.
+ * 콜드스타트와 로그인 직후가 **같은 규칙**을 쓰도록 이 함수 하나만 사용한다.
+ */
+private suspend fun resolveFlow(): AppFlow =
+    if (!AppGraph.isLoggedIn) {
+        AppFlow.Auth(AuthDestination.Login)                     // 미로그인 → 로그인
+    } else {
+        val user = AppGraph.getAuthUserUseCase().first()        // /me (로그인 직후엔 방금 받은 값)
+        // 역할은 반드시 일회성 조회로 읽는다. observeRole()은 공유 flow(replay=1)이고 화면을 벗어나도
+        // 살아있는 VM들이 구독을 유지해 캐시가 리셋되지 않는다 → 재로그인 시점엔 아직 "로그아웃 상태의
+        // role=null"이 replay돼, 동아리가 있는데도 온보딩으로 보내는 오판이 난다(재조회는 진행 중).
+        val role = AppGraph.fetchMyRoleUseCase()               // /members/me 직접 조회
+        when {
+            // 저장 토큰은 있었지만 서버가 인증을 거부(계정 삭제·DB 초기화·재사용 폐기 등) →
+            // refreshTokens가 refresh 실패로 토큰을 폐기한 상태. 온보딩이 아니라 로그인으로 보낸다.
+            // (네트워크 오류/오프라인이면 토큰은 유지되므로 이 분기에 걸리지 않고 아래로 진행)
+            !AppGraph.isLoggedIn -> AppFlow.Auth(AuthDestination.Login)
+            user.needsProfileSetup -> AppFlow.Auth(AuthDestination.ProfileSetup) // 프로필 미완료 → 31
+            role != null -> AppFlow.Main(role)                  // 활성 동아리 있음 → 홈
+            else -> AppFlow.Auth(AuthDestination.Start)         // 로그인·프로필 O, 동아리 X → 온보딩
+        }
+    }
+
+/**
  * 최상위 네비게이션. 콜드스타트에 (로그인 여부, 프로필 완료 여부, 활성 동아리 여부)로 초기 플로우를
  * 결정하고, 이후 전환(생성/가입/탈퇴/로그아웃)은 콜백으로 즉시 처리한다(재조회 지연 깜빡임 방지).
+ * 로그인(01) 성공도 [resolveFlow]로 콜드스타트와 동일하게 재판정한다.
  */
 @Composable
 fun RootNavHost() {
     var flow by remember { mutableStateOf<AppFlow>(AppFlow.Loading) }
+    // 판정 코루틴은 반드시 루트 scope에서 — AuthNavHost가 dispose돼도 살아남아야 한다.
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        flow = if (!AppGraph.isLoggedIn) {
-            AppFlow.Auth(AuthDestination.Login)                     // 미로그인 → 로그인
-        } else {
-            val ctx = AppGraph.observeMyContextUseCase().first()   // /me·/members/me 조회(실패 시 401→refresh)
-            when {
-                // 저장 토큰은 있었지만 서버가 인증을 거부(계정 삭제·DB 초기화·재사용 폐기 등) →
-                // refreshTokens가 refresh 실패로 토큰을 폐기한 상태. 온보딩이 아니라 로그인으로 보낸다.
-                // (네트워크 오류/오프라인이면 토큰은 유지되므로 이 분기에 걸리지 않고 아래로 진행)
-                !AppGraph.isLoggedIn -> AppFlow.Auth(AuthDestination.Login)
-                ctx.needsProfileSetup -> AppFlow.Auth(AuthDestination.ProfileSetup) // 프로필 미완료 → 31
-                ctx.role != null -> AppFlow.Main(ctx.role)          // 활성 동아리 있음 → 홈
-                else -> AppFlow.Auth(AuthDestination.Start)         // 로그인·프로필 O, 동아리 X → 온보딩
-            }
-        }
-    }
+    LaunchedEffect(Unit) { flow = resolveFlow() }
 
     // 실행 중 세션 만료(서버가 토큰 거부 → refresh 실패로 폐기) → 즉시 로그인으로.
     // 로그인 성공 후 지난 신호가 되살아나지 않도록 SessionEvents는 replay=0.
@@ -61,6 +75,14 @@ fun RootNavHost() {
 
         is AppFlow.Auth -> AuthNavHost(
             start = current.start,
+            // 로그인 성공 → 콜드스타트와 동일 규칙으로 재판정(31 / 홈 / 32).
+            // Loading을 한 번 거쳐야 AuthNavHost가 dispose되며 백스택이 새 start로 재생성된다.
+            onLoggedIn = {
+                scope.launch {
+                    flow = AppFlow.Loading   // 판정 중 스플래시(로그인 화면과 동색이라 깜빡임 없음)
+                    flow = resolveFlow()
+                }
+            },
             onEnterClub = { role ->
                 AppGraph.enterClubUseCase(role)
                 flow = AppFlow.Main(role)

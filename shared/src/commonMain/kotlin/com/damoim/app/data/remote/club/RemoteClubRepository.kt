@@ -69,6 +69,11 @@ class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
 
     override fun observeRole(): Flow<ClubRole?> = meMember().map { it?.let { m -> clubRole(m.role) } }
 
+    // 공유 flow(meMember)를 쓰지 않는다 — 그 replay에는 직전 세션 값이 남아 있을 수 있어
+    // 재로그인 판정이 뒤집힌다(withdrawFromActiveClub의 잔존판정과 같은 이유로 직접 조회).
+    override suspend fun fetchMyRole(): ClubRole? =
+        api.getData<MemberResponseDto>(ApiRoutes.Members.ME).getOrNull()?.let { clubRole(it.role) }
+
     override fun observeHomeSummary(): Flow<HomeSummary?> = shared.get("home") {
         reactiveFlow<HomeSummary?>(DataTopic.CLUB, DataTopic.MEMBER, DataTopic.NOTIFICATION, fallback = null) {
             api.getData<HomeSummaryResponseDto>(ApiRoutes.Clubs.ME_HOME).getOrNull()?.toDomain()
