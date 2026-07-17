@@ -1,3 +1,13 @@
+// 카카오 네이티브 앱 키 등 비밀값 — Gradle이 local.properties에서 생성한다(커밋 제외).
+//   재생성: ./gradlew :shared:generateIosSecretsXcconfig
+//   '?' = 파일이 없어도 빌드가 깨지지 않는다(키 없으면 로그인만 비활성).
+// ⚠️ xcconfig는 Xcode가 '빌드 페이즈 실행 전'에 읽는다 → Gradle Run Script가 이 파일을 새로
+//    만들어도 그 빌드엔 반영되지 않고 '다음 빌드'부터 적용된다. 최초 1회와 키 변경 시엔
+//    반드시 Xcode 밖에서 위 태스크를 먼저 실행할 것.
+// ⚠️ 서버 URL을 여기 넣지 말 것 — xcconfig는 '//'를 주석으로 먹어 https:// 가 깨진다.
+//    서버 주소는 iosMain의 IosBuildConfig(Gradle 생성 Kotlin 상수)로 간다.
+#include? "Secrets.xcconfig"
+
 TEAM_ID=
 
 PRODUCT_NAME=Damoim

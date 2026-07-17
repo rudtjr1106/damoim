@@ -5,6 +5,9 @@
 xcuserdata
 !src/**/build/
 local.properties
+# 카카오 네이티브 앱 키 — Gradle이 local.properties에서 생성한다(:shared:generateIosSecretsXcconfig).
+# ⚠️ *.xcodeproj/* 규칙은 .xcodeproj 내부만 덮으므로 이 경로는 별도로 무시해야 한다.
+iosApp/Configuration/Secrets.xcconfig
 .idea
 .DS_Store
 captures

@@ -24,6 +24,8 @@ fun Project.localProperty(key: String, default: String): Provider<String> =
 // 서버 주소 — 없으면 로컬 서버로 폴백(빌드는 깨지지 않는다).
 // ⚠️ iOS ATS가 cleartext http를 막으므로 실기기/시뮬레이터 검증에는 https 주소여야 한다.
 val iosServerBaseUrl: Provider<String> = localProperty("server.base.url", "http://localhost:8080")
+// 카카오 네이티브 앱 키 — 없으면 빈 문자열(= isConfigured false). 값은 절대 커밋·로그되지 않는다.
+val kakaoNativeAppKey: Provider<String> = localProperty("kakao.native.app.key", "")
 
 /**
  * iosMain에 서버 주소 상수를 생성한다(안드로이드 BuildConfig.SERVER_BASE_URL 대응).
@@ -57,6 +59,42 @@ val generateIosBuildConfig by tasks.registering {
             """.trimIndent()
         )
     }
+}
+
+/**
+ * 카카오 네이티브 앱 키를 iosApp/Configuration/Secrets.xcconfig(gitignore)로 내보낸다.
+ * Config.xcconfig가 `#include?`로 읽고, Info.plist가 $(KAKAO_NATIVE_APP_KEY)로 치환한다.
+ *
+ * ⚠️ xcconfig는 Xcode **빌드 설정 해석 시점**(= 빌드 페이즈 실행 전)에 읽힌다. Gradle Run Script는
+ * 그 뒤에 돌므로 아래 dependsOn으로 걸어도 **같은 빌드에는 반영되지 않고 다음 빌드부터** 적용된다.
+ * → 최초 1회와 키 변경 시에는 Xcode 밖에서 `./gradlew :shared:generateIosSecretsXcconfig`를 먼저 실행할 것.
+ */
+val generateIosSecretsXcconfig by tasks.registering {
+    group = "ios"
+    description = "local.properties의 kakao.native.app.key를 iosApp/Configuration/Secrets.xcconfig로 생성한다."
+    val kakaoKey = kakaoNativeAppKey
+    val outputFile = rootProject.layout.projectDirectory.file("iosApp/Configuration/Secrets.xcconfig")
+    inputs.property("kakaoNativeAppKey", kakaoKey)
+    outputs.file(outputFile)
+    doLast {
+        val f = outputFile.asFile
+        f.parentFile.mkdirs()
+        // 키가 비어도 파일은 만든다 — $(KAKAO_NATIVE_APP_KEY)가 빈 문자열로 치환되어야 하기 때문.
+        f.writeText(
+            """
+            // 자동 생성 파일 — 수정 금지, 커밋 금지(.gitignore).
+            // 출처: local.properties의 kakao.native.app.key
+            // 재생성: ./gradlew :shared:generateIosSecretsXcconfig
+            KAKAO_NATIVE_APP_KEY = ${kakaoKey.get()}
+
+            """.trimIndent()
+        )
+    }
+}
+
+// Xcode Run Script가 부르는 태스크에 물려, 키를 바꿔도 다음 빌드에는 자동 반영되게 한다.
+tasks.matching { it.name.startsWith("embedAndSignAppleFrameworkForXcode") }.configureEach {
+    dependsOn(generateIosSecretsXcconfig)
 }
 
 kotlin {

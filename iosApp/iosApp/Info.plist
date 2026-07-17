@@ -6,5 +6,30 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>게시글에 사진을 촬영해 첨부하거나 프로필 사진을 찍기 위해 카메라를 사용합니다.</string>
+	<!-- 카카오 로그인 — 아래 값들은 빌드 시 Secrets.xcconfig(Gradle이 local.properties에서 생성, 커밋 제외)의
+	     KAKAO_NATIVE_APP_KEY로 치환된다. 리터럴 키를 여기 적지 말 것. -->
+	<!-- 카카오톡 앱이 인증 후 우리 앱으로 돌아올 URL 스킴. SDK가 "kakao{네이티브앱키}"를 콜백 스킴으로 쓴다. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>kakao</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kakao$(KAKAO_NATIVE_APP_KEY)</string>
+			</array>
+		</dict>
+	</array>
+	<!-- 카카오톡 설치 여부 조회(canOpenURL) 허용 목록. 없으면 isKakaoTalkLoginAvailable()이 항상 false가 되어
+	     카카오톡 로그인 경로가 죽고 계정(웹) 로그인만 남는다. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>kakaokompassauth</string>
+	</array>
+	<!-- 런타임에 Swift가 읽어 KakaoSDK.initSDK(appKey:)에 넘길 네이티브 앱 키. 비어 있으면 로그인 미설정으로 처리. -->
+	<key>KAKAO_NATIVE_APP_KEY</key>
+	<string>$(KAKAO_NATIVE_APP_KEY)</string>
 </dict>
 </plist>
