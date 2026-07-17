@@ -193,11 +193,18 @@ object IosBillingRegistry {
 /**
  * StoreKit 1(SKPaymentQueue) 폴백 — StoreKit 2 브릿지가 등록되지 않았을 때. 앱 전역 단일 옵저버로 관찰.
  * (StoreKit 2는 Swift async/await 전용이라 K/N 직접 호출 불가 → Swift 브릿지 또는 이 StoreKit 1.)
- * 성공 시 서버 검증용으로 앱 영수증(base64)을 함께 돌려준다.
+ *
+ * ⚠️ `object`가 아니라 `class` + [storeKitBilling] lazy 싱글턴이어야 한다 — Kotlin/Native는 Obj-C 클래스를
+ * 상속한 object 선언의 코드 생성을 지원하지 않아 프레임워크 **링크 단계에서** 컴파일러가 죽는다
+ * ("Allocation of Obj-C class ... should have been lowered"). compileKotlinIos*는 통과하므로 링크까지
+ * 돌려봐야 드러난다.
  */
-private object StoreKitBilling : NSObject(), SKPaymentTransactionObserverProtocol, SKProductsRequestDelegateProtocol {
-    private const val ERROR_PAYMENT_CANCELLED = 2L  // SKErrorPaymentCancelled
+private const val ERROR_PAYMENT_CANCELLED = 2L  // SKErrorPaymentCancelled
 
+/** 앱 전역 단일 옵저버. `object`로 두면 안 된다 — 아래 클래스 주석 참고. */
+private val storeKitBilling: StoreKitBilling by lazy { StoreKitBilling() }
+
+private class StoreKitBilling : NSObject(), SKPaymentTransactionObserverProtocol, SKProductsRequestDelegateProtocol {
     private var callback: ((BillingResult, String?) -> Unit)? = null
     private var productsRequest: SKProductsRequest? = null
     private var observerAdded = false
@@ -269,7 +276,7 @@ actual fun rememberSubscriptionBilling(): (String, String, (BillingResult, Purch
             onResult(result, proof)
         }
         val swift = IosBillingRegistry.impl
-        if (swift != null) swift.purchase(productId, handle) else StoreKitBilling.purchase(productId, handle)
+        if (swift != null) swift.purchase(productId, handle) else storeKitBilling.purchase(productId, handle)
     }
 }
 
