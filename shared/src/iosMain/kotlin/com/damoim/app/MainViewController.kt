@@ -7,9 +7,9 @@ import com.damoim.app.data.remote.core.RemoteEnv
 import platform.UIKit.UIViewController
 
 fun MainViewController(): UIViewController {
-    // 서버 통합 설정 주입 (iOS 시뮬레이터는 호스트와 네트워크 공유 → localhost).
-    RemoteConfig.baseUrl = "http://localhost:8080"
+    // 서버 통합 설정 주입 — local.properties의 server.base.url이 단일 출처(안드로이드 BuildConfig와 동일).
+    // ⚠️ iOS ATS가 cleartext http를 막으므로 그 값은 https 주소여야 한다.
+    RemoteConfig.baseUrl = IosBuildConfig.SERVER_BASE_URL
     RemoteEnv.tokenStore = IosTokenStore()
-    // AppGraph.useRemote는 기본 false — 서버 검증 시 여기서 true로. (iOS는 카카오 로그인 미구현이라 보류.)
     return ComposeUIViewController { App() }
 }
