@@ -84,6 +84,8 @@ data class UpdatePostRequestDto(
     val title: String,
     val content: String,
     val attachments: List<AttachmentInputDto> = emptyList(),
+    // 수정 시 투표 항목 추가/삭제를 반영하려면 poll도 함께 보낸다(null=투표 제거).
+    val poll: PollInputDto? = null,
 )
 
 @Serializable
@@ -453,6 +455,7 @@ internal fun PostDraft.toUpdateRequest(attachments: List<AttachmentInputDto>): U
         title = title,
         content = content,
         attachments = attachments + links.map { it.toInput() },
+        poll = pollInput(),
     )
 
 /** 임시저장 — 미디어(바이트)는 서버에 올리지 않고 링크/투표/모집만 저장. */
