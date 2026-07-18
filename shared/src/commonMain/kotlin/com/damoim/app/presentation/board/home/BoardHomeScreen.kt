@@ -45,7 +45,10 @@ import com.damoim.app.domain.model.RecruitStatus
 import com.damoim.app.domain.repository.BoardHomeData
 import com.damoim.app.presentation.board.CategoryBadge
 import com.damoim.app.presentation.board.SolidBadge
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.presentation.component.BottomNavBar
+import com.damoim.app.presentation.component.PullRefreshColumn
 import com.damoim.app.presentation.component.CommentIcon
 import com.damoim.app.presentation.component.HeartIcon
 import com.damoim.app.presentation.component.MainTab
@@ -92,7 +95,7 @@ fun BoardHomeScreen(
     val colors = DamoimTheme.colors
     Column(modifier = Modifier.fillMaxSize().background(colors.surface)) {
         Box(Modifier.weight(1f)) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            PullRefreshColumn(onRefresh = { RemoteBus.invalidate(DataTopic.BOARD) }, modifier = Modifier.fillMaxSize()) {
                 BoardHomeHeader(onSearch)
                 CategoryFilterRow(selected = null, onSelect = onOpenCategory)
                 val home = state.home

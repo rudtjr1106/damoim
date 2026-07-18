@@ -46,7 +46,10 @@ import com.damoim.app.core.di.AppGraph
 import com.damoim.app.domain.model.ResourceFile
 import com.damoim.app.domain.model.ResourceFolder
 import com.damoim.app.domain.repository.StorageUsage
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.presentation.component.BackChevronIcon
+import com.damoim.app.presentation.component.PullRefreshColumn
 import com.damoim.app.presentation.component.BottomNavBar
 import com.damoim.app.presentation.component.CloseIcon
 import com.damoim.app.presentation.component.FolderIcon
@@ -104,7 +107,7 @@ fun ArchiveScreen(
         // 헤더(뒤로가기·제목·저장공간·검색·폴더칩·기수칩)는 고정, 아래 목록만 스크롤한다
         ArchiveHeader(state, onBack, onSelectFolder, onSelectCohort, onQueryChange)
         Box(Modifier.weight(1f)) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            PullRefreshColumn(onRefresh = { RemoteBus.invalidate(DataTopic.RESOURCE) }, modifier = Modifier.fillMaxSize()) {
                 when {
                     state.isEmpty -> ArchiveEmpty(onUpload)
                     else -> ArchiveList(state, onOpenResource)

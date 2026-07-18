@@ -35,6 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
+import com.damoim.app.presentation.component.PullRefreshColumn
 import com.damoim.app.domain.model.Member
 import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.presentation.component.BackChevronIcon
@@ -92,7 +95,7 @@ fun MemberListScreen(
                 // displayed는 계산 getter(2중 필터) — 한 번만 계산해 재사용(매 리컴포지션 O(N²) 방지)
                 val displayed = remember(state.all, state.query, state.filter, state.cohorts) { state.displayed }
                 val lastIndex = displayed.lastIndex
-                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+                PullRefreshColumn(onRefresh = { RemoteBus.invalidate(DataTopic.MEMBER, DataTopic.CLUB) }, modifier = Modifier.weight(1f), columnModifier = Modifier.padding(horizontal = 20.dp)) {
                 if (state.isSearchEmpty) {
                     Text(
                         DamoimStrings.memberSearchEmpty(state.query),

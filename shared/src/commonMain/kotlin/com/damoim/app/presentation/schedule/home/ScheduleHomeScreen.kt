@@ -39,7 +39,10 @@ import com.damoim.app.domain.model.ScheduleAccent
 import com.damoim.app.domain.model.ScheduleType
 import com.damoim.app.platform.CalendarEvent
 import com.damoim.app.platform.rememberCalendarAdder
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.presentation.component.BackChevronIcon
+import com.damoim.app.presentation.component.PullRefreshColumn
 import com.damoim.app.presentation.component.BottomNavBar
 import com.damoim.app.presentation.component.CalendarIcon
 import com.damoim.app.presentation.component.ChevronRightIcon
@@ -138,7 +141,7 @@ fun ScheduleHomeScreen(
         }
 
         Box(Modifier.weight(1f)) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            PullRefreshColumn(onRefresh = { RemoteBus.invalidate(DataTopic.SCHEDULE) }, modifier = Modifier.fillMaxSize()) {
                 when {
                     state.isEmpty -> EmptyState(isLeader = isLeader, onRegister = onRegister)
                     state.listMode -> ListView(state, onOpenSchedule, onAddCalendarCombined)

@@ -34,9 +34,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.presentation.club.ClubSwitchOverlay
 import com.damoim.app.presentation.component.BottomNavBar
 import com.damoim.app.presentation.component.DamoimConfirmDialog
+import com.damoim.app.presentation.component.PullRefreshColumn
 import com.damoim.app.presentation.component.ChevronRightIcon
 import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.MainTab
@@ -144,7 +147,12 @@ fun SettingsHomeScreen(
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
 
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        PullRefreshColumn(
+            onRefresh = { RemoteBus.invalidate(DataTopic.CLUB, DataTopic.SETTINGS) },
+            modifier = Modifier.weight(1f),
+            columnModifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             // 동아리 카드 — 일반 부원은 동아리 정보 설정으로 이동 불가
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).then(if (canManageClubSettings) Modifier.noRippleClick(onOpenClubSettings) else Modifier).padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 // 이미지 URL이 있어도 로드에 실패하면(서버에 바이트 없음 등) 이니셜로 폴백한다

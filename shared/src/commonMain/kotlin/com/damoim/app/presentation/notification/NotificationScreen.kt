@@ -29,6 +29,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
+import com.damoim.app.presentation.component.PullRefreshColumn
 import com.damoim.app.domain.model.AppNotification
 import com.damoim.app.domain.model.NotificationTargetType
 import com.damoim.app.domain.model.NotificationType
@@ -85,7 +88,7 @@ fun NotificationScreen(
         if (empty) {
             EmptyNotifications(Modifier.weight(1f))
         } else {
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            PullRefreshColumn(onRefresh = { RemoteBus.invalidate(DataTopic.NOTIFICATION) }, modifier = Modifier.weight(1f)) {
                 state.notifications.forEach { n ->
                     NotificationRow(n) {
                         onMarkRead(n.id)   // 터치한 알림만 읽음 처리

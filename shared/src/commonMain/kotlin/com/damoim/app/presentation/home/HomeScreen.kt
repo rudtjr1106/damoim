@@ -43,7 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.presentation.club.ClubSwitchOverlay
+import com.damoim.app.presentation.component.PullRefreshColumn
 import com.damoim.app.domain.model.AlertKind
 import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.BoardPreview
@@ -123,8 +126,9 @@ fun HomeScreen(
     var showSwitch by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().background(colors.surface)) {
-            Column(
-                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            PullRefreshColumn(
+                onRefresh = { RemoteBus.invalidate(DataTopic.CLUB, DataTopic.MEMBER, DataTopic.NOTIFICATION, DataTopic.SCHEDULE, DataTopic.BOARD) },
+                modifier = Modifier.weight(1f),
             ) {
                 if (summary != null) {
                     HomeHeader(summary, onBellClick, onClubNameClick = { showSwitch = true })
