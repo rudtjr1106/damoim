@@ -76,7 +76,8 @@ fun MyProfileRoute(
     onLoggedOut: () -> Unit = {},              // 로그아웃 → 로그인
     onWithdrewToClub: () -> Unit = {},         // 탈퇴 후 잔존 → 새 동아리 홈
     onWithdrewToOnboarding: () -> Unit = {},   // 탈퇴 후 없음 → 온보딩(재로그인 X)
-    onAddClub: () -> Unit = {},                // 33 새 참여/생성 → 온보딩(세션 유지)
+    onAddClub: () -> Unit = {},                // 33 새 동아리 생성 → 온보딩(세션 유지)
+    onJoinClub: () -> Unit = {},               // 33 코드로 참여 → 코드 입력 화면 직행(뒤로가기로 복귀)
     onSwitched: () -> Unit = {},
     onOpenNotification: () -> Unit = {},
     onComingSoon: () -> Unit = {},
@@ -101,6 +102,7 @@ fun MyProfileRoute(
         onLogout = viewModel::onLogout,
         onWithdraw = viewModel::onWithdraw,
         onAddClub = onAddClub,
+        onJoinClub = onJoinClub,
         onOpenNotification = onOpenNotification,
         onComingSoon = onComingSoon,
     )
@@ -115,6 +117,7 @@ fun MyProfileScreen(
     onLogout: () -> Unit = {},
     onWithdraw: () -> Unit = {},
     onAddClub: () -> Unit = {},
+    onJoinClub: () -> Unit = {},
     onOpenNotification: () -> Unit = {},
     onComingSoon: () -> Unit = {},
 ) {
@@ -146,7 +149,8 @@ fun MyProfileScreen(
                 currentClubId = state.joinedClubs.firstOrNull { it.club.name == state.currentClubName }?.club?.id ?: -1L,
                 onDismiss = { overlay = null },
                 onSwitch = { id -> overlay = null; onSwitchClub(id) },
-                onJoinOrCreate = { overlay = null; onAddClub() },
+                onJoin = { overlay = null; onJoinClub() },
+                onCreate = { overlay = null; onAddClub() },
             )
             ProfileOverlay.Logout -> ConfirmDialog(
                 DamoimStrings.LOGOUT_TITLE, DamoimStrings.LOGOUT_BODY, confirmLabel = DamoimStrings.LOGOUT_CONFIRM, destructive = false,

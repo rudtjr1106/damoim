@@ -32,17 +32,19 @@ fun AuthNavHost(
     start: AuthDestination = AuthDestination.Login,
     onLoggedIn: () -> Unit = {},
     onEnterClub: (ClubRole) -> Unit = {},
+    // 스택 루트에서 뒤로가기 시 호출(예: 코드로 참여 진입 → 원래 메인으로 복귀). null이면 루트에서 뒤로가기 무시.
+    onExit: (() -> Unit)? = null,
 ) {
     val backStack: SnapshotStateList<AuthDestination> =
         remember { mutableStateListOf(start) }
     var toast by remember { mutableStateOf<String?>(null) }
 
     fun navigate(destination: AuthDestination) = backStack.add(destination)
-    fun back() { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) }
+    fun back() { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) else onExit?.invoke() }
     fun resetTo(destination: AuthDestination) { backStack.clear(); backStack.add(destination) }
 
-    // 시스템 뒤로가기: 온보딩 스택 pop (루트=로그인에선 기본 동작)
-    com.damoim.app.platform.PlatformBackHandler(enabled = backStack.size > 1) { back() }
+    // 시스템 뒤로가기: 온보딩 스택 pop, 루트에선 onExit(있으면)로 상위 플로우에 위임
+    com.damoim.app.platform.PlatformBackHandler(enabled = backStack.size > 1 || onExit != null) { back() }
 
     Box(Modifier.fillMaxSize()) {
         when (val current = backStack.last()) {

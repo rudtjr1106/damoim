@@ -105,6 +105,7 @@ fun MainNavHost(
     onLoggedOut: () -> Unit = {},
     onWithdrewToOnboarding: () -> Unit = {},
     onAddClub: () -> Unit = {},
+    onJoinClub: () -> Unit = {},
 ) {
     // 역할은 세션에서 관찰 — 동아리 전환(33)으로 세션이 바뀌면 자동 반영된다
     val ctx by AppGraph.observeMyContextUseCase().collectAsState(
@@ -271,7 +272,8 @@ fun MainNavHost(
                 onLoggedOut = onLoggedOut,                             // 로그아웃 → 로그인
                 onWithdrewToClub = { resetTo(MainDestination.Home) },  // 탈퇴 후 잔존 → 새 동아리 홈
                 onWithdrewToOnboarding = onWithdrewToOnboarding,       // 탈퇴 후 없음 → 온보딩
-                onAddClub = onAddClub,                                 // 33 새 참여/생성 → 온보딩
+                onAddClub = onAddClub,                                 // 33 새 동아리 생성 → 온보딩
+                onJoinClub = onJoinClub,                               // 33 코드로 참여 → 코드 입력 직행
                 onSwitched = { resetTo(MainDestination.Home) },        // 동아리 전환 → 새 동아리 홈으로
                 onOpenNotification = { navigate(MainDestination.NotifSettings) },
                 onComingSoon = { toast = DamoimStrings.TOAST_COMING_SOON },

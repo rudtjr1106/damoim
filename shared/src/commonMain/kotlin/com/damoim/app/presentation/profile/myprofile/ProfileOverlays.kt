@@ -49,7 +49,8 @@ internal fun ClubSwitchSheet(
     currentClubId: Long,
     onDismiss: () -> Unit,
     onSwitch: (Long) -> Unit,
-    onJoinOrCreate: () -> Unit,
+    onJoin: () -> Unit,
+    onCreate: () -> Unit,
 ) {
     val colors = DamoimTheme.colors
     DamoimBottomSheet(onDismiss = onDismiss) {
@@ -61,8 +62,8 @@ internal fun ClubSwitchSheet(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashedButton(DamoimStrings.CLUB_SWITCH_JOIN, { LockIcon(colors.textTertiary, Modifier.size(15.dp)) }, Modifier.weight(1f), onJoinOrCreate)
-                DashedButton(DamoimStrings.CLUB_SWITCH_CREATE, { PlusIcon(colors.textTertiary, Modifier.size(15.dp)) }, Modifier.weight(1f), onJoinOrCreate)
+                DashedButton(DamoimStrings.CLUB_SWITCH_JOIN, { LockIcon(colors.textTertiary, Modifier.size(15.dp)) }, Modifier.weight(1f), onJoin)
+                DashedButton(DamoimStrings.CLUB_SWITCH_CREATE, { PlusIcon(colors.textTertiary, Modifier.size(15.dp)) }, Modifier.weight(1f), onCreate)
             }
         }
     }

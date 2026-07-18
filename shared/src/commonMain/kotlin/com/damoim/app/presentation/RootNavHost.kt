@@ -23,7 +23,8 @@ import kotlinx.coroutines.launch
 /** 앱 루트 플로우: 인증(로그인/프로필설정/온보딩) · 메인(홈). */
 private sealed interface AppFlow {
     data object Loading : AppFlow                        // 콜드스타트 세션 판정 중(스플래시)
-    data class Auth(val start: AuthDestination) : AppFlow // 시작 화면 지정: Login / ProfileSetup / Start
+    // returnRole != null이면 "동아리 있는 상태에서 코드로 참여" 진입 — 루트에서 뒤로가기 시 그 역할의 메인으로 복귀.
+    data class Auth(val start: AuthDestination, val returnRole: ClubRole? = null) : AppFlow
     data class Main(val role: ClubRole) : AppFlow
 }
 
@@ -87,13 +88,17 @@ fun RootNavHost() {
                 AppGraph.enterClubUseCase(role)
                 flow = AppFlow.Main(role)
             },
+            // 코드로 참여 진입(동아리 보유 상태)에서 루트 뒤로가기 → 원래 메인으로 복귀.
+            onExit = current.returnRole?.let { role -> { flow = AppFlow.Main(role) } },
         )
 
         is AppFlow.Main -> MainNavHost(
             initialRole = current.role,
             onLoggedOut = { flow = AppFlow.Auth(AuthDestination.Login) },       // 로그아웃 → 로그인
             onWithdrewToOnboarding = { flow = AppFlow.Auth(AuthDestination.Start) }, // 탈퇴 후 동아리 없음 → 온보딩
-            onAddClub = { flow = AppFlow.Auth(AuthDestination.Start) },         // 33 새 참여/생성 → 온보딩
+            onAddClub = { flow = AppFlow.Auth(AuthDestination.Start) },         // 33 새 동아리 생성 → 온보딩
+            // 33 코드로 참여 → 코드 입력 화면 직행, 뒤로가기 시 원래 메인으로 복귀(returnRole).
+            onJoinClub = { flow = AppFlow.Auth(AuthDestination.JoinCode, returnRole = current.role) },
         )
     }
 }
