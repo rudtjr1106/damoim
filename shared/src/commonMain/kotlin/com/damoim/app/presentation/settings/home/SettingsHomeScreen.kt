@@ -44,6 +44,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 @Composable
 fun SettingsHomeRoute(
     isLeader: Boolean = false,
+    isStaff: Boolean = false,
     canManageClubSettings: Boolean = false,
     viewModel: SettingsHomeViewModel = viewModel(key = "settingsHome") {
         SettingsHomeViewModel(AppGraph.getClubInfoUseCase, AppGraph.subscriptionUseCase)
@@ -62,6 +63,7 @@ fun SettingsHomeRoute(
     SettingsHomeScreen(
         state = state,
         isLeader = isLeader,
+        isStaff = isStaff,
         canManageClubSettings = canManageClubSettings,
         onOpenMyProfile = onOpenMyProfile,
         onOpenClubSettings = onOpenClubSettings,
@@ -79,6 +81,7 @@ fun SettingsHomeRoute(
 fun SettingsHomeScreen(
     state: SettingsHomeUiState = SettingsHomeUiState(clubName = "코딩하는 사람들", memberCount = 38, joinCode = "DM29AX", overLimit = true, memberUsed = 38),
     isLeader: Boolean = false,
+    isStaff: Boolean = false,
     canManageClubSettings: Boolean = false,
     onOpenMyProfile: () -> Unit = {},
     onOpenClubSettings: () -> Unit = {},
@@ -119,8 +122,8 @@ fun SettingsHomeScreen(
                 if (canManageClubSettings) ChevronRightIcon(colors.outlineStrong, Modifier.size(18.dp))
             }
 
-            // 인원 초과 경고
-            if (state.overLimit) {
+            // 인원 초과 경고 — 유일한 액션(플랜 업그레이드)이 운영진 전용이라 운영진에게만 노출
+            if (state.overLimit && isStaff) {
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.errorSurface).border(1.dp, colors.errorBorder, RoundedCornerShape(18.dp)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         WarningIcon(colors.error, Modifier.size(20.dp))
@@ -149,11 +152,14 @@ fun SettingsHomeScreen(
                     if (isLeader) SettingsRow(DamoimStrings.SETTINGS_ADMIN_PERM, onOpenAdmin, showDivider = false)
                 }
             }
-            SettingsSection(DamoimStrings.SETTINGS_SEC_SUBSCRIPTION) {
-                SettingsRow(DamoimStrings.SETTINGS_PLAN_INFO, onOpenPlan, trailing = {
-                    Text(state.planName, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold), color = colors.textMuted)
-                })
-                SettingsRow(DamoimStrings.SETTINGS_PAYMENT_HISTORY, onOpenSubscription, showDivider = false)
+            // 구독/결제는 운영진 전용 — 일반 부원에겐 구독 플랜·결제 내역 진입점을 감춘다.
+            if (isStaff) {
+                SettingsSection(DamoimStrings.SETTINGS_SEC_SUBSCRIPTION) {
+                    SettingsRow(DamoimStrings.SETTINGS_PLAN_INFO, onOpenPlan, trailing = {
+                        Text(state.planName, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold), color = colors.textMuted)
+                    })
+                    SettingsRow(DamoimStrings.SETTINGS_PAYMENT_HISTORY, onOpenSubscription, showDivider = false)
+                }
             }
             SettingsSection(DamoimStrings.SETTINGS_SEC_ETC) {
                 SettingsRow(DamoimStrings.SETTINGS_NOTIF, onOpenNotif)

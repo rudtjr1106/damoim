@@ -336,11 +336,12 @@ fun MainNavHost(
 
             MainDestination.SettingsHome -> SettingsHomeRoute(
                 isLeader = role == ClubRole.LEADER,
+                isStaff = isAdmin,
                 canManageClubSettings = canManageClubSettings,
                 onOpenMyProfile = { navigate(MainDestination.MyProfile) },
                 onOpenClubSettings = { if (canManageClubSettings) navigate(MainDestination.ClubSettings) },
                 onOpenAdmin = { if (role == ClubRole.LEADER) navigate(MainDestination.Admin) },
-                onOpenPlan = { navigate(MainDestination.Plan) },
+                onOpenPlan = { if (isAdmin) navigate(MainDestination.Plan) },
                 onOpenSubscription = { navigate(MainDestination.SubscriptionManage) },
                 onOpenNotif = { navigate(MainDestination.NotifSettings) },
                 onOpenInquiry = { navigate(MainDestination.Inquiry) },
@@ -365,7 +366,7 @@ fun MainNavHost(
 
             MainDestination.SubscriptionManage -> SubscriptionRoute(
                 onBack = { back() },
-                onChangePlan = { navigate(MainDestination.Plan) },
+                onChangePlan = { if (isAdmin) navigate(MainDestination.Plan) },
                 onToast = { toast = it },
             )
 
