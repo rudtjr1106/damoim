@@ -49,6 +49,8 @@ class ClubSessionUseCase(private val repo: ClubRepository) {
     fun switch(clubId: Long) = repo.switchClub(clubId)
     /** 60 동아리 탈퇴. @return true=잔존 활성 동아리 있음(→ 새 홈), false=없음(→ 온보딩). */
     suspend fun withdraw(): DataResult<Boolean> = repo.withdrawFromActiveClub()
+    /** 52 동아리 삭제(단독 리더). @return true=다른 동아리 있음(→ 새 홈), false=없음(→ 온보딩). */
+    suspend fun deleteClub(): DataResult<Boolean> = repo.deleteActiveClub()
 }
 
 /** 로그아웃 — 토큰 폐기·세션 종료(→ 로그인). */

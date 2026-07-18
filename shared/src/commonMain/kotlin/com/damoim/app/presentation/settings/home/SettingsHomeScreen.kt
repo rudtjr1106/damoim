@@ -53,7 +53,7 @@ fun SettingsHomeRoute(
     isStaff: Boolean = false,
     canManageClubSettings: Boolean = false,
     viewModel: SettingsHomeViewModel = viewModel(key = "settingsHome") {
-        SettingsHomeViewModel(AppGraph.getClubInfoUseCase, AppGraph.subscriptionUseCase, AppGraph.withdrawAccountUseCase)
+        SettingsHomeViewModel(AppGraph.getClubInfoUseCase, AppGraph.subscriptionUseCase, AppGraph.withdrawAccountUseCase, AppGraph.clubSessionUseCase)
     },
     onOpenMyProfile: () -> Unit = {},
     onOpenClubSettings: () -> Unit = {},
@@ -69,7 +69,9 @@ fun SettingsHomeRoute(
     onJoinClub: () -> Unit = {},               // 33 코드로 참여
     onAddClub: () -> Unit = {},                // 33 새 동아리 생성
     onWithdrewAccount: () -> Unit = {},        // 51 탈퇴 완료 → 로그인
-    onError: (String) -> Unit = {},            // 탈퇴 실패 등 메시지
+    onDeletedToClub: () -> Unit = {},          // 52 삭제 후 잔존 동아리 → 새 홈
+    onDeletedNoClub: () -> Unit = {},          // 52 삭제 후 없음 → 온보딩
+    onError: (String) -> Unit = {},            // 탈퇴/삭제 실패 등 메시지
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -77,6 +79,8 @@ fun SettingsHomeRoute(
         viewModel.sideEffect.collect { effect ->
             when (effect) {
                 SettingsHomeSideEffect.WithdrewAccount -> onWithdrewAccount()
+                SettingsHomeSideEffect.DeletedToClub -> onDeletedToClub()
+                SettingsHomeSideEffect.DeletedNoClub -> onDeletedNoClub()
                 is SettingsHomeSideEffect.ActionFailed -> onError(effect.message)
             }
         }
@@ -100,6 +104,7 @@ fun SettingsHomeRoute(
         onJoinClub = onJoinClub,
         onAddClub = onAddClub,
         onWithdrawAccount = viewModel::onWithdrawAccount,
+        onDeleteClub = viewModel::onDeleteClub,
         onTabSelect = onTabSelect,
     )
 }
@@ -124,11 +129,13 @@ fun SettingsHomeScreen(
     onJoinClub: () -> Unit = {},
     onAddClub: () -> Unit = {},
     onWithdrawAccount: () -> Unit = {},
+    onDeleteClub: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     var showSwitch by remember { mutableStateOf(false) }
     var confirmWithdraw by remember { mutableStateOf(false) }
+    var confirmDeleteClub by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(colors.surfaceInput)) {
         // 헤더(탭 루트 — 뒤로가기 없음)
@@ -191,7 +198,10 @@ fun SettingsHomeScreen(
                     SettingsRow(DamoimStrings.SETTINGS_JOIN_CODE, onOpenClubSettings, showDivider = isLeader, trailing = {
                         Text(state.joinCode, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = colors.primaryDark)
                     })
-                    if (isLeader) SettingsRow(DamoimStrings.SETTINGS_ADMIN_PERM, onOpenAdmin, showDivider = false)
+                    val soleLeader = isLeader && state.memberCount == 1
+                    if (isLeader) SettingsRow(DamoimStrings.SETTINGS_ADMIN_PERM, onOpenAdmin, showDivider = soleLeader)
+                    // 52 동아리 삭제 — 동아리장이 마지막 1인일 때만 노출(파괴적). 그 외엔 동아리 탈퇴만 가능.
+                    if (soleLeader) SettingsRow(DamoimStrings.SETTINGS_DELETE_CLUB, { confirmDeleteClub = true }, labelColor = colors.error, showDivider = false)
                 }
             }
             // 구독/결제는 운영진 전용 — 일반 부원에겐 구독 플랜·결제 내역 진입점을 감춘다.
@@ -233,6 +243,16 @@ fun SettingsHomeScreen(
                 destructive = true,
                 onConfirm = { confirmWithdraw = false; onWithdrawAccount() },
                 onDismiss = { confirmWithdraw = false },
+            )
+        }
+        if (confirmDeleteClub) {
+            DamoimConfirmDialog(
+                title = DamoimStrings.clubDeleteTitle(state.clubName),
+                desc = DamoimStrings.CLUB_DELETE_BODY,
+                confirm = DamoimStrings.CLUB_DELETE_CONFIRM,
+                destructive = true,
+                onConfirm = { confirmDeleteClub = false; onDeleteClub() },
+                onDismiss = { confirmDeleteClub = false },
             )
         }
     }

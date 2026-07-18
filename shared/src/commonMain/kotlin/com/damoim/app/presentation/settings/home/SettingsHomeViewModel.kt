@@ -5,6 +5,7 @@ import com.damoim.app.core.mvi.BaseViewModel
 import com.damoim.app.core.mvi.UiSideEffect
 import com.damoim.app.core.mvi.UiState
 import com.damoim.app.core.result.DataResult
+import com.damoim.app.domain.usecase.ClubSessionUseCase
 import com.damoim.app.domain.usecase.GetClubInfoUseCase
 import com.damoim.app.domain.usecase.SubscriptionUseCase
 import com.damoim.app.domain.usecase.WithdrawAccountUseCase
@@ -25,6 +26,8 @@ data class SettingsHomeUiState(
 
 sealed interface SettingsHomeSideEffect : UiSideEffect {
     data object WithdrewAccount : SettingsHomeSideEffect          // 51 탈퇴 완료 → 로그인
+    data object DeletedToClub : SettingsHomeSideEffect            // 52 삭제 후 잔존 동아리 → 새 홈
+    data object DeletedNoClub : SettingsHomeSideEffect            // 52 삭제 후 없음 → 온보딩
     data class ActionFailed(val message: String) : SettingsHomeSideEffect  // 예: 단독 리더 위임 필요
 }
 
@@ -33,6 +36,7 @@ class SettingsHomeViewModel(
     getClubInfo: GetClubInfoUseCase,
     subscription: SubscriptionUseCase,
     private val withdrawAccount: WithdrawAccountUseCase,
+    private val clubSession: ClubSessionUseCase,
 ) : BaseViewModel<SettingsHomeUiState, SettingsHomeSideEffect>(SettingsHomeUiState()) {
 
     init {
@@ -59,6 +63,15 @@ class SettingsHomeViewModel(
     fun onWithdrawAccount() = viewModelScope.launch {
         when (val result = withdrawAccount()) {
             is DataResult.Success -> sendEffect(SettingsHomeSideEffect.WithdrewAccount)
+            is DataResult.Failure -> sendEffect(SettingsHomeSideEffect.ActionFailed(result.error.message))
+        }
+    }
+
+    /** 52 동아리 삭제 — 잔존 동아리 여부로 새 홈/온보딩 분기. 실패(회원 남음 등) 시 메시지 표면화. */
+    fun onDeleteClub() = viewModelScope.launch {
+        when (val result = clubSession.deleteClub()) {
+            is DataResult.Success ->
+                sendEffect(if (result.data) SettingsHomeSideEffect.DeletedToClub else SettingsHomeSideEffect.DeletedNoClub)
             is DataResult.Failure -> sendEffect(SettingsHomeSideEffect.ActionFailed(result.error.message))
         }
     }

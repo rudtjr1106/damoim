@@ -108,4 +108,10 @@ interface ClubRepository {
      * @return true=아직 활성 동아리 있음(→ 새 동아리 홈), false=남은 동아리 없음(→ 온보딩, 재로그인 없이).
      */
     suspend fun withdrawFromActiveClub(): DataResult<Boolean>
+
+    /**
+     * 52 동아리 삭제 — 동아리장이 마지막 1인일 때만(DELETE /api/clubs/me). 동아리 데이터 전체가 사라진다.
+     * @return true=아직 다른 활성 동아리 있음(→ 새 동아리 홈), false=없음(→ 온보딩).
+     */
+    suspend fun deleteActiveClub(): DataResult<Boolean>
 }

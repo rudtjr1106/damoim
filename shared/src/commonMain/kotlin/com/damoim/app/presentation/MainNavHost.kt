@@ -343,6 +343,8 @@ fun MainNavHost(
                 onJoinClub = onJoinClub,
                 onAddClub = onAddClub,
                 onWithdrewAccount = onLoggedOut,                       // 51 탈퇴 완료 → 로그인
+                onDeletedToClub = { resetTo(MainDestination.Home) },   // 52 삭제 후 잔존 → 새 동아리 홈
+                onDeletedNoClub = onWithdrewToOnboarding,              // 52 삭제 후 없음 → 온보딩
                 onError = { toast = it },
                 onTabSelect = { tab -> onTab(tab) },
             )

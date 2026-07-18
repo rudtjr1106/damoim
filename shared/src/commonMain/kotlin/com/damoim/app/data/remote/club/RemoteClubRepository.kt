@@ -205,4 +205,12 @@ class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
         val hasActiveClub = api.getData<MemberResponseDto>(ApiRoutes.Members.ME) is DataResult.Success
         return DataResult.Success(hasActiveClub)
     }
+
+    override suspend fun deleteActiveClub(): DataResult<Boolean> {
+        val del = api.deleteUnit(ApiRoutes.Clubs.ME)
+        if (del is DataResult.Failure) return del
+        RemoteBus.invalidateAll()
+        val hasActiveClub = api.getData<MemberResponseDto>(ApiRoutes.Members.ME) is DataResult.Success
+        return DataResult.Success(hasActiveClub)
+    }
 }
