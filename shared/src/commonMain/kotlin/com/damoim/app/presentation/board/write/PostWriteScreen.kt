@@ -199,6 +199,7 @@ fun PostWriteScreen(
         selectionMode = SelectionMode.Multiple(maxSelection = 10),
         scope = scope,
         onResult = { byteArrays ->
+            val before = photos.size
             byteArrays.forEach { bytes ->
                 if (photos.size < 10) {
                     // 바이트는 업로드용으로 보존, 로컬 미리보기는 ImageStore에 디코드해 둔다.
@@ -206,6 +207,8 @@ fun PostWriteScreen(
                     photos.add(DraftImage(bytes = bytes, localKey = localKey))
                 }
             }
+            // 10장을 넘겨 고른 경우 일부만 담기므로 안내한다.
+            if (before + byteArrays.size > 10) onToast(DamoimStrings.TOAST_PHOTO_MAX)
         },
     )
     val cameraLauncher = rememberCameraLauncher { bytes ->
@@ -213,11 +216,16 @@ fun PostWriteScreen(
             if (photos.size < 10) {
                 val localKey = ImageStore.put(bytes.toImageBitmap())
                 photos.add(DraftImage(bytes = bytes, contentType = "image/jpeg", localKey = localKey))
+            } else {
+                onToast(DamoimStrings.TOAST_PHOTO_MAX)
             }
         } else {
             onToast(DamoimStrings.TOAST_CAMERA_UNAVAILABLE)
         }
     }
+    // 이미 10장이면 피커/카메라를 열지 않고 바로 안내한다.
+    fun tryPickPhoto() { if (photos.size >= 10) onToast(DamoimStrings.TOAST_PHOTO_MAX) else photoPicker.launch() }
+    fun tryCamera() { if (photos.size >= 10) onToast(DamoimStrings.TOAST_PHOTO_MAX) else cameraLauncher.launch() }
     val documentPicker = rememberDocumentPickerLauncher { doc ->
         if (doc != null) {
             docs.add(DraftDocFile(name = doc.name, sizeLabel = doc.sizeLabel, bytes = doc.bytes, contentType = doc.contentType))
@@ -302,7 +310,7 @@ fun PostWriteScreen(
                 }
                 // 첨부 영역 — 여러 종류를 동시에 쌓아 보여준다(상호 배타 아님)
                 if (photos.isNotEmpty()) {
-                    PhotoAttach(photos = photos, onAdd = { photoPicker.launch() }, onRemove = { photos.removeAt(it) })
+                    PhotoAttach(photos = photos, onAdd = { tryPickPhoto() }, onRemove = { photos.removeAt(it) })
                     Spacer(Modifier.height(12.dp))
                 }
                 if (docs.isNotEmpty()) {
@@ -334,8 +342,8 @@ fun PostWriteScreen(
             // 하단 툴바 — 각 아이콘이 실제 피커/모드로 연결
             Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
             Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                ToolIcon({ CameraIcon(it, Modifier.size(22.dp)) }, active = false) { cameraLauncher.launch() }
-                ToolIcon({ ImageIcon(it, Modifier.size(22.dp)) }, active = photos.isNotEmpty()) { photoPicker.launch() }
+                ToolIcon({ CameraIcon(it, Modifier.size(22.dp)) }, active = false) { tryCamera() }
+                ToolIcon({ ImageIcon(it, Modifier.size(22.dp)) }, active = photos.isNotEmpty()) { tryPickPhoto() }
                 ToolIcon({ PaperclipIcon(it, Modifier.size(22.dp)) }, active = docs.isNotEmpty()) { documentPicker.launch() }
                 ToolIcon({ LinkIcon(it, Modifier.size(22.dp)) }, active = links.isNotEmpty()) { links.add("") }
                 ToolIcon({ ChartIcon(it, Modifier.size(22.dp)) }, active = pollEnabled) { pollEnabled = true }
@@ -361,8 +369,8 @@ fun PostWriteScreen(
                 },
             )
             WriteSheet.Attach -> AttachSheet(
-                onPhoto = { sheet = null; photoPicker.launch() },
-                onCamera = { sheet = null; cameraLauncher.launch() },
+                onPhoto = { sheet = null; tryPickPhoto() },
+                onCamera = { sheet = null; tryCamera() },
                 onDocument = { sheet = null; documentPicker.launch() },
                 onLink = { links.add(""); sheet = null },
                 onPoll = { pollEnabled = true; sheet = null },
