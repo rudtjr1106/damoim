@@ -48,7 +48,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 @Composable
 fun MyApplicationsRoute(
     viewModel: MyApplicationsViewModel = viewModel(key = "myApplications") {
-        MyApplicationsViewModel(AppGraph.getMyApplicationsUseCase, AppGraph.getSchedulesUseCase, AppGraph.eventApplicationUseCase)
+        MyApplicationsViewModel(AppGraph.getMyApplicationsUseCase, AppGraph.getScheduleDetailUseCase, AppGraph.eventApplicationUseCase)
     },
     onBack: () -> Unit = {},
     onOpenEvent: (Long) -> Unit = {},
@@ -58,7 +58,10 @@ fun MyApplicationsRoute(
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collect { if (it is MyApplicationsSideEffect.Toast) onToast(it.message) }
     }
-    MyApplicationsScreen(state = state, onBack = onBack, onOpenEvent = onOpenEvent, onCancel = viewModel::cancel, onUpdateAnswers = viewModel::updateAnswers)
+    MyApplicationsScreen(
+        state = state, onBack = onBack, onOpenEvent = onOpenEvent, onCancel = viewModel::cancel,
+        onStartEdit = viewModel::startEdit, onClearEdit = viewModel::clearEdit, onUpdateAnswers = viewModel::updateAnswers,
+    )
 }
 
 @Composable
@@ -67,10 +70,11 @@ fun MyApplicationsScreen(
     onBack: () -> Unit = {},
     onOpenEvent: (Long) -> Unit = {},
     onCancel: (Long) -> Unit = {},
+    onStartEdit: (MyApplication) -> Unit = {},
+    onClearEdit: () -> Unit = {},
     onUpdateAnswers: (Long, List<com.damoim.app.domain.model.QuestionAnswer>) -> Unit = { _, _ -> },
 ) {
     val colors = DamoimTheme.colors
-    var editing by remember { mutableStateOf<MyApplication?>(null) }
     var canceling by remember { mutableStateOf<MyApplication?>(null) }
 
     Box(Modifier.fillMaxSize().background(colors.surface)) {
@@ -85,15 +89,15 @@ fun MyApplicationsScreen(
             } else {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     state.applications.forEach { app ->
-                        ApplicationCard(app, onOpen = { onOpenEvent(app.eventId) }, onEdit = { editing = app }, onCancel = { canceling = app })
+                        ApplicationCard(app, onOpen = { onOpenEvent(app.eventId) }, onEdit = { onStartEdit(app) }, onCancel = { canceling = app })
                     }
                 }
             }
         }
-        // 응답 수정(25 재사용, 편집 모드)
-        editing?.let { app ->
-            state.schedulesById[app.eventId]?.let { schedule ->
-                ApplyFormSheet(schedule = schedule, existingAnswers = app.answers, isEdit = true, onSubmit = { answers -> onUpdateAnswers(app.eventId, answers); editing = null }, onDismiss = { editing = null })
+        // 응답 수정(25 재사용, 편집 모드) — 폼 문항이 담긴 전체 상세를 로드한 뒤 시트를 띄운다.
+        state.editingApp?.let { app ->
+            state.editingSchedule?.let { schedule ->
+                ApplyFormSheet(schedule = schedule, existingAnswers = app.answers, isEdit = true, onSubmit = { answers -> onUpdateAnswers(app.eventId, answers) }, onDismiss = onClearEdit)
             }
         }
         // 신청 취소 확인
