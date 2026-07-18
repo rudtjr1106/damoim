@@ -1,7 +1,9 @@
 package com.damoim.app.presentation.component
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -40,12 +44,17 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
@@ -82,6 +91,10 @@ fun DamoimBottomSheet(
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     var visible by remember { mutableStateOf(false) }
+    // 그래버를 아래로 끌면 닫히도록 하는 드래그 상태.
+    val scope = rememberCoroutineScope()
+    val dragY = remember { Animatable(0f) }
+    val dismissThresholdPx = with(LocalDensity.current) { 90.dp.toPx() }
     // 시트가 뜨면 입력 포커스를 해제해 소프트 키보드를 내린다(입력 중 시트/다이얼로그 진입 시 키보드 잔류 방지).
     LaunchedEffect(Unit) {
         focusManager.clearFocus(force = true)
@@ -100,12 +113,22 @@ fun DamoimBottomSheet(
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth()
+                    // 드래그한 만큼 시트를 아래로 민다(아래 방향만).
+                    .offset { IntOffset(0, dragY.value.roundToInt()) }
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(colors.surface)
                     // 시트 자체는 클릭을 소비(뒤 scrim으로 전달 안 되게)
                     .noRippleClick { },
             ) {
-                if (showGrabber) SheetGrabber()
+                if (showGrabber) SheetGrabber(
+                    onDrag = { delta -> scope.launch { dragY.snapTo((dragY.value + delta).coerceAtLeast(0f)) } },
+                    onDragEnd = {
+                        scope.launch {
+                            if (dragY.value >= dismissThresholdPx) onDismiss()
+                            else dragY.animateTo(0f, tween(180))
+                        }
+                    },
+                )
                 content()
             }
         }
@@ -146,10 +169,32 @@ fun DamoimDialog(
     }
 }
 
-/** 시트 상단 그래버 핸들(44×5). */
+/**
+ * 시트 상단 그래버 핸들(44×5). [onDrag]가 주어지면 아래로 끌어 시트를 닫을 수 있는 드래그 핸들이 된다.
+ * 터치 영역을 넓히려 상하 패딩을 넉넉히 준다.
+ */
 @Composable
-fun SheetGrabber() {
-    Box(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 6.dp), contentAlignment = Alignment.Center) {
+fun SheetGrabber(
+    onDrag: ((Float) -> Unit)? = null,
+    onDragEnd: (() -> Unit)? = null,
+) {
+    Box(
+        Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 10.dp)
+            .then(
+                if (onDrag != null) {
+                    Modifier.pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { change, dragAmount -> change.consume(); onDrag(dragAmount) },
+                            onDragEnd = { onDragEnd?.invoke() },
+                            onDragCancel = { onDragEnd?.invoke() },
+                        )
+                    }
+                } else {
+                    Modifier
+                },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
         Box(Modifier.width(44.dp).height(5.dp).clip(RoundedCornerShape(99.dp)).background(DamoimTheme.colors.divider))
     }
 }
