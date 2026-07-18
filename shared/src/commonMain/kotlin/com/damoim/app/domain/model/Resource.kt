@@ -51,7 +51,7 @@ data class ResourceDraft(
     val contentType: String? = null,
 ) {
     companion object {
-        /** 인메모리로 읽어 presigned PUT하므로 단일 파일 상한(25MB). 서버 쿼터(5GB 전체)와 별개. */
-        const val MAX_UPLOAD_BYTES: Long = 25L * 1024 * 1024
+        /** 인메모리로 읽어 presigned PUT하므로 단일 파일 상한(100MB — 사진/영상 지원). 서버 쿼터(5GB 전체)와 별개. */
+        const val MAX_UPLOAD_BYTES: Long = 100L * 1024 * 1024
     }
 }

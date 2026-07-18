@@ -79,7 +79,8 @@ actual fun rememberDocumentPickerLauncher(onResult: (PickedDocument?) -> Unit): 
         object : DocumentPickerLauncher {
             override fun launch() {
                 runCatching {
-                    launcher.launch(arrayOf("application/pdf", "application/*", "text/*"))
+                    // 문서 + 사진/영상 선택 허용(자료실 미디어 업로드).
+                    launcher.launch(arrayOf("application/pdf", "application/*", "text/*", "image/*", "video/*"))
                 }.onFailure { onResult(null) }
             }
         }

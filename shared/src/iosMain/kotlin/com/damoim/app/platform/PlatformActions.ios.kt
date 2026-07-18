@@ -49,6 +49,8 @@ import platform.UIKit.UINavigationControllerDelegateProtocol
 import platform.UIKit.UIRectFill
 import platform.UniformTypeIdentifiers.UTType
 import platform.UniformTypeIdentifiers.UTTypeData
+import platform.UniformTypeIdentifiers.UTTypeImage
+import platform.UniformTypeIdentifiers.UTTypeMovie
 import platform.UniformTypeIdentifiers.UTTypePDF
 import platform.UniformTypeIdentifiers.UTTypePlainText
 import platform.darwin.NSObject
@@ -160,7 +162,7 @@ actual fun rememberDocumentPickerLauncher(onResult: (PickedDocument?) -> Unit): 
             if (root == null) { onResult(null); return }
             val d = DocPickerDelegate(onResult)
             delegate = d
-            val types: List<UTType> = listOf(UTTypePDF, UTTypePlainText, UTTypeData)
+            val types: List<UTType> = listOf(UTTypePDF, UTTypePlainText, UTTypeImage, UTTypeMovie, UTTypeData)
             val picker = UIDocumentPickerViewController(forOpeningContentTypes = types, asCopy = true)
             picker.delegate = d
             root.presentViewController(picker, animated = true, completion = null)
