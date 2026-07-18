@@ -6,6 +6,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>게시글에 사진을 촬영해 첨부하거나 프로필 사진을 찍기 위해 카메라를 사용합니다.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>선택한 일정을 기기 캘린더에 추가하기 위해 캘린더 접근을 사용합니다.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>선택한 일정을 기기 캘린더에 추가하기 위해 캘린더 접근을 사용합니다.</string>
 	<!-- 수출 규정 신고 — 앱이 '면제 대상이 아닌' 암호화를 쓰지 않는다는 선언.
 	     이 앱의 통신은 표준 HTTPS/TLS뿐이고(서버 API·카카오 SDK) 자체 암호화 구현이 없어 면제 대상이다.
 	     선언이 없으면 TestFlight/App Store 업로드마다 이 질문에 수동으로 답해야 처리가 진행된다. -->

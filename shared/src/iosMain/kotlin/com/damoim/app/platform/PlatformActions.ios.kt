@@ -13,7 +13,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSizeMake
+import platform.EventKit.EKEvent
+import platform.EventKit.EKEventStore
+import platform.EventKitUI.EKEventEditViewAction
+import platform.EventKitUI.EKEventEditViewController
+import platform.EventKitUI.EKEventEditViewDelegateProtocol
 import platform.Foundation.NSData
+import platform.Foundation.NSDate
+import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.dataWithBytes
 import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
@@ -180,9 +187,47 @@ actual fun rememberShareText(): (String) -> Unit = remember {
     }
 }
 
-// iOS 기기 캘린더 추가는 현재 no-op(EventKit 연동 시 구현). Android만 실제 동작.
+/**
+ * 기기 캘린더 추가 — EKEventEditViewController를 미리 채워 띄운다(사용자가 확인·저장, 권한 프롬프트는 시스템이 처리).
+ * Info.plist의 NSCalendars(WriteOnlyAccess)UsageDescription 필요.
+ */
 @Composable
-actual fun rememberCalendarAdder(): (CalendarEvent) -> Unit = remember { { _ -> } }
+actual fun rememberCalendarAdder(): (CalendarEvent) -> Unit {
+    val presenter = remember { CalendarPresenter() }
+    return remember(presenter) { { ev -> presenter.present(ev) } }
+}
+
+private class CalendarPresenter {
+    // 편집 완료 콜백까지 델리게이트를 살려두는 강한 참조.
+    private var delegate: EventEditDelegate? = null
+
+    fun present(ev: CalendarEvent) {
+        runCatching {
+            val root = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return
+            val store = EKEventStore()
+            val event = EKEvent.eventWithEventStore(store)
+            event.title = ev.title
+            event.startDate = NSDate.dateWithTimeIntervalSince1970(ev.startEpochMillis / 1000.0)
+            event.endDate = NSDate.dateWithTimeIntervalSince1970(ev.endEpochMillis / 1000.0)
+            if (ev.location.isNotBlank()) event.location = ev.location
+            if (ev.description.isNotBlank()) event.notes = ev.description
+            store.defaultCalendarForNewEvents?.let { event.setCalendar(it) }
+            val controller = EKEventEditViewController()
+            controller.eventStore = store
+            controller.event = event
+            val d = EventEditDelegate()
+            delegate = d
+            controller.editViewDelegate = d
+            root.presentViewController(controller, animated = true, completion = null)
+        }
+    }
+}
+
+private class EventEditDelegate : NSObject(), EKEventEditViewDelegateProtocol {
+    override fun eventEditViewController(controller: EKEventEditViewController, didCompleteWithAction: EKEventEditViewAction) {
+        controller.dismissViewControllerAnimated(true, completion = null)
+    }
+}
 
 /**
  * StoreKit 2(Swift) 결제 구현 주입점. iosApp이 앱 시작 시 `IosBillingRegistry.impl`을 등록하면 그걸 우선 쓰고,
