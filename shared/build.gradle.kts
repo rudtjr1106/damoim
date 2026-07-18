@@ -26,6 +26,8 @@ fun Project.localProperty(key: String, default: String): Provider<String> =
 val iosServerBaseUrl: Provider<String> = localProperty("server.base.url", "http://localhost:8080")
 // 카카오 네이티브 앱 키 — 없으면 빈 문자열(= isConfigured false). 값은 절대 커밋·로그되지 않는다.
 val kakaoNativeAppKey: Provider<String> = localProperty("kakao.native.app.key", "")
+// 실기기 서명용 개발 팀 — 없으면 빈 문자열(= 시뮬레이터만 빌드). 개발자/머신마다 달라 커밋하지 않는다.
+val iosTeamId: Provider<String> = localProperty("ios.team.id", "")
 
 /**
  * iosMain에 서버 주소 상수를 생성한다(안드로이드 BuildConfig.SERVER_BASE_URL 대응).
@@ -62,30 +64,36 @@ val generateIosBuildConfig by tasks.registering {
 }
 
 /**
- * 카카오 네이티브 앱 키를 iosApp/Configuration/Secrets.xcconfig(gitignore)로 내보낸다.
- * Config.xcconfig가 `#include?`로 읽고, Info.plist가 $(KAKAO_NATIVE_APP_KEY)로 치환한다.
+ * 개발자별/비밀 설정을 iosApp/Configuration/Secrets.xcconfig(gitignore)로 내보낸다.
+ * Config.xcconfig가 **맨 아래에서** `#include?`로 읽어 위쪽 기본값을 덮는다.
+ *  - KAKAO_NATIVE_APP_KEY → Info.plist가 $(KAKAO_NATIVE_APP_KEY)로 치환(URL 스킴 + 런타임 키)
+ *  - TEAM_ID              → pbxproj의 DEVELOPMENT_TEAM = "${'$'}{TEAM_ID}" (실기기 서명)
  *
  * ⚠️ xcconfig는 Xcode **빌드 설정 해석 시점**(= 빌드 페이즈 실행 전)에 읽힌다. Gradle Run Script는
  * 그 뒤에 돌므로 아래 dependsOn으로 걸어도 **같은 빌드에는 반영되지 않고 다음 빌드부터** 적용된다.
- * → 최초 1회와 키 변경 시에는 Xcode 밖에서 `./gradlew :shared:generateIosSecretsXcconfig`를 먼저 실행할 것.
+ * → 최초 1회와 값 변경 시에는 Xcode 밖에서 `./gradlew :shared:generateIosSecretsXcconfig`를 먼저 실행할 것.
  */
 val generateIosSecretsXcconfig by tasks.registering {
     group = "ios"
-    description = "local.properties의 kakao.native.app.key를 iosApp/Configuration/Secrets.xcconfig로 생성한다."
+    description = "local.properties의 kakao.native.app.key·ios.team.id를 iosApp/Configuration/Secrets.xcconfig로 생성한다."
     val kakaoKey = kakaoNativeAppKey
+    val teamId = iosTeamId
     val outputFile = rootProject.layout.projectDirectory.file("iosApp/Configuration/Secrets.xcconfig")
     inputs.property("kakaoNativeAppKey", kakaoKey)
+    inputs.property("iosTeamId", teamId)
     outputs.file(outputFile)
     doLast {
         val f = outputFile.asFile
         f.parentFile.mkdirs()
-        // 키가 비어도 파일은 만든다 — $(KAKAO_NATIVE_APP_KEY)가 빈 문자열로 치환되어야 하기 때문.
+        // 값이 비어도 파일은 만든다 — $(KAKAO_NATIVE_APP_KEY)가 빈 문자열로 치환되어야 하기 때문.
+        // (TEAM_ID가 비면 서명이 안 잡혀 시뮬레이터만 빌드된다 — 의도된 폴백.)
         f.writeText(
             """
             // 자동 생성 파일 — 수정 금지, 커밋 금지(.gitignore).
-            // 출처: local.properties의 kakao.native.app.key
+            // 출처: local.properties의 kakao.native.app.key · ios.team.id
             // 재생성: ./gradlew :shared:generateIosSecretsXcconfig
             KAKAO_NATIVE_APP_KEY = ${kakaoKey.get()}
+            TEAM_ID = ${teamId.get()}
 
             """.trimIndent()
         )

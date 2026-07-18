@@ -6,6 +6,11 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>게시글에 사진을 촬영해 첨부하거나 프로필 사진을 찍기 위해 카메라를 사용합니다.</string>
+	<!-- 수출 규정 신고 — 앱이 '면제 대상이 아닌' 암호화를 쓰지 않는다는 선언.
+	     이 앱의 통신은 표준 HTTPS/TLS뿐이고(서버 API·카카오 SDK) 자체 암호화 구현이 없어 면제 대상이다.
+	     선언이 없으면 TestFlight/App Store 업로드마다 이 질문에 수동으로 답해야 처리가 진행된다. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<!-- 카카오 로그인 — 아래 값들은 빌드 시 Secrets.xcconfig(Gradle이 local.properties에서 생성, 커밋 제외)의
 	     KAKAO_NATIVE_APP_KEY로 치환된다. 리터럴 키를 여기 적지 말 것. -->
 	<!-- 카카오톡 앱이 인증 후 우리 앱으로 돌아올 URL 스킴. SDK가 "kakao{네이티브앱키}"를 콜백 스킴으로 쓴다. -->
