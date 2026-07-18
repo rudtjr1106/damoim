@@ -184,10 +184,10 @@ class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
             .also { RemoteBus.invalidate(DataTopic.BOARD) } // 최근 검색어 기록 → 추천 화면 갱신
 
     override fun observeSearchSuggestions(): Flow<SearchSuggestions> = shared.get("search-suggestions") {
-        reactiveFlow(DataTopic.BOARD, fallback = SearchSuggestions(emptyList(), emptyList())) {
+        reactiveFlow(DataTopic.BOARD, fallback = SearchSuggestions(emptyList())) {
             api.getData<SearchSuggestionsResponseDto>(ApiRoutes.Board.SEARCH_SUGGESTIONS).getOrNull()
-                ?.let { SearchSuggestions(recent = it.recent, recommended = it.recommended) }
-                ?: SearchSuggestions(emptyList(), emptyList())
+                ?.let { SearchSuggestions(recent = it.recent) }
+                ?: SearchSuggestions(emptyList())
         }
     }
 

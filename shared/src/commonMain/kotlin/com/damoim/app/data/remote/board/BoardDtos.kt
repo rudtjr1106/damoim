@@ -237,7 +237,6 @@ data class SearchResultResponseDto(
 @Serializable
 data class SearchSuggestionsResponseDto(
     val recent: List<String> = emptyList(),
-    val recommended: List<String> = emptyList(),
 )
 
 @Serializable

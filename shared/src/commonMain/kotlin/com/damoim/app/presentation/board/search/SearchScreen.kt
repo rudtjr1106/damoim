@@ -8,10 +8,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -102,7 +99,7 @@ fun SearchScreen(
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             when {
                 state.showSuggestions -> state.suggestions?.let { SuggestionsBody(it, onKeyword, onRemoveRecent, onClearRecents) }
-                state.noResult -> NoResultBody(state.query, state.suggestions?.recommended.orEmpty().take(3), onKeyword)
+                state.noResult -> NoResultBody(state.query)
                 else -> state.results?.let { ResultsBody(it, onOpenPost, onOpenSchedule, onComingSoon) }
             }
         }
@@ -173,33 +170,17 @@ private fun SuggestionsBody(s: SearchSuggestions, onKeyword: (String) -> Unit, o
                 }
             }
         }
-        Spacer(Modifier.height(12.dp))
-        Text(DamoimStrings.SEARCH_RECOMMENDED, style = DamoimTheme.typography.bodyStrong.copy(fontWeight = FontWeight.ExtraBold), color = colors.textPrimary)
-        KeywordChips(s.recommended, onKeyword)
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun KeywordChips(keywords: List<String>, onKeyword: (String) -> Unit) {
-    val colors = DamoimTheme.colors
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        keywords.forEach { kw ->
-            Text(kw, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold), color = colors.textTertiary,
-                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(colors.surfaceVariant).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onKeyword(kw) }.padding(horizontal = 15.dp, vertical = 9.dp))
-        }
     }
 }
 
 // ── 76 무결과 ──
 @Composable
-private fun NoResultBody(query: String, recommended: List<String>, onKeyword: (String) -> Unit) {
+private fun NoResultBody(query: String) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = 40.dp, vertical = 90.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Box(Modifier.size(80.dp).clip(CircleShape).background(colors.surfaceVariant), contentAlignment = Alignment.Center) { SearchIcon(colors.textDisabled, Modifier.size(34.dp)) }
         Text(DamoimStrings.searchNoResultTitle(query), style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 17.sp), color = colors.textPrimary, textAlign = TextAlign.Center)
         Text(DamoimStrings.SEARCH_NO_RESULT_SUBTITLE, style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Normal), color = colors.textMuted, textAlign = TextAlign.Center)
-        KeywordChips(recommended, onKeyword)
     }
 }
 
@@ -287,7 +268,6 @@ private fun highlight(text: String, query: String) = buildAnnotatedString {
 
 internal fun previewSuggestions() = SearchSuggestions(
     recent = listOf("MT", "신입 부원 모집", "회칙", "OT 일정"),
-    recommended = listOf("MT 후기", "정기 모임", "회비 납부", "스터디", "자료실", "가입 코드"),
 )
 
 @Preview

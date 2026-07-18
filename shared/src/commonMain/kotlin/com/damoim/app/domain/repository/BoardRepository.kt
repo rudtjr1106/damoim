@@ -94,5 +94,4 @@ data class SearchFileHit(val name: String, val meta: String)
 /** 검색 시작 화면(85) 데이터. */
 data class SearchSuggestions(
     val recent: List<String>,
-    val recommended: List<String>,
 )

@@ -237,7 +237,6 @@ object DamoimStrings {
     const val SEARCH_PLACEHOLDER = "게시글, 일정, 파일 검색"
     const val SEARCH_RECENT = "최근 검색어"
     const val SEARCH_CLEAR_ALL = "전체 삭제"
-    const val SEARCH_RECOMMENDED = "추천 검색어"
 
     // 86 날짜·시간 선택기
     const val PICKER_TITLE = "마감일 설정"
