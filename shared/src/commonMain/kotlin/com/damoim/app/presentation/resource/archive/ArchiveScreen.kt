@@ -58,7 +58,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 @Composable
 fun ArchiveRoute(
     viewModel: ArchiveViewModel = viewModel(key = "archive") {
-        ArchiveViewModel(AppGraph.getResourcesUseCase, AppGraph.getStorageUsageUseCase)
+        ArchiveViewModel(AppGraph.getResourcesUseCase, AppGraph.getStorageUsageUseCase, AppGraph.getCohortsUseCase)
     },
     onBack: () -> Unit = {},
     onOpenResource: (Long) -> Unit = {},
@@ -70,6 +70,7 @@ fun ArchiveRoute(
         state = state,
         onBack = onBack,
         onSelectFolder = viewModel::onSelectFolder,
+        onSelectCohort = viewModel::onSelectCohort,
         onOpenResource = onOpenResource,
         onUpload = onUpload,
         onTabSelect = onTabSelect,
@@ -81,14 +82,15 @@ fun ArchiveScreen(
     state: ArchiveUiState = ArchiveUiState(isLoading = false, resources = previewResources(), storage = previewStorage()),
     onBack: () -> Unit = {},
     onSelectFolder: (ResourceFolder?) -> Unit = {},
+    onSelectCohort: (Long?) -> Unit = {},
     onOpenResource: (Long) -> Unit = {},
     onUpload: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     Column(modifier = Modifier.fillMaxSize().background(colors.surfaceInput)) {
-        // 헤더(뒤로가기·제목·저장공간·폴더칩)는 고정, 아래 목록만 스크롤한다
-        ArchiveHeader(state, onBack, onSelectFolder)
+        // 헤더(뒤로가기·제목·저장공간·폴더칩·기수칩)는 고정, 아래 목록만 스크롤한다
+        ArchiveHeader(state, onBack, onSelectFolder, onSelectCohort)
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 when {
@@ -105,7 +107,12 @@ fun ArchiveScreen(
 }
 
 @Composable
-private fun ArchiveHeader(state: ArchiveUiState, onBack: () -> Unit, onSelectFolder: (ResourceFolder?) -> Unit) {
+private fun ArchiveHeader(
+    state: ArchiveUiState,
+    onBack: () -> Unit,
+    onSelectFolder: (ResourceFolder?) -> Unit,
+    onSelectCohort: (Long?) -> Unit,
+) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().background(colors.surface)) {
         Row(
@@ -123,12 +130,25 @@ private fun ArchiveHeader(state: ArchiveUiState, onBack: () -> Unit, onSelectFol
         StorageBar(state.storage, Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 12.dp))
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
-                .padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 14.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = if (state.cohorts.isEmpty()) 14.dp else 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ArchiveFilterChip(DamoimStrings.ARCHIVE_FILTER_ALL, active = state.folder == null) { onSelectFolder(null) }
             ResourceFolder.entries.forEach { folder ->
                 ArchiveFilterChip(resourceFolderLabel(folder), active = state.folder == folder) { onSelectFolder(folder) }
+            }
+        }
+        // 기수 필터 — 동아리에 기수가 있을 때만 노출(폴더 필터와 독립적으로 겹쳐 적용된다).
+        if (state.cohorts.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
+                    .padding(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ArchiveFilterChip(DamoimStrings.ARCHIVE_COHORT_ALL, active = state.selectedCohortId == null) { onSelectCohort(null) }
+                state.cohorts.forEach { cohort ->
+                    ArchiveFilterChip(cohort.short, active = state.selectedCohortId == cohort.id) { onSelectCohort(cohort.id) }
+                }
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
@@ -138,14 +158,19 @@ private fun ArchiveHeader(state: ArchiveUiState, onBack: () -> Unit, onSelectFol
 @Composable
 private fun ArchiveList(state: ArchiveUiState, onOpenResource: (Long) -> Unit) {
     val colors = DamoimTheme.colors
+    val list = state.visibleResources
     Column(
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         val folder = state.folder
+        val cohort = state.cohorts.firstOrNull { it.id == state.selectedCohortId }
         Text(
-            if (folder == null) DamoimStrings.archiveCount(state.storage?.count ?: state.resources.size)
-            else DamoimStrings.archiveFolderCount(resourceFolderLabel(folder), state.resources.size),
+            when {
+                folder != null -> DamoimStrings.archiveFolderCount(resourceFolderLabel(folder), list.size)
+                cohort != null -> DamoimStrings.archiveFolderCount(cohort.short, list.size)
+                else -> DamoimStrings.archiveCount(state.storage?.count ?: list.size)
+            },
             style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 0.6.sp),
             color = colors.textMuted,
         )
@@ -158,7 +183,7 @@ private fun ArchiveList(state: ArchiveUiState, onOpenResource: (Long) -> Unit) {
                 textAlign = TextAlign.Center,
             )
         }
-        state.resources.forEach { resource ->
+        list.forEach { resource ->
             ResourceRow(resource, onClick = { onOpenResource(resource.id) })
         }
         Spacer(Modifier.height(70.dp))   // FAB 아래 여백
