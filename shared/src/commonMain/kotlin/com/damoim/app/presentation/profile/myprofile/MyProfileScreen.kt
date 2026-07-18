@@ -58,7 +58,6 @@ import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
 private sealed interface ProfileOverlay {
-    data object Switch : ProfileOverlay
     data object Logout : ProfileOverlay
     data object Leave : ProfileOverlay
 }
@@ -69,18 +68,14 @@ private sealed interface ProfileOverlay {
 @Composable
 fun MyProfileRoute(
     viewModel: MyProfileViewModel = viewModel(key = "my_profile") {
-        MyProfileViewModel(AppGraph.getMyMemberUseCase, AppGraph.getCohortsUseCase, AppGraph.getClubInfoUseCase, AppGraph.getJoinedClubsUseCase, AppGraph.observeMyContextUseCase, AppGraph.clubSessionUseCase, AppGraph.logoutUseCase)
+        MyProfileViewModel(AppGraph.getMyMemberUseCase, AppGraph.getCohortsUseCase, AppGraph.getClubInfoUseCase, AppGraph.observeMyContextUseCase, AppGraph.clubSessionUseCase, AppGraph.logoutUseCase)
     },
     onBack: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onLoggedOut: () -> Unit = {},              // 로그아웃 → 로그인
     onWithdrewToClub: () -> Unit = {},         // 탈퇴 후 잔존 → 새 동아리 홈
     onWithdrewToOnboarding: () -> Unit = {},   // 탈퇴 후 없음 → 온보딩(재로그인 X)
-    onAddClub: () -> Unit = {},                // 33 새 동아리 생성 → 온보딩(세션 유지)
-    onJoinClub: () -> Unit = {},               // 33 코드로 참여 → 코드 입력 화면 직행(뒤로가기로 복귀)
-    onSwitched: () -> Unit = {},
     onOpenNotification: () -> Unit = {},
-    onComingSoon: () -> Unit = {},
     onError: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -98,13 +93,9 @@ fun MyProfileRoute(
         state = state,
         onBack = onBack,
         onEditProfile = onEditProfile,
-        onSwitchClub = { id -> viewModel.onSwitchClub(id); onSwitched() },
         onLogout = viewModel::onLogout,
         onWithdraw = viewModel::onWithdraw,
-        onAddClub = onAddClub,
-        onJoinClub = onJoinClub,
         onOpenNotification = onOpenNotification,
-        onComingSoon = onComingSoon,
     )
 }
 
@@ -113,13 +104,9 @@ fun MyProfileScreen(
     state: MyProfileUiState = MyProfileUiState("이서연", "서연", "24기", "2024학년 1기 (24기)", MemberRole.MEMBER, "2024.09.15", "코딩하는 사람들"),
     onBack: () -> Unit = {},
     onEditProfile: () -> Unit = {},
-    onSwitchClub: (Long) -> Unit = {},
     onLogout: () -> Unit = {},
     onWithdraw: () -> Unit = {},
-    onAddClub: () -> Unit = {},
-    onJoinClub: () -> Unit = {},
     onOpenNotification: () -> Unit = {},
-    onComingSoon: () -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     var overlay by remember { mutableStateOf<ProfileOverlay?>(null) }
@@ -136,7 +123,7 @@ fun MyProfileScreen(
                 Hero(state, onEditProfile)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     InfoCard(state)
-                    ActionCard(state, onEditProfile, onNotification = onOpenNotification, onSwitch = { overlay = ProfileOverlay.Switch })
+                    ActionCard(state, onEditProfile, onNotification = onOpenNotification)
                     DangerCard(onLogout = { overlay = ProfileOverlay.Logout }, onLeave = { overlay = ProfileOverlay.Leave })
                     Text(DamoimStrings.APP_VERSION, style = DamoimTheme.typography.label, color = colors.outlineStrong, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
@@ -144,14 +131,6 @@ fun MyProfileScreen(
         }
 
         when (overlay) {
-            ProfileOverlay.Switch -> ClubSwitchSheet(
-                clubs = state.joinedClubs,
-                currentClubId = state.joinedClubs.firstOrNull { it.club.name == state.currentClubName }?.club?.id ?: -1L,
-                onDismiss = { overlay = null },
-                onSwitch = { id -> overlay = null; onSwitchClub(id) },
-                onJoin = { overlay = null; onJoinClub() },
-                onCreate = { overlay = null; onAddClub() },
-            )
             ProfileOverlay.Logout -> ConfirmDialog(
                 DamoimStrings.LOGOUT_TITLE, DamoimStrings.LOGOUT_BODY, confirmLabel = DamoimStrings.LOGOUT_CONFIRM, destructive = false,
                 onDismiss = { overlay = null }, onConfirm = { overlay = null; onLogout() },
@@ -217,7 +196,7 @@ private fun LinkedRow() {
 }
 
 @Composable
-private fun ActionCard(state: MyProfileUiState, onEdit: () -> Unit, onNotification: () -> Unit, onSwitch: () -> Unit) {
+private fun ActionCard(state: MyProfileUiState, onEdit: () -> Unit, onNotification: () -> Unit) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(18.dp)).clip(RoundedCornerShape(18.dp)).background(colors.surface).padding(horizontal = 18.dp, vertical = 6.dp)) {
         Row(Modifier.fillMaxWidth().noRippleClick(onEdit).padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -230,12 +209,6 @@ private fun ActionCard(state: MyProfileUiState, onEdit: () -> Unit, onNotificati
             BellIcon(colors.textSecondary, Modifier.size(18.dp))
             Text(DamoimStrings.PROFILE_ROW_NOTIFICATION, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
             FakeToggle(on = true)
-        }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))
-        Row(Modifier.fillMaxWidth().noRippleClick(onSwitch).padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            DoorExitIcon(colors.textSecondary, Modifier.size(18.dp))
-            Text(DamoimStrings.PROFILE_ROW_SWITCH, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
-            Text(state.currentClubName, style = DamoimTheme.typography.caption, color = colors.textMuted)
         }
     }
 }

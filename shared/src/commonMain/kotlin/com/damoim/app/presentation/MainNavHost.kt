@@ -281,11 +281,7 @@ fun MainNavHost(
                 onLoggedOut = onLoggedOut,                             // 로그아웃 → 로그인
                 onWithdrewToClub = { resetTo(MainDestination.Home) },  // 탈퇴 후 잔존 → 새 동아리 홈
                 onWithdrewToOnboarding = onWithdrewToOnboarding,       // 탈퇴 후 없음 → 온보딩
-                onAddClub = onAddClub,                                 // 33 새 동아리 생성 → 온보딩
-                onJoinClub = onJoinClub,                               // 33 코드로 참여 → 코드 입력 직행
-                onSwitched = { resetTo(MainDestination.Home) },        // 동아리 전환 → 새 동아리 홈으로
                 onOpenNotification = { navigate(MainDestination.NotifSettings) },
-                onComingSoon = { toast = DamoimStrings.TOAST_COMING_SOON },
                 onError = { toast = it },                              // 탈퇴 실패(예: 위임 필요) 메시지
             )
 
@@ -349,6 +345,9 @@ fun MainNavHost(
                 onOpenInquiry = { navigate(MainDestination.Inquiry) },
                 onOpenMyReports = { navigate(MainDestination.MyReports) },
                 onOpenClubReports = { if (isAdmin) navigate(MainDestination.ClubReports) },
+                onSwitched = { resetTo(MainDestination.Home) },        // 42 동아리 전환 → 새 동아리 홈
+                onJoinClub = onJoinClub,
+                onAddClub = onAddClub,
                 onTabSelect = { tab -> onTab(tab) },
             )
 

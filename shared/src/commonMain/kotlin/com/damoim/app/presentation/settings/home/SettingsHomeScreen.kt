@@ -22,6 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.presentation.club.ClubSwitchOverlay
 import com.damoim.app.presentation.component.BottomNavBar
 import com.damoim.app.presentation.component.ChevronRightIcon
 import com.damoim.app.presentation.component.NetworkImage
@@ -58,6 +62,9 @@ fun SettingsHomeRoute(
     onOpenInquiry: () -> Unit = {},
     onOpenMyReports: () -> Unit = {},
     onOpenClubReports: () -> Unit = {},
+    onSwitched: () -> Unit = {},               // 42 동아리 전환 → 새 동아리 홈
+    onJoinClub: () -> Unit = {},               // 33 코드로 참여
+    onAddClub: () -> Unit = {},                // 33 새 동아리 생성
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -75,6 +82,9 @@ fun SettingsHomeRoute(
         onOpenInquiry = onOpenInquiry,
         onOpenMyReports = onOpenMyReports,
         onOpenClubReports = onOpenClubReports,
+        onSwitched = onSwitched,
+        onJoinClub = onJoinClub,
+        onAddClub = onAddClub,
         onTabSelect = onTabSelect,
     )
 }
@@ -94,9 +104,14 @@ fun SettingsHomeScreen(
     onOpenInquiry: () -> Unit = {},
     onOpenMyReports: () -> Unit = {},
     onOpenClubReports: () -> Unit = {},
+    onSwitched: () -> Unit = {},
+    onJoinClub: () -> Unit = {},
+    onAddClub: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
+    var showSwitch by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(colors.surfaceInput)) {
         // 헤더(탭 루트 — 뒤로가기 없음)
         Box(Modifier.fillMaxWidth().background(colors.surface).windowInsetsPadding(WindowInsets.statusBars).padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 16.dp)) {
@@ -142,7 +157,11 @@ fun SettingsHomeScreen(
             }
 
             SettingsSection(DamoimStrings.SETTINGS_SEC_ME) {
-                SettingsRow(DamoimStrings.MY_PROFILE_TITLE, onOpenMyProfile, showDivider = false)
+                SettingsRow(DamoimStrings.MY_PROFILE_TITLE, onOpenMyProfile)
+                // 42 동아리 전환 — 내 프로필에서 설정으로 이동. 현재 동아리명을 우측에 표시.
+                SettingsRow(DamoimStrings.PROFILE_ROW_SWITCH, { showSwitch = true }, showDivider = false, trailing = {
+                    Text(state.clubName, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold), color = colors.textMuted)
+                })
             }
             // 동아리 관리 — 정보 설정·가입 코드는 CLUB_SETTINGS 권한, 운영진 권한 관리는 동아리장 전용.
             if (canManageClubSettings) {
@@ -175,5 +194,14 @@ fun SettingsHomeScreen(
         }
 
         BottomNavBar(selected = MainTab.SETTINGS, onSelect = onTabSelect)
+    }
+        // 42 동아리 전환 — 홈 동아리명(46)과 같은 공유 시트를 설정에서도 연다.
+        ClubSwitchOverlay(
+            visible = showSwitch,
+            onDismiss = { showSwitch = false },
+            onSwitched = onSwitched,
+            onJoin = onJoinClub,
+            onCreate = onAddClub,
+        )
     }
 }

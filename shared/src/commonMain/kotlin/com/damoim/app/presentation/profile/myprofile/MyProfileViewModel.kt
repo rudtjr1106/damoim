@@ -5,12 +5,10 @@ import com.damoim.app.core.mvi.BaseViewModel
 import com.damoim.app.core.mvi.UiSideEffect
 import com.damoim.app.core.mvi.UiState
 import com.damoim.app.core.result.DataResult
-import com.damoim.app.domain.model.ClubMembership
 import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.domain.usecase.ClubSessionUseCase
 import com.damoim.app.domain.usecase.GetClubInfoUseCase
 import com.damoim.app.domain.usecase.GetCohortsUseCase
-import com.damoim.app.domain.usecase.GetJoinedClubsUseCase
 import com.damoim.app.domain.usecase.GetMyMemberUseCase
 import com.damoim.app.domain.usecase.LogoutUseCase
 import com.damoim.app.domain.usecase.ObserveMyContextUseCase
@@ -26,7 +24,6 @@ data class MyProfileUiState(
     val role: MemberRole = MemberRole.MEMBER,
     val joinedLabel: String = "",
     val currentClubName: String = "",
-    val joinedClubs: List<ClubMembership> = emptyList(),
     val profileImageUrl: String? = null,
 ) : UiState
 
@@ -42,7 +39,6 @@ class MyProfileViewModel(
     getMyMember: GetMyMemberUseCase,
     getCohorts: GetCohortsUseCase,
     getClubInfo: GetClubInfoUseCase,
-    getJoinedClubs: GetJoinedClubsUseCase,
     observeMyContext: ObserveMyContextUseCase,
     private val clubSession: ClubSessionUseCase,
     private val logout: LogoutUseCase,
@@ -50,7 +46,7 @@ class MyProfileViewModel(
 
     init {
         viewModelScope.launch {
-            combine(getMyMember(), getCohorts(), getClubInfo(), getJoinedClubs(), observeMyContext()) { me, cohorts, club, joined, ctx ->
+            combine(getMyMember(), getCohorts(), getClubInfo(), observeMyContext()) { me, cohorts, club, ctx ->
                 val cohort = cohorts.firstOrNull { it.id == me?.cohortId }
                 MyProfileUiState(
                     name = me?.name ?: ctx.name,
@@ -61,14 +57,11 @@ class MyProfileViewModel(
                     role = me?.role ?: MemberRole.MEMBER,
                     joinedLabel = me?.joinedLabel ?: "",
                     currentClubName = club?.name ?: "",
-                    joinedClubs = joined,
                     profileImageUrl = ctx.profileImageUrl,
                 )
             }.collect { next -> setState { next } }
         }
     }
-
-    fun onSwitchClub(clubId: Long) = clubSession.switch(clubId)
 
     /** 60 동아리 탈퇴 — 멤버십 삭제(로그인 유지). 잔존 여부로 홈/온보딩 분기. */
     fun onWithdraw() = viewModelScope.launch {
