@@ -114,6 +114,11 @@ fun MainNavHost(
     val role = ctx.role ?: initialRole
     // 운영진(STAFF 포함) 여부 — 게시판·자료 관리 등 STAFF 허용 기능 게이트(서버 canManage와 일치).
     val isAdmin = ctx.isAdmin
+    // 세분 권한(리더=전권 또는 STAFF에 부여된 권한). 서버 requirePermission과 일치시켜 UI 노출/이동을 게이팅.
+    val canManageSchedule = ctx.canManageSchedule
+    val canApproveJoin = ctx.canApproveJoin
+    val canManageMember = ctx.canManageMember
+    val canManageClubSettings = ctx.canManageClubSettings
 
     val backStack: SnapshotStateList<MainDestination> =
         remember { mutableStateListOf<MainDestination>(MainDestination.Home) }
@@ -125,7 +130,7 @@ fun MainNavHost(
     fun onTab(tab: MainTab) = when (tab) {
         MainTab.HOME -> resetTo(MainDestination.Home)
         MainTab.BOARD -> resetTo(MainDestination.BoardHome)
-        MainTab.MEMBERS -> resetTo(if (role == ClubRole.LEADER) MainDestination.MemberManage else MainDestination.MemberList())
+        MainTab.MEMBERS -> resetTo(if (canManageMember) MainDestination.MemberManage else MainDestination.MemberList())
         MainTab.SCHEDULE -> resetTo(MainDestination.ScheduleHome)
         MainTab.SETTINGS -> resetTo(MainDestination.SettingsHome)
         else -> { toast = DamoimStrings.TOAST_COMING_SOON }
@@ -162,9 +167,9 @@ fun MainNavHost(
         when (val current = backStack.last()) {
             MainDestination.Home -> HomeRoute(
                 role = role,
-                onNavigateJoinManage = { navigate(MainDestination.JoinManage) },
+                onNavigateJoinManage = { if (canApproveJoin) navigate(MainDestination.JoinManage) },
                 onNavigateNotifications = { navigate(MainDestination.Notification) },
-                onNavigateClubSettings = { if (role == ClubRole.LEADER) navigate(MainDestination.ClubSettings) },
+                onNavigateClubSettings = { if (canManageClubSettings) navigate(MainDestination.ClubSettings) },
                 onNavigateArchive = { navigate(MainDestination.Archive) },
                 onComingSoon = { label ->
                     // 홈 퀵액션: 게시판→탭, 회원 관리(리더)→16, 내 프로필(회원)→20, 그 외 준비중
@@ -244,7 +249,7 @@ fun MainNavHost(
 
             MainDestination.MemberManage -> MemberManageRoute(
                 onOpenList = { navigate(MainDestination.MemberList()) },
-                onOpenJoinManage = { navigate(MainDestination.JoinManage) },
+                onOpenJoinManage = { if (canApproveJoin) navigate(MainDestination.JoinManage) },
                 onOpenCohorts = { navigate(MainDestination.CohortManage) },
                 onTabSelect = { tab -> onTab(tab) },
             )
@@ -254,7 +259,7 @@ fun MainNavHost(
                 // 회원 탭 루트(일반회원)로 쓰일 땐 뒤로가기=홈 탭, 푸시됐을 땐 pop
                 onBack = { if (backStack.size > 1) back() else resetTo(MainDestination.Home) },
                 onOpenMember = { id -> navigate(MainDestination.MemberDetail(id)) },
-                onShareCode = { if (role == ClubRole.LEADER) navigate(MainDestination.ClubSettings) },
+                onShareCode = { if (canManageClubSettings) navigate(MainDestination.ClubSettings) },
             )
 
             is MainDestination.MemberDetail -> MemberDetailRoute(
@@ -291,7 +296,7 @@ fun MainNavHost(
             )
 
             MainDestination.ScheduleHome -> ScheduleHomeRoute(
-                isLeader = role == ClubRole.LEADER,
+                isLeader = canManageSchedule,
                 onOpenSchedule = { navigate(MainDestination.EventDetail(it)) },
                 onRegister = { navigate(MainDestination.ScheduleRegister()) },
                 onOpenMyApps = { navigate(MainDestination.MyApplications) },
@@ -310,7 +315,7 @@ fun MainNavHost(
 
             is MainDestination.EventDetail -> EventDetailRoute(
                 scheduleId = current.scheduleId,
-                isLeader = role == ClubRole.LEADER,
+                isLeader = canManageSchedule,
                 onBack = { back() },
                 onEdit = { navigate(MainDestination.ScheduleRegister(editId = it)) },
                 onApplicants = { navigate(MainDestination.Applicants(it)) },
@@ -331,8 +336,9 @@ fun MainNavHost(
 
             MainDestination.SettingsHome -> SettingsHomeRoute(
                 isLeader = role == ClubRole.LEADER,
+                canManageClubSettings = canManageClubSettings,
                 onOpenMyProfile = { navigate(MainDestination.MyProfile) },
-                onOpenClubSettings = { if (role == ClubRole.LEADER) navigate(MainDestination.ClubSettings) },
+                onOpenClubSettings = { if (canManageClubSettings) navigate(MainDestination.ClubSettings) },
                 onOpenAdmin = { if (role == ClubRole.LEADER) navigate(MainDestination.Admin) },
                 onOpenPlan = { navigate(MainDestination.Plan) },
                 onOpenSubscription = { navigate(MainDestination.SubscriptionManage) },

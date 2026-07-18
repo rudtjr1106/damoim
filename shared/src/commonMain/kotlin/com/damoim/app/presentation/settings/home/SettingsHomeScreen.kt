@@ -44,6 +44,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 @Composable
 fun SettingsHomeRoute(
     isLeader: Boolean = false,
+    canManageClubSettings: Boolean = false,
     viewModel: SettingsHomeViewModel = viewModel(key = "settingsHome") {
         SettingsHomeViewModel(AppGraph.getClubInfoUseCase, AppGraph.subscriptionUseCase)
     },
@@ -61,6 +62,7 @@ fun SettingsHomeRoute(
     SettingsHomeScreen(
         state = state,
         isLeader = isLeader,
+        canManageClubSettings = canManageClubSettings,
         onOpenMyProfile = onOpenMyProfile,
         onOpenClubSettings = onOpenClubSettings,
         onOpenAdmin = onOpenAdmin,
@@ -77,6 +79,7 @@ fun SettingsHomeRoute(
 fun SettingsHomeScreen(
     state: SettingsHomeUiState = SettingsHomeUiState(clubName = "코딩하는 사람들", memberCount = 38, joinCode = "DM29AX", overLimit = true, memberUsed = 38),
     isLeader: Boolean = false,
+    canManageClubSettings: Boolean = false,
     onOpenMyProfile: () -> Unit = {},
     onOpenClubSettings: () -> Unit = {},
     onOpenAdmin: () -> Unit = {},
@@ -97,7 +100,7 @@ fun SettingsHomeScreen(
 
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             // 동아리 카드 — 일반 부원은 동아리 정보 설정으로 이동 불가
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).then(if (isLeader) Modifier.noRippleClick(onOpenClubSettings) else Modifier).padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).then(if (canManageClubSettings) Modifier.noRippleClick(onOpenClubSettings) else Modifier).padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 // 이미지 URL이 있어도 로드에 실패하면(서버에 바이트 없음 등) 이니셜로 폴백한다
                 val clubInitialBox: @Composable () -> Unit = {
                     Box(Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
@@ -113,7 +116,7 @@ fun SettingsHomeScreen(
                     Text(state.clubName, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.textPrimary)
                     Text(DamoimStrings.settingsClubMeta(state.memberCount, state.planName), style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Normal), color = colors.textMuted)
                 }
-                if (isLeader) ChevronRightIcon(colors.outlineStrong, Modifier.size(18.dp))
+                if (canManageClubSettings) ChevronRightIcon(colors.outlineStrong, Modifier.size(18.dp))
             }
 
             // 인원 초과 경고
@@ -135,14 +138,15 @@ fun SettingsHomeScreen(
             SettingsSection(DamoimStrings.SETTINGS_SEC_ME) {
                 SettingsRow(DamoimStrings.MY_PROFILE_TITLE, onOpenMyProfile, showDivider = false)
             }
-            // 동아리 관리(정보 설정·가입 코드·운영진 권한)는 동아리장 전용
-            if (isLeader) {
+            // 동아리 관리 — 정보 설정·가입 코드는 CLUB_SETTINGS 권한, 운영진 권한 관리는 동아리장 전용.
+            if (canManageClubSettings) {
                 SettingsSection(DamoimStrings.SETTINGS_SEC_CLUB) {
                     SettingsRow(DamoimStrings.SETTINGS_CLUB_INFO, onOpenClubSettings)
-                    SettingsRow(DamoimStrings.SETTINGS_JOIN_CODE, onOpenClubSettings, trailing = {
+                    // 운영진 권한 행이 뒤따르지 않으면(설정 권한만 있는 STAFF) 가입 코드가 마지막이라 구분선 제거.
+                    SettingsRow(DamoimStrings.SETTINGS_JOIN_CODE, onOpenClubSettings, showDivider = isLeader, trailing = {
                         Text(state.joinCode, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = colors.primaryDark)
                     })
-                    SettingsRow(DamoimStrings.SETTINGS_ADMIN_PERM, onOpenAdmin, showDivider = false)
+                    if (isLeader) SettingsRow(DamoimStrings.SETTINGS_ADMIN_PERM, onOpenAdmin, showDivider = false)
                 }
             }
             SettingsSection(DamoimStrings.SETTINGS_SEC_SUBSCRIPTION) {

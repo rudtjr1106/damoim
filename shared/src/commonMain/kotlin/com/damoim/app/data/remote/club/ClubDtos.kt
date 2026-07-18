@@ -169,6 +169,8 @@ data class MemberResponseDto(
     val joinedLabel: String = "",
     val isMe: Boolean = false,
     val profileImageUrl: String? = null,
+    // /me 응답에만 채워진다 — 요청자 본인의 세분 권한(운영진 기능 게이팅용).
+    val permissions: List<String> = emptyList(),
 )
 
 @Serializable

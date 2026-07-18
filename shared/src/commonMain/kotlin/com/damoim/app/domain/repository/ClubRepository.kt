@@ -33,6 +33,9 @@ interface ClubRepository {
     /** 명부 등급(LEADER/STAFF/MEMBER). 운영진(STAFF) 권한 판정용 — ClubRole만으론 STAFF를 구분 못 한다. */
     fun observeMemberRole(): Flow<MemberRole?>
 
+    /** 내 세분 권한 이름 집합(SCHEDULE_MANAGE 등). 리더는 서버가 전권을 내려준다. */
+    fun observePermissions(): Flow<Set<String>>
+
     /**
      * 현재 세션 역할을 **일회성으로** 조회한다(동아리 없으면 null). 라우팅 판정 전용.
      * [observeRole]은 공유 flow라 직전 세션의 값이 replay될 수 있어(로그아웃 → 재로그인),
