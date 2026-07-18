@@ -11,6 +11,7 @@ import com.damoim.app.domain.usecase.GetPostDetailUseCase
 import com.damoim.app.domain.usecase.ObserveMyContextUseCase
 import com.damoim.app.domain.usecase.SubmitPostUseCase
 import com.damoim.app.presentation.theme.DamoimStrings
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -39,8 +40,10 @@ class PostWriteViewModel(
     init {
         if (editPostId != null) {
             viewModelScope.launch {
-                val detail = getPostDetail(editPostId).first()
-                setState { copy(editing = detail?.post, editLoaded = true) }
+                // 공유 replay 플로우가 첫 방출로 null/실패값을 줄 수 있어, 첫 유효 상세를 기다린다.
+                // (기존 .first()는 그 null을 잡아 사진 등 첨부가 빈 채로 편집이 열리곤 했다.)
+                val detail = getPostDetail(editPostId).filterNotNull().first()
+                setState { copy(editing = detail.post, editLoaded = true) }
             }
         } else {
             setState { copy(editLoaded = true) }
