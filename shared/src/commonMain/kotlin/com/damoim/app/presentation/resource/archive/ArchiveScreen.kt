@@ -114,7 +114,7 @@ fun ArchiveScreen(
                 UploadFab(onUpload, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp))
             }
         }
-        BottomNavBar(selected = MainTab.HOME, onSelect = onTabSelect)
+        BottomNavBar(selected = MainTab.ARCHIVE, onSelect = onTabSelect)
     }
 }
 

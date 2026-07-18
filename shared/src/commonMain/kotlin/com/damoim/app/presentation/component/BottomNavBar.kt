@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.dp
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 
-/** 하단 탭 종류. 홈만 실제 화면이 있고 나머지는 그룹 C~G(미구현). */
-enum class MainTab { HOME, BOARD, SCHEDULE, MEMBERS, SETTINGS }
+/** 하단 탭 종류. 회원은 설정으로 옮기고(43) 그 자리에 자료실을 둔다. */
+enum class MainTab { HOME, BOARD, SCHEDULE, ARCHIVE, SETTINGS }
 
 /**
  * 앱 하단 탭바 (디자인: 홈/게시판/일정/회원/설정, 활성=primary·비활성=textDisabled).
@@ -48,7 +48,7 @@ fun BottomNavBar(
             TabItem(MainTab.HOME, DamoimStrings.TAB_HOME, selected, onSelect) { t, m -> HomeIcon(t, m) }
             TabItem(MainTab.BOARD, DamoimStrings.TAB_BOARD, selected, onSelect) { t, m -> BoardIcon(t, m) }
             TabItem(MainTab.SCHEDULE, DamoimStrings.TAB_SCHEDULE, selected, onSelect) { t, m -> CalendarIcon(t, m) }
-            TabItem(MainTab.MEMBERS, DamoimStrings.TAB_MEMBERS, selected, onSelect) { t, m -> PeopleIcon(t, m) }
+            TabItem(MainTab.ARCHIVE, DamoimStrings.TAB_ARCHIVE, selected, onSelect) { t, m -> FolderIcon(t, m) }
             TabItem(MainTab.SETTINGS, DamoimStrings.TAB_SETTINGS, selected, onSelect) { t, m -> SettingsIcon(t, m) }
         }
     }

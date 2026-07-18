@@ -102,7 +102,7 @@ fun MemberManageScreen(
                 }
             }
         }
-        BottomNavBar(selected = MainTab.MEMBERS, onSelect = onTabSelect)
+        BottomNavBar(selected = MainTab.SETTINGS, onSelect = onTabSelect)
     }
 }
 

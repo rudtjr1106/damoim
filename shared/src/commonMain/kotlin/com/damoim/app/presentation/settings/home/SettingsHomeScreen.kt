@@ -62,6 +62,7 @@ fun SettingsHomeRoute(
     onOpenInquiry: () -> Unit = {},
     onOpenMyReports: () -> Unit = {},
     onOpenClubReports: () -> Unit = {},
+    onOpenMembers: () -> Unit = {},            // 43 회원 목록
     onSwitched: () -> Unit = {},               // 42 동아리 전환 → 새 동아리 홈
     onJoinClub: () -> Unit = {},               // 33 코드로 참여
     onAddClub: () -> Unit = {},                // 33 새 동아리 생성
@@ -82,6 +83,7 @@ fun SettingsHomeRoute(
         onOpenInquiry = onOpenInquiry,
         onOpenMyReports = onOpenMyReports,
         onOpenClubReports = onOpenClubReports,
+        onOpenMembers = onOpenMembers,
         onSwitched = onSwitched,
         onJoinClub = onJoinClub,
         onAddClub = onAddClub,
@@ -104,6 +106,7 @@ fun SettingsHomeScreen(
     onOpenInquiry: () -> Unit = {},
     onOpenMyReports: () -> Unit = {},
     onOpenClubReports: () -> Unit = {},
+    onOpenMembers: () -> Unit = {},
     onSwitched: () -> Unit = {},
     onJoinClub: () -> Unit = {},
     onAddClub: () -> Unit = {},
@@ -158,6 +161,8 @@ fun SettingsHomeScreen(
 
             SettingsSection(DamoimStrings.SETTINGS_SEC_ME) {
                 SettingsRow(DamoimStrings.MY_PROFILE_TITLE, onOpenMyProfile)
+                // 43 회원 — 바텀탭에서 설정으로 이동(모든 역할이 회원 목록을 볼 수 있음).
+                SettingsRow(DamoimStrings.TAB_MEMBERS, onOpenMembers)
                 // 42 동아리 전환 — 내 프로필에서 설정으로 이동. 현재 동아리명을 우측에 표시.
                 SettingsRow(DamoimStrings.PROFILE_ROW_SWITCH, { showSwitch = true }, showDivider = false, trailing = {
                     Text(state.clubName, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold), color = colors.textMuted)

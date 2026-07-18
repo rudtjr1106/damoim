@@ -83,7 +83,8 @@ object DamoimStrings {
     const val TAB_HOME = "홈"
     const val TAB_BOARD = "게시판"
     const val TAB_SCHEDULE = "일정"
-    const val TAB_MEMBERS = "회원"
+    const val TAB_ARCHIVE = "자료실"
+    const val TAB_MEMBERS = "회원"   // 설정 › 회원 행 라벨(바텀탭에서 이동)
     const val TAB_SETTINGS = "설정"
     // 게시판 카테고리
     const val BOARD_NOTICE = "공지"
