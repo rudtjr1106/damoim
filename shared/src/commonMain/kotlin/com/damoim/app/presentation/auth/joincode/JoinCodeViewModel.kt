@@ -31,7 +31,8 @@ class JoinCodeViewModel(
 ) : BaseViewModel<JoinCodeUiState, JoinCodeSideEffect>(JoinCodeUiState()) {
 
     fun onCodeChange(value: String) {
-        val normalized = value.filter { it.isLetterOrDigit() }
+        // 가입 코드는 영문/숫자만 — isLetterOrDigit()은 한글도 통과시키므로 ASCII 영숫자로 제한한다.
+        val normalized = value.filter { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' }
             .take(SubmitJoinCodeUseCase.CODE_LENGTH)
             .uppercase()
         setState { copy(code = normalized, errorMessage = null) }

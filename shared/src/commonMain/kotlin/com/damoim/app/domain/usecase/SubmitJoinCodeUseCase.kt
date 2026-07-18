@@ -13,7 +13,8 @@ class SubmitJoinCodeUseCase(
 ) {
     suspend operator fun invoke(code: String): DataResult<JoinRequestResult> {
         val normalized = code.trim().uppercase()
-        if (normalized.length != CODE_LENGTH || !normalized.all { it.isLetterOrDigit() }) {
+        // 영문/숫자만 허용 — isLetterOrDigit()은 한글도 통과하므로 ASCII 영숫자로 검증한다.
+        if (normalized.length != CODE_LENGTH || !normalized.all { it in 'A'..'Z' || it in '0'..'9' }) {
             return DataResult.Failure(
                 DataError(code = "INVALID_FORMAT", message = "${CODE_LENGTH}자리 코드를 정확히 입력해주세요"),
             )

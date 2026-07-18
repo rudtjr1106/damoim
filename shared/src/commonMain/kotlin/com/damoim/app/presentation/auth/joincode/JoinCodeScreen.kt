@@ -179,7 +179,8 @@ private fun CodeCells(
             onValueChange = onChange,
             modifier = Modifier.focusRequester(focusRequester),
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
+                // Ascii 키보드로 한글 IME 전환을 억제(실입력 필터는 VM.onCodeChange가 담당).
+                keyboardType = KeyboardType.Ascii,
                 capitalization = KeyboardCapitalization.Characters,
                 imeAction = ImeAction.Done,
             ),
