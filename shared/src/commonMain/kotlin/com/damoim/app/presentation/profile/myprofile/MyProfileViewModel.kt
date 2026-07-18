@@ -14,6 +14,7 @@ import com.damoim.app.domain.usecase.GetJoinedClubsUseCase
 import com.damoim.app.domain.usecase.GetMyMemberUseCase
 import com.damoim.app.domain.usecase.LogoutUseCase
 import com.damoim.app.domain.usecase.ObserveMyContextUseCase
+import com.damoim.app.presentation.theme.DamoimStrings
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -55,7 +56,8 @@ class MyProfileViewModel(
                     name = me?.name ?: ctx.name,
                     initials = me?.initials ?: "",
                     cohortShort = cohort?.short ?: "",
-                    cohortLabel = cohort?.label ?: "",
+                    // 기수가 없으면 배지는 숨기고(빈 파란 원 방지) 정보 행은 '미배정'으로 표시.
+                    cohortLabel = cohort?.label?.ifBlank { DamoimStrings.PROFILE_COHORT_NONE } ?: DamoimStrings.PROFILE_COHORT_NONE,
                     role = me?.role ?: MemberRole.MEMBER,
                     joinedLabel = me?.joinedLabel ?: "",
                     currentClubName = club?.name ?: "",

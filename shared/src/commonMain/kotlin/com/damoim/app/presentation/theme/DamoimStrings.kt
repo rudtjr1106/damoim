@@ -492,6 +492,7 @@ object DamoimStrings {
     // 20 내 프로필
     const val MY_PROFILE_TITLE = "내 프로필"
     const val PROFILE_INFO_COHORT = "내 기수"
+    const val PROFILE_COHORT_NONE = "미배정"
     const val PROFILE_INFO_LINKED = "연동 계정"
     const val PROFILE_LINKED_KAKAO = "카카오"
     const val PROFILE_ROW_EDIT = "프로필 수정"

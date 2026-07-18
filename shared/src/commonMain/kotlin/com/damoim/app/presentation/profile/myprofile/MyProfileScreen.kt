@@ -179,7 +179,8 @@ private fun Hero(state: MyProfileUiState, onEdit: () -> Unit) {
             Text(state.name, style = DamoimTheme.typography.titleLarge.copy(fontSize = 19.sp), color = colors.textPrimary)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                DetailBadge(state.cohortShort, emphasized = true)
+                // 기수가 없으면 빈 파란 배지가 남지 않도록 숨긴다.
+                if (state.cohortShort.isNotBlank()) DetailBadge(state.cohortShort, emphasized = true)
                 DetailBadge(memberRoleLabel(state.role), emphasized = false)
             }
         }
