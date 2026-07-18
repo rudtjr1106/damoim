@@ -3,6 +3,7 @@ package com.damoim.app.presentation.component
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,6 +67,8 @@ fun NetworkImage(
     cornerRadius: Dp = 12.dp,
     contentScale: ContentScale = ContentScale.Crop,
     localKey: String? = null,
+    // true면 로드된 비트맵의 실제 가로세로 비율로 크기를 잡는다(고정 높이로 잘리지 않게).
+    naturalRatio: Boolean = false,
     fallback: (@Composable () -> Unit)? = null,
 ) {
     val colors = DamoimTheme.colors
@@ -89,11 +92,13 @@ fun NetworkImage(
         bitmap != null -> Image(
             bitmap = bitmap,
             contentDescription = null,
-            contentScale = contentScale,
-            modifier = modifier.clip(RoundedCornerShape(cornerRadius)),
+            contentScale = if (naturalRatio) ContentScale.Fit else contentScale,
+            modifier = (if (naturalRatio) modifier.aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat()) else modifier)
+                .clip(RoundedCornerShape(cornerRadius)),
         )
         failed && fallback != null -> fallback()
-        else -> Box(modifier.clip(RoundedCornerShape(cornerRadius)).background(colors.surfaceInput))
+        // 로딩/실패 플레이스홀더 — naturalRatio면 비율을 알기 전 4:3로 잡아 로드 후 실제 비율로 스냅.
+        else -> Box((if (naturalRatio) modifier.aspectRatio(4f / 3f) else modifier).clip(RoundedCornerShape(cornerRadius)).background(colors.surfaceInput))
     }
 }
 

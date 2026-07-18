@@ -337,9 +337,11 @@ private fun PostBody(
                     val idx = att.url?.let { imageUrls.indexOf(it) }?.coerceAtLeast(0) ?: 0
                     NetworkImage(
                         url = att.url,
-                        modifier = Modifier.fillMaxWidth().height(180.dp)
+                        // 고정 높이(180dp)로 잘리지 않고 원본 비율 그대로 표시.
+                        modifier = Modifier.fillMaxWidth()
                             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onImageTap(imageUrls, idx) },
                         cornerRadius = 14.dp,
+                        naturalRatio = true,
                     )
                 }
                 else -> AttachmentCard(att) { onOpenAttachment(att) }
