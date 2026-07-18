@@ -46,7 +46,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 /** 화면 37/74 알림 — Route. */
 @Composable
 fun NotificationRoute(
-    viewModel: NotificationViewModel = viewModel { NotificationViewModel(AppGraph.getNotificationsUseCase, AppGraph.markNotificationsReadUseCase) },
+    viewModel: NotificationViewModel = viewModel { NotificationViewModel(AppGraph.getNotificationsUseCase, AppGraph.markNotificationsReadUseCase, AppGraph.markNotificationReadUseCase) },
     onBack: () -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
     onOpenSchedule: (Long) -> Unit = {},
@@ -56,6 +56,7 @@ fun NotificationRoute(
         state = state,
         onBack = onBack,
         onMarkAllRead = viewModel::onMarkAllRead,
+        onMarkRead = viewModel::onMarkRead,
         onOpenPost = onOpenPost,
         onOpenSchedule = onOpenSchedule,
     )
@@ -66,6 +67,7 @@ fun NotificationScreen(
     state: NotificationUiState = NotificationUiState(isLoading = false, notifications = previewNotifications()),
     onBack: () -> Unit = {},
     onMarkAllRead: () -> Unit = {},
+    onMarkRead: (Long) -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
     onOpenSchedule: (Long) -> Unit = {},
 ) {
@@ -86,11 +88,12 @@ fun NotificationScreen(
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 state.notifications.forEach { n ->
                     NotificationRow(n) {
+                        onMarkRead(n.id)   // 터치한 알림만 읽음 처리
                         val id = n.targetId
                         when (n.targetType) {
                             NotificationTargetType.POST -> if (id != null) onOpenPost(id)
                             NotificationTargetType.SCHEDULE -> if (id != null) onOpenSchedule(id)
-                            null -> Unit   // 가입 승인 등 이동 대상 없음
+                            null -> Unit   // 가입 승인 등 이동 대상 없음 — 읽음 처리만
                         }
                     }
                 }
@@ -102,12 +105,13 @@ fun NotificationScreen(
 @Composable
 private fun NotificationRow(n: AppNotification, onClick: () -> Unit = {}) {
     val colors = DamoimTheme.colors
-    // 이동 대상이 있는 알림만 클릭 가능(가입 승인 등은 눌러도 반응 없음)
+    // 이동 대상이 있거나 아직 안 읽은 알림은 클릭 가능(터치 시 읽음 처리 + 이동).
     val hasTarget = n.targetType != null && n.targetId != null
+    val clickable = hasTarget || n.isUnread
     Column {
         Row(
             modifier = Modifier.fillMaxWidth()
-                .then(if (hasTarget) Modifier.noRippleClick(onClick) else Modifier)
+                .then(if (clickable) Modifier.noRippleClick(onClick) else Modifier)
                 .background(if (n.isUnread) colors.surfaceVariant else colors.surface).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.Top,
         ) {

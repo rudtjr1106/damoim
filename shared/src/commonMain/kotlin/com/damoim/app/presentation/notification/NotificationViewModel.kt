@@ -6,6 +6,7 @@ import com.damoim.app.core.mvi.UiSideEffect
 import com.damoim.app.core.mvi.UiState
 import com.damoim.app.domain.model.AppNotification
 import com.damoim.app.domain.usecase.GetNotificationsUseCase
+import com.damoim.app.domain.usecase.MarkNotificationReadUseCase
 import com.damoim.app.domain.usecase.MarkNotificationsReadUseCase
 import kotlinx.coroutines.launch
 
@@ -21,6 +22,7 @@ sealed interface NotificationSideEffect : UiSideEffect
 class NotificationViewModel(
     getNotifications: GetNotificationsUseCase,
     private val markAllRead: MarkNotificationsReadUseCase,
+    private val markRead: MarkNotificationReadUseCase,
 ) : BaseViewModel<NotificationUiState, NotificationSideEffect>(NotificationUiState()) {
 
     init {
@@ -30,4 +32,10 @@ class NotificationViewModel(
     }
 
     fun onMarkAllRead() = viewModelScope.launch { markAllRead() }
+
+    /** 알림 터치 → 그 알림만 읽음. 즉시 낙관적 반영 후 서버 반영(재조회로 확정). */
+    fun onMarkRead(id: Long) {
+        setState { copy(notifications = notifications.map { if (it.id == id) it.copy(isUnread = false) else it }) }
+        viewModelScope.launch { markRead(id) }
+    }
 }

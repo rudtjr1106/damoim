@@ -58,6 +58,7 @@ import com.damoim.app.domain.usecase.GetSearchSuggestionsUseCase
 import com.damoim.app.domain.usecase.GetStorageUsageUseCase
 import com.damoim.app.domain.usecase.LoginWithKakaoUseCase
 import com.damoim.app.domain.usecase.ManageRecentSearchUseCase
+import com.damoim.app.domain.usecase.MarkNotificationReadUseCase
 import com.damoim.app.domain.usecase.MarkNotificationsReadUseCase
 import com.damoim.app.domain.usecase.MyReportsUseCase
 import com.damoim.app.domain.usecase.SubmitReportUseCase
@@ -117,6 +118,7 @@ object AppGraph {
     val decideApplicantUseCase get() = DecideApplicantUseCase(clubRepository)
     val getNotificationsUseCase get() = GetNotificationsUseCase(notificationRepository)
     val markNotificationsReadUseCase get() = MarkNotificationsReadUseCase(notificationRepository)
+    val markNotificationReadUseCase get() = MarkNotificationReadUseCase(notificationRepository)
 
     // E. 회원·기수 관리
     val getMembersUseCase get() = GetMembersUseCase(clubRepository)

@@ -18,6 +18,7 @@ object ApiRoutes {
         const val PROFILE_IMAGE = "/api/me/profile-image"
         const val NOTIFICATIONS = "/api/me/notifications"
         const val NOTIFICATIONS_READ_ALL = "/api/me/notifications/read-all"
+        fun notificationRead(id: Long) = "$NOTIFICATIONS/$id/read"
         const val NOTIFICATION_SETTINGS = "/api/me/notification-settings"
     }
 

@@ -11,4 +11,7 @@ interface NotificationRepository {
 
     /** 모두 읽음 처리(37). */
     suspend fun markAllRead(): DataResult<Unit>
+
+    /** 단건 읽음 처리(49) — 알림을 터치했을 때 그 알림만. */
+    suspend fun markRead(id: Long): DataResult<Unit>
 }

@@ -31,4 +31,8 @@ class RemoteNotificationRepository(private val api: ApiClient) : NotificationRep
     override suspend fun markAllRead(): DataResult<Unit> =
         api.postUnit(ApiRoutes.Me.NOTIFICATIONS_READ_ALL)
             .also { RemoteBus.invalidate(DataTopic.NOTIFICATION, DataTopic.CLUB) }
+
+    override suspend fun markRead(id: Long): DataResult<Unit> =
+        api.postUnit(ApiRoutes.Me.notificationRead(id))
+            .also { RemoteBus.invalidate(DataTopic.NOTIFICATION, DataTopic.CLUB) }
 }
