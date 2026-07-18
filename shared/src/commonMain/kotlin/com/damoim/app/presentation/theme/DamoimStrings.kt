@@ -724,8 +724,10 @@ object DamoimStrings {
     const val SUB_CANCEL_SUB = "App Store 구독"
     const val SUB_PAYMENT_HISTORY = "결제 내역"
     const val SUB_ACTIVE_BADGE = "이용 중"
+    const val SUB_CANCELED_BADGE = "해지 예정"
+    const val SUB_USABLE_UNTIL = "이용 가능"
     const val SUB_CANCEL_DIALOG_TITLE = "구독을 해지할까요?"
-    const val SUB_CANCEL_DIALOG_DESC = "무료 플랜으로 전환되고, 다음 결제일부터 청구되지 않아요."
+    const val SUB_CANCEL_DIALOG_DESC = "해지해도 갱신일까지는 지금 플랜을 그대로 이용할 수 있어요. 이후 무료 플랜으로 전환돼요."
     const val SUB_CANCEL_CONFIRM = "해지하기"
 
     // 결제(인앱)
@@ -815,7 +817,7 @@ object DamoimStrings {
 
     // G 토스트
     const val TOAST_SUBSCRIBED = "구독이 시작됐어요"
-    const val TOAST_SUB_CANCELED = "구독을 해지했어요"
+    const val TOAST_SUB_CANCELED = "해지했어요. 갱신일까지 이용할 수 있어요"
     const val TOAST_EXTERNAL_STORE = "스토어 구독 설정에서 관리해요"
     const val TOAST_ADMIN_ADDED = "운영진으로 지정했어요"
     const val TOAST_ADMIN_REMOVED = "운영진에서 해제했어요"

@@ -26,6 +26,7 @@ data class SubscriptionState(
     val memberUsed: Int,
     val memberLimit: Int,            // FREE=30
     val payments: List<PaymentRecord> = emptyList(),
+    val canceled: Boolean = false,   // 해지 예약(만료 전) — 갱신일까지 이용 가능
 ) {
     val active: Boolean get() = tier != PlanTier.FREE
     val overLimit: Boolean get() = memberUsed > memberLimit

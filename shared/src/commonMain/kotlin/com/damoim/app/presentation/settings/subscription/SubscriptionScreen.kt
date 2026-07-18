@@ -77,12 +77,15 @@ fun SubscriptionScreen(
                         }
                     })
                     if (sub.active) {
-                        SettingsRow(DamoimStrings.SUB_PAYMENT_METHOD, { onToast(DamoimStrings.TOAST_EXTERNAL_STORE) }, trailing = {
+                        SettingsRow(DamoimStrings.SUB_PAYMENT_METHOD, { onToast(DamoimStrings.TOAST_EXTERNAL_STORE) }, showDivider = !sub.canceled, trailing = {
                             Text(DamoimStrings.SUB_PAYMENT_METHOD_SUB, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Normal), color = colors.textMuted)
                         })
-                        SettingsRow(DamoimStrings.SUB_CANCEL, { confirmCancel = true }, labelColor = colors.error, showDivider = false, trailing = {
-                            Text(DamoimStrings.SUB_CANCEL_SUB, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Normal), color = colors.textDisabled)
-                        })
+                        // 이미 해지 예약이면 해지 행을 숨기고 갱신일까지 이용 가능 안내만 남긴다.
+                        if (!sub.canceled) {
+                            SettingsRow(DamoimStrings.SUB_CANCEL, { confirmCancel = true }, labelColor = colors.error, showDivider = false, trailing = {
+                                Text(DamoimStrings.SUB_CANCEL_SUB, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Normal), color = colors.textDisabled)
+                            })
+                        }
                     }
                 }
                 // 결제 내역
@@ -112,11 +115,18 @@ private fun Hero(sub: SubscriptionState) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(colors.onDarkNavy).padding(22.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(sub.planName, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.onPrimary, modifier = Modifier.weight(1f))
-            if (sub.active) Text(DamoimStrings.SUB_ACTIVE_BADGE, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 11.sp), color = colors.accentSky, modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(colors.onPrimary.copy(alpha = 0.12f)).padding(horizontal = 10.dp, vertical = 4.dp))
+            if (sub.active) {
+                Text(
+                    if (sub.canceled) DamoimStrings.SUB_CANCELED_BADGE else DamoimStrings.SUB_ACTIVE_BADGE,
+                    style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold, fontSize = 11.sp),
+                    color = if (sub.canceled) colors.onPrimary.copy(alpha = 0.6f) else colors.accentSky,
+                    modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(colors.onPrimary.copy(alpha = 0.12f)).padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             HeroStat(DamoimStrings.SUB_MONTHLY_FEE, sub.monthlyPriceLabel)
-            HeroStat(DamoimStrings.SUB_NEXT_BILLING, sub.nextBillingLabel)
+            HeroStat(if (sub.canceled) DamoimStrings.SUB_USABLE_UNTIL else DamoimStrings.SUB_NEXT_BILLING, sub.nextBillingLabel)
             HeroStat(DamoimStrings.SUB_USAGE, "${sub.memberUsed}/${sub.memberLimit}")
         }
         Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(99.dp)).background(colors.onPrimary.copy(alpha = 0.15f))) {

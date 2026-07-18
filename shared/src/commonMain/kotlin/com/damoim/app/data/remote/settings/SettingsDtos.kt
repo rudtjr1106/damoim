@@ -65,6 +65,7 @@ data class SubscriptionStateResponseDto(
     val memberUsed: Int = 0,
     val memberLimit: Int = 30,
     val payments: List<PaymentRecordResponseDto> = emptyList(),
+    val canceled: Boolean = false,
 )
 
 @Serializable
@@ -126,6 +127,7 @@ internal fun SubscriptionStateResponseDto.toDomain(): SubscriptionState = Subscr
     memberUsed = memberUsed,
     memberLimit = memberLimit,
     payments = payments.map { PaymentRecord(it.title, it.dateLabel, it.amountLabel, it.channel) },
+    canceled = canceled,
 )
 
 internal fun SubscriptionPlanResponseDto.toDomain(): SubscriptionPlan = SubscriptionPlan(
