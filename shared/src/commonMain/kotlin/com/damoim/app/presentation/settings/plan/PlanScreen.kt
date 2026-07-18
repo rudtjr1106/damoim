@@ -34,7 +34,6 @@ import com.damoim.app.domain.model.SubscriptionPlan
 import com.damoim.app.platform.BillingResult
 import com.damoim.app.platform.rememberSubscriptionBilling
 import com.damoim.app.presentation.component.CheckIcon
-import com.damoim.app.presentation.component.CloseIcon
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.settings.SettingsTopBar
 import com.damoim.app.presentation.theme.DamoimStrings
@@ -78,7 +77,8 @@ fun PlanScreen(
                 Text(DamoimStrings.PLAN_HEADING, style = DamoimTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, lineHeight = 31.sp), color = colors.textPrimary)
                 Text(DamoimStrings.planSubtitle(state.memberCount), style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Normal, fontSize = 13.sp), color = colors.textMuted)
             }
-            Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // '추천' 배지가 카드 위로 11dp 튀어나와 있어, 간격이 좁으면 앞 카드와 배지가 겹쳐 보인다 → 24dp로 확보.
+            Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 state.plans.forEach { plan ->
                     PlanCard(plan, isCurrent = plan.tier == state.currentTier, onStart = { onStart(plan) })
                 }
@@ -110,7 +110,8 @@ private fun PlanCard(plan: SubscriptionPlan, isCurrent: Boolean, onStart: () -> 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 plan.features.forEach { f ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (f.included) CheckIcon(colors.primary, Modifier.size(14.dp)) else CloseIcon(colors.outlineStrong, Modifier.size(14.dp))
+                        // 미포함 항목도 X 대신 흐린 체크로 표시(부정 신호 제거) — 포함 여부는 색으로만 구분.
+                        CheckIcon(if (f.included) colors.primary else colors.outlineStrong, Modifier.size(14.dp))
                         Text(f.text, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Normal, fontSize = 13.sp), color = if (f.included) colors.textTertiary else colors.textDisabled)
                     }
                 }
