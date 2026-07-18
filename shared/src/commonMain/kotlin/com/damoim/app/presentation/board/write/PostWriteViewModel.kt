@@ -5,8 +5,10 @@ import com.damoim.app.core.mvi.BaseViewModel
 import com.damoim.app.core.mvi.UiSideEffect
 import com.damoim.app.core.mvi.UiState
 import com.damoim.app.domain.model.BoardPost
+import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.PostDraft
 import com.damoim.app.domain.usecase.GetPostDetailUseCase
+import com.damoim.app.domain.usecase.ObserveMyContextUseCase
 import com.damoim.app.domain.usecase.SubmitPostUseCase
 import com.damoim.app.presentation.theme.DamoimStrings
 import kotlinx.coroutines.flow.first
@@ -17,6 +19,8 @@ data class PostWriteUiState(
     /** 수정 모드일 때 원본 글(프리필용). 로드 전 null. */
     val editing: BoardPost? = null,
     val editLoaded: Boolean = false,
+    /** 동아리장 여부 — 공지 카테고리 선택은 운영진 전용. */
+    val isAdmin: Boolean = false,
 ) : UiState
 
 sealed interface PostWriteSideEffect : UiSideEffect {
@@ -28,6 +32,7 @@ sealed interface PostWriteSideEffect : UiSideEffect {
 class PostWriteViewModel(
     private val submitPost: SubmitPostUseCase,
     private val getPostDetail: GetPostDetailUseCase,
+    observeMyContext: ObserveMyContextUseCase,
     private val editPostId: Long?,
 ) : BaseViewModel<PostWriteUiState, PostWriteSideEffect>(PostWriteUiState()) {
 
@@ -39,6 +44,10 @@ class PostWriteViewModel(
             }
         } else {
             setState { copy(editLoaded = true) }
+        }
+        // 현재 사용자의 역할을 관찰 — 공지 선택 권한 판정용.
+        viewModelScope.launch {
+            observeMyContext().collect { ctx -> setState { copy(isAdmin = ctx.role == ClubRole.LEADER) } }
         }
     }
 

@@ -95,7 +95,7 @@ fun PostWriteRoute(
     initialCategory: BoardCategory = BoardCategory.FREE,
     editPostId: Long? = null,
     viewModel: PostWriteViewModel = viewModel(key = "postwrite_${editPostId ?: "new"}") {
-        PostWriteViewModel(AppGraph.submitPostUseCase, AppGraph.getPostDetailUseCase, editPostId)
+        PostWriteViewModel(AppGraph.submitPostUseCase, AppGraph.getPostDetailUseCase, AppGraph.observeMyContextUseCase, editPostId)
     },
     onCancel: () -> Unit = {},
     onDone: (edited: Boolean) -> Unit = { _ -> },
@@ -121,7 +121,7 @@ fun PostWriteRoute(
         initialCategory = initialCategory,
         prefill = state.editing,
         prefillDraft = restoredDraft,
-        isAdmin = true,
+        isAdmin = state.isAdmin,
         isSaving = state.isSaving,
         onCancel = onCancel,
         onSubmit = viewModel::submit,
@@ -135,7 +135,7 @@ fun PostWriteScreen(
     initialCategory: BoardCategory = BoardCategory.FREE,
     prefill: BoardPost? = null,
     prefillDraft: PostDraft? = null,
-    isAdmin: Boolean = true,
+    isAdmin: Boolean = false,
     isSaving: Boolean = false,
     onCancel: () -> Unit = {},
     onSubmit: (PostDraft) -> Unit = {},
