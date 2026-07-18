@@ -16,6 +16,7 @@ object ApiRoutes {
         const val ROOT = "/api/me"
         const val PROFILE = "/api/me/profile"
         const val PROFILE_IMAGE = "/api/me/profile-image"
+        const val WITHDRAW = "/api/me/withdraw"          // 51 회원 탈퇴
         const val NOTIFICATIONS = "/api/me/notifications"
         const val NOTIFICATIONS_READ_ALL = "/api/me/notifications/read-all"
         fun notificationRead(id: Long) = "$NOTIFICATIONS/$id/read"

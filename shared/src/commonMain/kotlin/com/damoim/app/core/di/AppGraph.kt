@@ -25,6 +25,7 @@ import com.damoim.app.domain.usecase.ClubReportsUseCase
 import com.damoim.app.domain.usecase.ClubSessionUseCase
 import com.damoim.app.domain.usecase.FetchMyRoleUseCase
 import com.damoim.app.domain.usecase.LogoutUseCase
+import com.damoim.app.domain.usecase.WithdrawAccountUseCase
 import com.damoim.app.domain.usecase.NotifSettingsUseCase
 import com.damoim.app.domain.usecase.SubscriptionUseCase
 import com.damoim.app.domain.usecase.EventApplicationUseCase
@@ -129,6 +130,7 @@ object AppGraph {
     val cohortActionUseCase get() = CohortActionUseCase(clubRepository)
     val clubSessionUseCase get() = ClubSessionUseCase(clubRepository)
     val logoutUseCase get() = LogoutUseCase(authRepository)
+    val withdrawAccountUseCase get() = WithdrawAccountUseCase(authRepository)
 
     // C. 게시판
     val getBoardHomeUseCase get() = GetBoardHomeUseCase(boardRepository)

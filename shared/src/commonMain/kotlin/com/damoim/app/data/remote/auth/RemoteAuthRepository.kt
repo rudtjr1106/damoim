@@ -135,6 +135,19 @@ class RemoteAuthRepository(private val api: ApiClient) : AuthRepository {
         return result
     }
 
+    override suspend fun withdraw(): DataResult<Unit> {
+        // 로그아웃과 달리 서버가 성공해야 로컬 정리 — 단독 리더 위임 필요(LEADER_MUST_DELEGATE) 등 실패 시
+        // 세션을 유지해 사용자가 에러를 보고 위임을 진행할 수 있게 한다.
+        val result = api.deleteUnit(ApiRoutes.Me.WITHDRAW)
+        if (result is DataResult.Success) {
+            RemoteEnv.tokenStore.clear()
+            RemoteEnv.currentUserId = 0L
+            userState.value = null
+            RemoteBus.invalidateAll()
+        }
+        return result
+    }
+
     private suspend fun refreshMe() {
         if (RemoteEnv.tokenStore.load() == null) return // 미로그인
         api.getData<UserResponseDto>(ApiRoutes.Me.ROOT).onSuccess { setUser(it.toDomain()) }

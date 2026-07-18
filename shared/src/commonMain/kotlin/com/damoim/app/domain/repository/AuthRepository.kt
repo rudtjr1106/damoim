@@ -34,4 +34,7 @@ interface AuthRepository {
 
     /** 로그아웃 — 리프레시 토큰 폐기(서버) + 로컬 토큰/신원 정리. 성공 시 미로그인 상태로 복귀. */
     suspend fun logout(): DataResult<Unit>
+
+    /** 51 회원 탈퇴 — 서버 성공 시에만 로컬 세션 정리(단독 리더 위임 필요 등 실패 시 로그인 유지). */
+    suspend fun withdraw(): DataResult<Unit>
 }

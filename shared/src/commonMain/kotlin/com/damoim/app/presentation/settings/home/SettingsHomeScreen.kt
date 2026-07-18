@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
 import com.damoim.app.presentation.club.ClubSwitchOverlay
 import com.damoim.app.presentation.component.BottomNavBar
+import com.damoim.app.presentation.component.DamoimConfirmDialog
 import com.damoim.app.presentation.component.ChevronRightIcon
 import com.damoim.app.presentation.component.NetworkImage
 import com.damoim.app.presentation.component.MainTab
@@ -51,7 +53,7 @@ fun SettingsHomeRoute(
     isStaff: Boolean = false,
     canManageClubSettings: Boolean = false,
     viewModel: SettingsHomeViewModel = viewModel(key = "settingsHome") {
-        SettingsHomeViewModel(AppGraph.getClubInfoUseCase, AppGraph.subscriptionUseCase)
+        SettingsHomeViewModel(AppGraph.getClubInfoUseCase, AppGraph.subscriptionUseCase, AppGraph.withdrawAccountUseCase)
     },
     onOpenMyProfile: () -> Unit = {},
     onOpenClubSettings: () -> Unit = {},
@@ -66,9 +68,19 @@ fun SettingsHomeRoute(
     onSwitched: () -> Unit = {},               // 42 동아리 전환 → 새 동아리 홈
     onJoinClub: () -> Unit = {},               // 33 코드로 참여
     onAddClub: () -> Unit = {},                // 33 새 동아리 생성
+    onWithdrewAccount: () -> Unit = {},        // 51 탈퇴 완료 → 로그인
+    onError: (String) -> Unit = {},            // 탈퇴 실패 등 메시지
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    LaunchedEffect(viewModel) {
+        viewModel.sideEffect.collect { effect ->
+            when (effect) {
+                SettingsHomeSideEffect.WithdrewAccount -> onWithdrewAccount()
+                is SettingsHomeSideEffect.ActionFailed -> onError(effect.message)
+            }
+        }
+    }
     SettingsHomeScreen(
         state = state,
         isLeader = isLeader,
@@ -87,6 +99,7 @@ fun SettingsHomeRoute(
         onSwitched = onSwitched,
         onJoinClub = onJoinClub,
         onAddClub = onAddClub,
+        onWithdrawAccount = viewModel::onWithdrawAccount,
         onTabSelect = onTabSelect,
     )
 }
@@ -110,10 +123,12 @@ fun SettingsHomeScreen(
     onSwitched: () -> Unit = {},
     onJoinClub: () -> Unit = {},
     onAddClub: () -> Unit = {},
+    onWithdrawAccount: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     var showSwitch by remember { mutableStateOf(false) }
+    var confirmWithdraw by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(colors.surfaceInput)) {
         // 헤더(탭 루트 — 뒤로가기 없음)
@@ -191,9 +206,11 @@ fun SettingsHomeScreen(
             SettingsSection(DamoimStrings.SETTINGS_SEC_ETC) {
                 SettingsRow(DamoimStrings.SETTINGS_NOTIF, onOpenNotif)
                 SettingsRow(DamoimStrings.SETTINGS_INQUIRY, onOpenInquiry)
-                SettingsRow(DamoimStrings.SETTINGS_MY_REPORTS, onOpenMyReports, showDivider = isStaff)
+                SettingsRow(DamoimStrings.SETTINGS_MY_REPORTS, onOpenMyReports)
                 // 신고 목록(모더레이션)은 운영진 전용
-                if (isStaff) SettingsRow(DamoimStrings.SETTINGS_REPORT_LIST, onOpenClubReports, showDivider = false)
+                if (isStaff) SettingsRow(DamoimStrings.SETTINGS_REPORT_LIST, onOpenClubReports)
+                // 51 회원 탈퇴 — 파괴적. 로그아웃(내 프로필)·동아리 탈퇴와 별개.
+                SettingsRow(DamoimStrings.SETTINGS_WITHDRAW_ACCOUNT, { confirmWithdraw = true }, labelColor = colors.error, showDivider = false)
             }
             Spacer(Modifier.height(8.dp))
         }
@@ -208,5 +225,15 @@ fun SettingsHomeScreen(
             onJoin = onJoinClub,
             onCreate = onAddClub,
         )
+        if (confirmWithdraw) {
+            DamoimConfirmDialog(
+                title = DamoimStrings.WITHDRAW_TITLE,
+                desc = DamoimStrings.WITHDRAW_BODY,
+                confirm = DamoimStrings.WITHDRAW_CONFIRM,
+                destructive = true,
+                onConfirm = { confirmWithdraw = false; onWithdrawAccount() },
+                onDismiss = { confirmWithdraw = false },
+            )
+        }
     }
 }

@@ -342,6 +342,8 @@ fun MainNavHost(
                 onSwitched = { resetTo(MainDestination.Home) },        // 42 동아리 전환 → 새 동아리 홈
                 onJoinClub = onJoinClub,
                 onAddClub = onAddClub,
+                onWithdrewAccount = onLoggedOut,                       // 51 탈퇴 완료 → 로그인
+                onError = { toast = it },
                 onTabSelect = { tab -> onTab(tab) },
             )
 
