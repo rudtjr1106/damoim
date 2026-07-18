@@ -148,6 +148,27 @@ actual fun rememberShareText(): (String) -> Unit {
 }
 
 @Composable
+actual fun rememberCalendarAdder(): (CalendarEvent) -> Unit {
+    val context = LocalContext.current
+    return remember(context) {
+        { ev ->
+            // 기기 캘린더 앱의 '새 일정' 화면을 미리 채워서 연다(런타임 권한 불필요 — 시스템 UI가 저장 담당).
+            val intent = android.content.Intent(android.content.Intent.ACTION_INSERT).apply {
+                data = android.provider.CalendarContract.Events.CONTENT_URI
+                putExtra(android.provider.CalendarContract.Events.TITLE, ev.title)
+                putExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME, ev.startEpochMillis)
+                putExtra(android.provider.CalendarContract.EXTRA_EVENT_END_TIME, ev.endEpochMillis)
+                if (ev.location.isNotBlank()) putExtra(android.provider.CalendarContract.Events.EVENT_LOCATION, ev.location)
+                if (ev.description.isNotBlank()) putExtra(android.provider.CalendarContract.Events.DESCRIPTION, ev.description)
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            runCatching { context.startActivity(intent) }
+            Unit
+        }
+    }
+}
+
+@Composable
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
     androidx.activity.compose.BackHandler(enabled = enabled, onBack = onBack)
 }

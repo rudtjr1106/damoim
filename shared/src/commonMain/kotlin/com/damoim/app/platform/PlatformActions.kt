@@ -43,6 +43,19 @@ expect fun rememberDocumentPickerLauncher(onResult: (PickedDocument?) -> Unit): 
 @Composable
 expect fun rememberShareText(): (String) -> Unit
 
+/** 기기 기본 캘린더에 추가할 일정. 시각은 epoch millis 기준. */
+data class CalendarEvent(
+    val title: String,
+    val startEpochMillis: Long,
+    val endEpochMillis: Long,
+    val location: String = "",
+    val description: String = "",
+)
+
+/** 기기 기본 캘린더 앱에 일정 추가. 반환 람다 호출 시 캘린더 앱의 새 일정 화면이 뜬다(Android). iOS는 현재 no-op. */
+@Composable
+expect fun rememberCalendarAdder(): (CalendarEvent) -> Unit
+
 /** 인앱 결제 결과(G 그룹 구독). */
 enum class BillingResult { SUCCESS, FAILURE, CANCELLED }
 

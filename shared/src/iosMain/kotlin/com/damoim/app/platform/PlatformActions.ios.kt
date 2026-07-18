@@ -180,6 +180,10 @@ actual fun rememberShareText(): (String) -> Unit = remember {
     }
 }
 
+// iOS 기기 캘린더 추가는 현재 no-op(EventKit 연동 시 구현). Android만 실제 동작.
+@Composable
+actual fun rememberCalendarAdder(): (CalendarEvent) -> Unit = remember { { _ -> } }
+
 /**
  * StoreKit 2(Swift) 결제 구현 주입점. iosApp이 앱 시작 시 `IosBillingRegistry.impl`을 등록하면 그걸 우선 쓰고,
  * 없으면 아래 StoreKit 1 폴백을 쓴다. onResult의 두번째 인자 = 서버 검증용 JWS 서명 트랜잭션(성공 시).

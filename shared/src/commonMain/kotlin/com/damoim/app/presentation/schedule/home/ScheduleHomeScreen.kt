@@ -37,6 +37,8 @@ import com.damoim.app.domain.model.EventInfo
 import com.damoim.app.domain.model.Schedule
 import com.damoim.app.domain.model.ScheduleAccent
 import com.damoim.app.domain.model.ScheduleType
+import com.damoim.app.platform.CalendarEvent
+import com.damoim.app.platform.rememberCalendarAdder
 import com.damoim.app.presentation.component.BackChevronIcon
 import com.damoim.app.presentation.component.BottomNavBar
 import com.damoim.app.presentation.component.CalendarIcon
@@ -54,6 +56,17 @@ import com.damoim.app.presentation.schedule.schMonthTitle
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
+
+/** Schedule → 기기 캘린더 이벤트. 종료 시각이 없으면 시작 +1시간. */
+private fun Schedule.toCalendarEvent(): CalendarEvent {
+    val tz = TimeZone.currentSystemDefault()
+    val startMs = date.atTime(startHour, startMinute).toInstant(tz).toEpochMilliseconds()
+    val endMs = endDate?.atTime(endHour, endMinute)?.toInstant(tz)?.toEpochMilliseconds() ?: (startMs + 60L * 60 * 1000)
+    return CalendarEvent(title = title, startEpochMillis = startMs, endEpochMillis = endMs, location = location, description = memo)
+}
 
 @Composable
 fun ScheduleHomeRoute(
@@ -101,6 +114,12 @@ fun ScheduleHomeScreen(
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
+    // '내 일정에 추가' = 인앱 표시(칩) + 기기 기본 캘린더에 실제 추가.
+    val addToCalendar = rememberCalendarAdder()
+    val onAddCalendarCombined: (Long) -> Unit = { id ->
+        onAddCalendar(id)
+        state.schedules.firstOrNull { it.id == id }?.let { addToCalendar(it.toCalendarEvent()) }
+    }
     Column(Modifier.fillMaxSize().background(colors.surface)) {
         // 헤더
         Row(
@@ -122,8 +141,8 @@ fun ScheduleHomeScreen(
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 when {
                     state.isEmpty -> EmptyState(isLeader = isLeader, onRegister = onRegister)
-                    state.listMode -> ListView(state, onOpenSchedule, onAddCalendar)
-                    else -> CalendarView(state, onSelectDate, onPrevMonth, onNextMonth, onOpenSchedule, onAddCalendar)
+                    state.listMode -> ListView(state, onOpenSchedule, onAddCalendarCombined)
+                    else -> CalendarView(state, onSelectDate, onPrevMonth, onNextMonth, onOpenSchedule, onAddCalendarCombined)
                 }
                 Spacer(Modifier.height(96.dp))
             }
