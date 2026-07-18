@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -597,7 +599,26 @@ private fun RecruitFields(
             Text("모집 정원", style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 StepBtn("−", colors.surfaceVariant, colors.textTertiary) { if (capacity > 1) onCapacity(capacity - 1) }
-                Text("${capacity}명", style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp), color = colors.textPrimary, modifier = Modifier.width(40.dp), textAlign = TextAlign.Center)
+                // +/- 버튼 외에 텍스트로도 정원을 직접 입력할 수 있다.
+                var capacityText by remember { mutableStateOf(capacity.toString()) }
+                // 외부(±버튼)로 값이 바뀌면 입력 텍스트도 맞춘다.
+                LaunchedEffect(capacity) { if (capacityText.toIntOrNull() != capacity) capacityText = capacity.toString() }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    BasicTextField(
+                        value = capacityText,
+                        onValueChange = { raw ->
+                            val digits = raw.filter { it.isDigit() }.take(4)
+                            capacityText = digits
+                            digits.toIntOrNull()?.takeIf { it >= 1 }?.let(onCapacity)
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = colors.textPrimary, textAlign = TextAlign.Center),
+                        cursorBrush = SolidColor(colors.primary),
+                        modifier = Modifier.width(32.dp),
+                    )
+                    Text("명", style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp), color = colors.textPrimary)
+                }
                 StepBtn("+", colors.primaryContainer, colors.primary) { onCapacity(capacity + 1) }
             }
         }
