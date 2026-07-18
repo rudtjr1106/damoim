@@ -86,7 +86,6 @@ fun ProfileEditRoute(
         onCancel = { viewModel.onCancel(); onCancel() },
         onNameChange = viewModel::onNameChange,
         onContactChange = viewModel::onContactChange,
-        onBioChange = viewModel::onBioChange,
         onSave = viewModel::onSave,
         onPickPhoto = { picker.launch() },
     )
@@ -99,7 +98,6 @@ fun ProfileEditScreen(
     onCancel: () -> Unit = {},
     onNameChange: (String) -> Unit = {},
     onContactChange: (String) -> Unit = {},
-    onBioChange: (String) -> Unit = {},
     onSave: () -> Unit = {},
     onPickPhoto: () -> Unit = {},
 ) {
@@ -152,10 +150,6 @@ fun ProfileEditScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     visualTransformation = PhoneNumberVisualTransformation,
                 )
-            }
-            // 한 줄 소개
-            Field(DamoimStrings.PROFILE_BIO_LABEL) {
-                DamoimTextField(state.bio, onBioChange, placeholder = DamoimStrings.PROFILE_BIO_PLACEHOLDER, cornerRadius = 14.dp)
             }
         }
     }

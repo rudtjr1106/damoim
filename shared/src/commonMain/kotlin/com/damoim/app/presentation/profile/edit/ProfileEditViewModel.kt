@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 data class ProfileEditUiState(
     val name: String = "",
     val contact: String = "",
-    val bio: String = "",          // 한 줄 소개 — 현재는 표시용(AuthUser 스키마 미확장, 서버 도입 시 저장)
     val profileImageUrl: String? = null, // 현재 저장된 프로필 사진(없으면 이니셜 아바타)
     val isSaving: Boolean = false,
 ) : UiState {
@@ -60,7 +59,6 @@ class ProfileEditViewModel(
 
     fun onNameChange(value: String) { dirty = true; setState { copy(name = value.take(UpdateProfileUseCase.MAX_NICKNAME_LENGTH)) } }
     fun onContactChange(value: String) { dirty = true; setState { copy(contact = value.filter { it.isDigit() }.take(11)) } }
-    fun onBioChange(value: String) { dirty = true; setState { copy(bio = value.take(40)) } }
 
     /** 사진 선택 — 바이트를 보관(저장 시 업로드). */
     fun onPhotoPicked(bytes: ByteArray, contentType: String?) {

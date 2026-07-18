@@ -511,8 +511,6 @@ object DamoimStrings {
     const val PROFILE_EDIT_TITLE = "프로필 수정"
     const val PROFILE_EDIT_SAVE = "저장"
     const val PROFILE_CONTACT_HELPER = "동아리장과 운영진에게만 공개돼요"
-    const val PROFILE_BIO_LABEL = "한 줄 소개"
-    const val PROFILE_BIO_PLACEHOLDER = "나를 소개하는 한 마디"
 
     // 60 동아리 탈퇴 확인
     fun clubLeaveTitle(club: String) = "${club}에서\n탈퇴할까요?"
