@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
@@ -29,10 +31,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -210,6 +216,8 @@ internal fun ImageViewerOverlay(images: List<String>, startIndex: Int, caption: 
         pageCount = { images.size.coerceAtLeast(1) },
     )
     val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // 현재 페이지가 확대되면 페이저 스와이프를 잠가 패닝과 충돌하지 않게 한다.
+    var pageZoomed by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(colors.imageViewerBg).safeDrawingPadding()) {
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(32.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose), contentAlignment = Alignment.Center) { CloseIcon(white, Modifier.size(24.dp)) }
@@ -220,16 +228,14 @@ internal fun ImageViewerOverlay(images: List<String>, startIndex: Int, caption: 
         }
         androidx.compose.foundation.pager.HorizontalPager(
             state = pagerState,
+            userScrollEnabled = !pageZoomed,
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) { page ->
-            Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                com.damoim.app.presentation.component.NetworkImage(
-                    url = images.getOrNull(page).orEmpty(),
-                    modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f),
-                    cornerRadius = 4.dp,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                )
-            }
+            ZoomableImage(
+                url = images.getOrNull(page).orEmpty(),
+                active = page == pagerState.currentPage,
+                onZoomedChange = { pageZoomed = it },
+            )
         }
         Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(caption, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Normal), color = white.copy(alpha = 0.55f))
@@ -248,6 +254,39 @@ internal fun ImageViewerOverlay(images: List<String>, startIndex: Int, caption: 
                 }
             }
         }
+    }
+}
+
+/** 전체화면 뷰어 한 장 — 핀치 확대/드래그 이동 + 더블탭 토글. 다른 페이지로 넘어가면 확대 초기화. */
+@Composable
+private fun ZoomableImage(url: String, active: Boolean, onZoomedChange: (Boolean) -> Unit) {
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    LaunchedEffect(active) { if (!active) { scale = 1f; offset = Offset.Zero } }
+    Box(
+        Modifier.fillMaxSize().padding(horizontal = 8.dp)
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    scale = (scale * zoom).coerceIn(1f, 4f)
+                    offset = if (scale > 1f) offset + pan else Offset.Zero
+                    onZoomedChange(scale > 1.01f)
+                }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(onDoubleTap = {
+                    if (scale > 1f) { scale = 1f; offset = Offset.Zero; onZoomedChange(false) }
+                    else { scale = 2.5f; onZoomedChange(true) }
+                })
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        com.damoim.app.presentation.component.NetworkImage(
+            url = url,
+            modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f)
+                .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y),
+            cornerRadius = 4.dp,
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+        )
     }
 }
 
