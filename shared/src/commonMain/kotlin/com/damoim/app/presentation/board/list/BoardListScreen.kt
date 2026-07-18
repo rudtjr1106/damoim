@@ -171,16 +171,6 @@ private fun SortChips(sort: BoardSort, onSort: (BoardSort) -> Unit) {
             SortChip(DamoimStrings.BOARD_SORT_RECENT, active = sort == BoardSort.RECENT) { onSort(BoardSort.RECENT) }
             SortChip(DamoimStrings.BOARD_SORT_POPULAR, active = sort == BoardSort.POPULAR) { onSort(BoardSort.POPULAR) }
             SortChip(DamoimStrings.BOARD_SORT_COMMENTS, active = sort == BoardSort.COMMENTS) { onSort(BoardSort.COMMENTS) }
-            // 기간 드롭다운 칩 (기간 필터는 일정 도메인 붙일 때 함께)
-            Row(
-                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(colors.surfaceVariant)
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(DamoimStrings.BOARD_SORT_PERIOD, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold), color = colors.textTertiary)
-                Spacer(Modifier.width(4.dp))
-                ChevronDownIcon(tint = colors.textTertiary, modifier = Modifier.size(11.dp))
-            }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
     }
