@@ -376,7 +376,7 @@ object DamoimStrings {
     const val RESOURCE_UPLOAD_TITLE = "자료 올리기"
     const val RESOURCE_UPLOAD_SUBMIT = "올리기"
     const val RESOURCE_UPLOAD_ADD_FILE = "파일 추가"
-    const val RESOURCE_UPLOAD_HINT = "PDF · 한글(hwp) · 오피스(ppt·xls·doc) · 압축(zip)\n한 파일당 최대 100MB"
+    const val RESOURCE_UPLOAD_HINT = "PDF · 한글(hwp) · 오피스(ppt·xls·doc) · 압축(zip) 등\n한 파일당 최대 100MB"
     fun resourceUploadReady(size: String) = "$size · 업로드 준비 완료"
     const val RESOURCE_FIELD_FOLDER = "폴더"
     const val RESOURCE_FIELD_TITLE = "제목"
