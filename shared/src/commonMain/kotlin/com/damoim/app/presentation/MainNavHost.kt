@@ -161,7 +161,7 @@ fun MainNavHost(
                 role = role,
                 onNavigateJoinManage = { navigate(MainDestination.JoinManage) },
                 onNavigateNotifications = { navigate(MainDestination.Notification) },
-                onNavigateClubSettings = { navigate(MainDestination.ClubSettings) },
+                onNavigateClubSettings = { if (role == ClubRole.LEADER) navigate(MainDestination.ClubSettings) },
                 onNavigateArchive = { navigate(MainDestination.Archive) },
                 onComingSoon = { label ->
                     // 홈 퀵액션: 게시판→탭, 회원 관리(리더)→16, 내 프로필(회원)→20, 그 외 준비중
@@ -251,7 +251,7 @@ fun MainNavHost(
                 // 회원 탭 루트(일반회원)로 쓰일 땐 뒤로가기=홈 탭, 푸시됐을 땐 pop
                 onBack = { if (backStack.size > 1) back() else resetTo(MainDestination.Home) },
                 onOpenMember = { id -> navigate(MainDestination.MemberDetail(id)) },
-                onShareCode = { navigate(MainDestination.ClubSettings) },
+                onShareCode = { if (role == ClubRole.LEADER) navigate(MainDestination.ClubSettings) },
             )
 
             is MainDestination.MemberDetail -> MemberDetailRoute(
@@ -326,9 +326,10 @@ fun MainNavHost(
             )
 
             MainDestination.SettingsHome -> SettingsHomeRoute(
+                isLeader = role == ClubRole.LEADER,
                 onOpenMyProfile = { navigate(MainDestination.MyProfile) },
-                onOpenClubSettings = { navigate(MainDestination.ClubSettings) },
-                onOpenAdmin = { navigate(MainDestination.Admin) },
+                onOpenClubSettings = { if (role == ClubRole.LEADER) navigate(MainDestination.ClubSettings) },
+                onOpenAdmin = { if (role == ClubRole.LEADER) navigate(MainDestination.Admin) },
                 onOpenPlan = { navigate(MainDestination.Plan) },
                 onOpenSubscription = { navigate(MainDestination.SubscriptionManage) },
                 onOpenNotif = { navigate(MainDestination.NotifSettings) },

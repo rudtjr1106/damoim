@@ -43,6 +43,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 
 @Composable
 fun SettingsHomeRoute(
+    isLeader: Boolean = false,
     viewModel: SettingsHomeViewModel = viewModel(key = "settingsHome") {
         SettingsHomeViewModel(AppGraph.getClubInfoUseCase, AppGraph.subscriptionUseCase)
     },
@@ -59,6 +60,7 @@ fun SettingsHomeRoute(
     val state by viewModel.uiState.collectAsState()
     SettingsHomeScreen(
         state = state,
+        isLeader = isLeader,
         onOpenMyProfile = onOpenMyProfile,
         onOpenClubSettings = onOpenClubSettings,
         onOpenAdmin = onOpenAdmin,
@@ -74,6 +76,7 @@ fun SettingsHomeRoute(
 @Composable
 fun SettingsHomeScreen(
     state: SettingsHomeUiState = SettingsHomeUiState(clubName = "코딩하는 사람들", memberCount = 38, joinCode = "DM29AX", overLimit = true, memberUsed = 38),
+    isLeader: Boolean = false,
     onOpenMyProfile: () -> Unit = {},
     onOpenClubSettings: () -> Unit = {},
     onOpenAdmin: () -> Unit = {},
@@ -93,8 +96,8 @@ fun SettingsHomeScreen(
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
 
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            // 동아리 카드
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).noRippleClick(onOpenClubSettings).padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            // 동아리 카드 — 일반 부원은 동아리 정보 설정으로 이동 불가
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(colors.surface).then(if (isLeader) Modifier.noRippleClick(onOpenClubSettings) else Modifier).padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 // 이미지 URL이 있어도 로드에 실패하면(서버에 바이트 없음 등) 이니셜로 폴백한다
                 val clubInitialBox: @Composable () -> Unit = {
                     Box(Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)).background(colors.primary), contentAlignment = Alignment.Center) {
@@ -110,7 +113,7 @@ fun SettingsHomeScreen(
                     Text(state.clubName, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.textPrimary)
                     Text(DamoimStrings.settingsClubMeta(state.memberCount, state.planName), style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Normal), color = colors.textMuted)
                 }
-                ChevronRightIcon(colors.outlineStrong, Modifier.size(18.dp))
+                if (isLeader) ChevronRightIcon(colors.outlineStrong, Modifier.size(18.dp))
             }
 
             // 인원 초과 경고
@@ -132,12 +135,15 @@ fun SettingsHomeScreen(
             SettingsSection(DamoimStrings.SETTINGS_SEC_ME) {
                 SettingsRow(DamoimStrings.MY_PROFILE_TITLE, onOpenMyProfile, showDivider = false)
             }
-            SettingsSection(DamoimStrings.SETTINGS_SEC_CLUB) {
-                SettingsRow(DamoimStrings.SETTINGS_CLUB_INFO, onOpenClubSettings)
-                SettingsRow(DamoimStrings.SETTINGS_JOIN_CODE, onOpenClubSettings, trailing = {
-                    Text(state.joinCode, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = colors.primaryDark)
-                })
-                SettingsRow(DamoimStrings.SETTINGS_ADMIN_PERM, onOpenAdmin, showDivider = false)
+            // 동아리 관리(정보 설정·가입 코드·운영진 권한)는 동아리장 전용
+            if (isLeader) {
+                SettingsSection(DamoimStrings.SETTINGS_SEC_CLUB) {
+                    SettingsRow(DamoimStrings.SETTINGS_CLUB_INFO, onOpenClubSettings)
+                    SettingsRow(DamoimStrings.SETTINGS_JOIN_CODE, onOpenClubSettings, trailing = {
+                        Text(state.joinCode, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = colors.primaryDark)
+                    })
+                    SettingsRow(DamoimStrings.SETTINGS_ADMIN_PERM, onOpenAdmin, showDivider = false)
+                }
             }
             SettingsSection(DamoimStrings.SETTINGS_SEC_SUBSCRIPTION) {
                 SettingsRow(DamoimStrings.SETTINGS_PLAN_INFO, onOpenPlan, trailing = {
