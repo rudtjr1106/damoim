@@ -421,6 +421,12 @@ private fun PhotoAttach(photos: List<DraftImage>, onAdd: () -> Unit, onRemove: (
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // 추가(+) 타일은 항상 맨 앞에 고정 — 사진이 늘어도 위치가 바뀌지 않는다.
+        if (photos.size < 10) {
+            Column(Modifier.size(76.dp).clip(RoundedCornerShape(14.dp)).border(1.5.dp, colors.outline, RoundedCornerShape(14.dp)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onAdd), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                PlusIcon(colors.textMuted, Modifier.size(18.dp)); Spacer(Modifier.height(2.dp)); Text(DamoimStrings.imageCount(photos.size, 10), style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.SemiBold), color = colors.textMuted)
+            }
+        }
         photos.forEachIndexed { i, img ->
             Box(Modifier.size(76.dp)) {
                 // 방금 고른 사진=로컬 미리보기(localKey), 수정 프리필=서버 이미지(url).
@@ -430,11 +436,6 @@ private fun PhotoAttach(photos: List<DraftImage>, onAdd: () -> Unit, onRemove: (
                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onRemove(i) },
                     contentAlignment = Alignment.Center,
                 ) { CloseIcon(colors.surface, Modifier.size(10.dp)) }
-            }
-        }
-        if (photos.size < 10) {
-            Column(Modifier.size(76.dp).clip(RoundedCornerShape(14.dp)).border(1.5.dp, colors.outline, RoundedCornerShape(14.dp)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onAdd), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                PlusIcon(colors.textMuted, Modifier.size(18.dp)); Spacer(Modifier.height(2.dp)); Text(DamoimStrings.imageCount(photos.size, 10), style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.SemiBold), color = colors.textMuted)
             }
         }
     }
