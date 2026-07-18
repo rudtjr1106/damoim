@@ -233,7 +233,7 @@ object DamoimStrings {
     const val RECRUIT_APPLY = "신청하기"
 
     // 85 검색 시작
-    const val SEARCH_PLACEHOLDER = "게시글, 일정, 파일 검색"
+    const val SEARCH_PLACEHOLDER = "게시글 검색"
     const val SEARCH_RECENT = "최근 검색어"
     const val SEARCH_CLEAR_ALL = "전체 삭제"
 
