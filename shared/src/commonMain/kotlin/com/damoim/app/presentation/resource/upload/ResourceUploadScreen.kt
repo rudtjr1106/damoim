@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
-import com.damoim.app.domain.model.ClubRole
+import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.domain.model.ResourceDraft
 import com.damoim.app.domain.model.ResourceFolder
 import com.damoim.app.domain.model.ResourceVisibility
@@ -112,9 +112,9 @@ fun ResourceUploadScreen(
     var cohortIds by remember { mutableStateOf(emptySet<Long>()) }
     var overlay by remember { mutableStateOf<UploadOverlay?>(null) }
 
-    // 일반 회원은 활동사진 폴더에만 올릴 수 있다. 역할이 확정된 뒤에 기본 폴더를 정한다.
-    LaunchedEffect(state.role) {
-        if (state.role == ClubRole.MEMBER) folder = ResourceFolder.PHOTOS
+    // 일반 회원은 활동사진 폴더에만 올릴 수 있다(운영진=STAFF/동아리장은 전체). 역할 확정 후 기본 폴더 결정.
+    LaunchedEffect(state.memberRole) {
+        if (state.memberRole == MemberRole.MEMBER) folder = ResourceFolder.PHOTOS
     }
 
     // 프리뷰(Layoutlib)에는 Activity가 없어 런처를 만들지 않는다
@@ -139,7 +139,7 @@ fun ResourceUploadScreen(
                 title = title.trim(),
                 description = description.trim(),
                 // 일반 회원이 어떤 경로로든 다른 폴더를 담지 못하게 마지막에 한 번 더 강제
-                folder = if (state.isLeader) folder else ResourceFolder.PHOTOS,
+                folder = if (state.isAdmin) folder else ResourceFolder.PHOTOS,
                 visibility = visibility,
                 cohortIds = if (visibility == ResourceVisibility.COHORT_ONLY) cohortIds.toList() else emptyList(),
                 bytes = file.bytes,
@@ -227,7 +227,7 @@ fun ResourceUploadScreen(
         when (overlay) {
             UploadOverlay.FolderPicker -> FolderPickerSheet(
                 selected = folder,
-                isLeader = state.isLeader,
+                isLeader = state.isAdmin,
                 onDismiss = { overlay = null },
                 onSelect = {
                     folder = it

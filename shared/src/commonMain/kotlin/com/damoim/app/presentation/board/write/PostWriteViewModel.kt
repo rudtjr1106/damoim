@@ -50,7 +50,7 @@ class PostWriteViewModel(
         }
         // 현재 사용자의 역할을 관찰 — 공지 선택 권한 판정용.
         viewModelScope.launch {
-            observeMyContext().collect { ctx -> setState { copy(isAdmin = ctx.role == ClubRole.LEADER) } }
+            observeMyContext().collect { ctx -> setState { copy(isAdmin = ctx.isAdmin) } }
         }
     }
 

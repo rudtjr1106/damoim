@@ -112,6 +112,8 @@ fun MainNavHost(
         initial = com.damoim.app.domain.usecase.ObserveMyContextUseCase.MyContext(0, "", initialRole),
     )
     val role = ctx.role ?: initialRole
+    // 운영진(STAFF 포함) 여부 — 게시판·자료 관리 등 STAFF 허용 기능 게이트(서버 canManage와 일치).
+    val isAdmin = ctx.isAdmin
 
     val backStack: SnapshotStateList<MainDestination> =
         remember { mutableStateListOf<MainDestination>(MainDestination.Home) }
@@ -368,7 +370,7 @@ fun MainNavHost(
             )
 
             MainDestination.NotifSettings -> NotifSettingsRoute(
-                isLeaderOrStaff = role == ClubRole.LEADER,
+                isLeaderOrStaff = isAdmin,
                 onBack = { back() },
             )
 

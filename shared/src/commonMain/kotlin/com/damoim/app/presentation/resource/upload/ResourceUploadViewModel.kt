@@ -4,8 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.damoim.app.core.mvi.BaseViewModel
 import com.damoim.app.core.mvi.UiSideEffect
 import com.damoim.app.core.mvi.UiState
-import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.Cohort
+import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.domain.model.ResourceDraft
 import com.damoim.app.domain.usecase.GetCohortsUseCase
 import com.damoim.app.domain.usecase.ObserveMyContextUseCase
@@ -14,10 +14,11 @@ import kotlinx.coroutines.launch
 
 data class ResourceUploadUiState(
     val isSubmitting: Boolean = false,
-    val role: ClubRole? = null,        // null = 아직 모름 (기본 폴더 결정을 미룬다)
+    val memberRole: MemberRole? = null,   // null = 아직 모름 (기본 폴더 결정을 미룬다)
     val cohorts: List<Cohort> = emptyList(),
 ) : UiState {
-    val isLeader: Boolean get() = role == ClubRole.LEADER
+    // 운영진(동아리장 또는 STAFF)은 모든 폴더에 올릴 수 있다(서버 canManage와 일치). 일반 회원은 활동사진만.
+    val isAdmin: Boolean get() = memberRole != null && memberRole != MemberRole.MEMBER
 }
 
 sealed interface ResourceUploadSideEffect : UiSideEffect {
@@ -38,7 +39,7 @@ class ResourceUploadViewModel(
 
     init {
         viewModelScope.launch {
-            observeMyContext().collect { ctx -> setState { copy(role = ctx.role) } }
+            observeMyContext().collect { ctx -> setState { copy(memberRole = ctx.memberRole) } }
         }
         viewModelScope.launch {
             getCohorts().collect { list -> setState { copy(cohorts = list) } }

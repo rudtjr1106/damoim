@@ -57,7 +57,8 @@ class ResourceDetailViewModel(
         }
         viewModelScope.launch {
             observeMyContext().collect { ctx ->
-                setState { copy(myUserId = ctx.userId, isLeader = ctx.role == ClubRole.LEADER) }
+                // 운영진(STAFF 포함)은 남의 자료 삭제 가능(서버 canManage와 일치).
+                setState { copy(myUserId = ctx.userId, isLeader = ctx.isAdmin) }
             }
         }
         viewModelScope.launch {

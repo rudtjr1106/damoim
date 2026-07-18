@@ -4,6 +4,8 @@ import com.damoim.app.data.remote.auth.RemoteAuthRepository
 import com.damoim.app.data.remote.board.RemoteBoardRepository
 import com.damoim.app.data.remote.club.RemoteClubRepository
 import com.damoim.app.data.remote.core.ApiClient
+import com.damoim.app.data.remote.core.DataTopic
+import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.buildHttpClient
 import com.damoim.app.data.remote.notification.RemoteNotificationRepository
 import com.damoim.app.data.remote.resource.RemoteResourceRepository
@@ -154,4 +156,10 @@ object AppGraph {
 
     // 공통 컨텍스트
     val observeMyContextUseCase get() = ObserveMyContextUseCase(authRepository, clubRepository)
+
+    /**
+     * 내 명부 정보(역할/권한)를 다시 불러오게 한다. me-member 공유 flow는 앱이 떠 있는 동안
+     * 계속 구독돼 재조회가 안 일어나므로, 앱 포그라운드 복귀 시 호출해 운영진 권한 변경을 반영한다.
+     */
+    fun refreshMemberContext() = RemoteBus.invalidate(DataTopic.CLUB, DataTopic.MEMBER)
 }

@@ -65,6 +65,11 @@ fun RootNavHost() {
 
     LaunchedEffect(Unit) { flow = resolveFlow() }
 
+    // 앱 포그라운드 복귀 시 내 명부(역할/권한)를 재조회 — 운영진 권한 변경을 즉시 반영(갱신 지연 완화).
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        AppGraph.refreshMemberContext()
+    }
+
     // 실행 중 세션 만료(서버가 토큰 거부 → refresh 실패로 폐기) → 즉시 로그인으로.
     // 로그인 성공 후 지난 신호가 되살아나지 않도록 SessionEvents는 replay=0.
     LaunchedEffect(Unit) {
