@@ -8,6 +8,7 @@ import com.damoim.app.data.remote.core.DataTopic
 import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.SharedFlows
 import com.damoim.app.data.remote.core.reactiveFlow
+import com.damoim.app.domain.model.ClubReport
 import com.damoim.app.domain.model.MyReport
 import com.damoim.app.domain.model.ReportReason
 import com.damoim.app.domain.model.ReportTargetType
@@ -32,6 +33,13 @@ class RemoteReportRepository(private val api: ApiClient) : ReportRepository {
     override fun observeMyReports(): Flow<List<MyReport>> = shared.get("my-reports") {
         reactiveFlow(DataTopic.SETTINGS, fallback = emptyList()) {
             api.getData<List<MyReportResponseDto>>(ApiRoutes.Reports.ME).getOrNull()?.map { it.toDomain() }
+                ?: emptyList()
+        }
+    }
+
+    override fun observeClubReports(): Flow<List<ClubReport>> = shared.get("club-reports") {
+        reactiveFlow(DataTopic.SETTINGS, fallback = emptyList()) {
+            api.getData<List<ClubReportResponseDto>>(ApiRoutes.Reports.CLUB).getOrNull()?.map { it.toDomain() }
                 ?: emptyList()
         }
     }

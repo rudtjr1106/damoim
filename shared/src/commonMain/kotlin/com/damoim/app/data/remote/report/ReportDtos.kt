@@ -1,5 +1,6 @@
 package com.damoim.app.data.remote.report
 
+import com.damoim.app.domain.model.ClubReport
 import com.damoim.app.domain.model.MyReport
 import com.damoim.app.domain.model.ReportReason
 import com.damoim.app.domain.model.ReportTargetType
@@ -38,5 +39,26 @@ internal fun MyReportResponseDto.toDomain() = MyReport(
     reason = reportReasonOf(reason),
     reportedUserName = reportedUserName,
     reportedUserImageUrl = reportedUserImageUrl,
+    createdLabel = createdLabel,
+)
+
+@Serializable
+data class ClubReportResponseDto(
+    val id: Long,
+    val targetType: String,
+    val targetPreview: String,
+    val reason: String,
+    val reporterName: String,
+    val reportedUserName: String,
+    val createdLabel: String,
+)
+
+internal fun ClubReportResponseDto.toDomain() = ClubReport(
+    id = id,
+    targetType = reportTargetTypeOf(targetType),
+    targetPreview = targetPreview,
+    reason = reportReasonOf(reason),
+    reporterName = reporterName,
+    reportedUserName = reportedUserName,
     createdLabel = createdLabel,
 )

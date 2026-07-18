@@ -44,6 +44,7 @@ import com.damoim.app.presentation.schedule.home.ScheduleHomeRoute
 import com.damoim.app.presentation.schedule.myapplications.MyApplicationsRoute
 import com.damoim.app.presentation.schedule.register.ScheduleRegisterRoute
 import com.damoim.app.presentation.settings.admin.AdminRoute
+import com.damoim.app.presentation.settings.reports.ClubReportsRoute
 import com.damoim.app.presentation.settings.reports.MyReportsRoute
 import com.damoim.app.presentation.settings.home.SettingsHomeRoute
 import com.damoim.app.presentation.settings.inquiry.InquiryRoute
@@ -89,6 +90,7 @@ private sealed interface MainDestination {
     data object NotifSettings : MainDestination                        // 65
     data object Inquiry : MainDestination                             // 66
     data object MyReports : MainDestination                          // 34 신고한 사용자(내 신고 내역)
+    data object ClubReports : MainDestination                         // 35 운영진 신고 목록
     // B 서브
     data object ClubSettings : MainDestination
     data object JoinManage : MainDestination
@@ -346,6 +348,7 @@ fun MainNavHost(
                 onOpenNotif = { navigate(MainDestination.NotifSettings) },
                 onOpenInquiry = { navigate(MainDestination.Inquiry) },
                 onOpenMyReports = { navigate(MainDestination.MyReports) },
+                onOpenClubReports = { if (isAdmin) navigate(MainDestination.ClubReports) },
                 onTabSelect = { tab -> onTab(tab) },
             )
 
@@ -387,6 +390,10 @@ fun MainNavHost(
             )
 
             MainDestination.MyReports -> MyReportsRoute(
+                onBack = { back() },
+            )
+
+            MainDestination.ClubReports -> ClubReportsRoute(
                 onBack = { back() },
             )
 
@@ -445,6 +452,7 @@ private fun topicsFor(d: MainDestination): Set<DataTopic> = when (d) {
     MainDestination.NotifSettings -> setOf(DataTopic.SETTINGS)
     MainDestination.Inquiry -> emptySet()
     MainDestination.MyReports -> setOf(DataTopic.SETTINGS)
+    MainDestination.ClubReports -> setOf(DataTopic.SETTINGS)
     MainDestination.ClubSettings -> setOf(DataTopic.CLUB)
     MainDestination.JoinManage -> setOf(DataTopic.CLUB)
     MainDestination.Notification -> setOf(DataTopic.NOTIFICATION)

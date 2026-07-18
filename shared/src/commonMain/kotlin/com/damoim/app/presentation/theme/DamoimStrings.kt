@@ -694,6 +694,7 @@ object DamoimStrings {
     const val SETTINGS_NOTIF = "알림 설정"
     const val SETTINGS_INQUIRY = "문의하기"
     const val SETTINGS_MY_REPORTS = "신고한 사용자"
+    const val SETTINGS_REPORT_LIST = "신고 목록"
     const val SETTINGS_LOGOUT = "로그아웃"
     fun settingsClubMeta(count: Int, plan: String) = "회원 ${count}명 · $plan"
     const val SETTINGS_OVERLIMIT_TITLE = "무료 플랜 인원 초과"
@@ -804,6 +805,13 @@ object DamoimStrings {
     fun reportCount(n: Int) = "신고 ${n}건"
     const val REPORT_TARGET_POST = "게시글"
     const val REPORT_TARGET_COMMENT = "댓글"
+
+    // 35 운영진 신고 목록
+    const val CLUB_REPORTS_TITLE = "신고 목록"
+    const val CLUB_REPORTS_DESC = "동아리에 접수된 게시글·댓글 신고예요. 확인 후 필요한 조치를 진행해주세요"
+    const val CLUB_REPORTS_EMPTY_TITLE = "접수된 신고가 없어요"
+    const val CLUB_REPORTS_EMPTY_SUB = "부원이 신고하면 여기에 모여요"
+    fun clubReportReporter(name: String) = "신고자 $name"
 
     // G 토스트
     const val TOAST_SUBSCRIBED = "구독이 시작됐어요"

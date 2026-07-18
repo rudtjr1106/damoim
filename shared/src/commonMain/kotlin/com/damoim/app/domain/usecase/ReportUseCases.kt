@@ -1,6 +1,7 @@
 package com.damoim.app.domain.usecase
 
 import com.damoim.app.core.result.DataResult
+import com.damoim.app.domain.model.ClubReport
 import com.damoim.app.domain.model.MyReport
 import com.damoim.app.domain.model.ReportReason
 import com.damoim.app.domain.model.ReportTargetType
@@ -16,4 +17,9 @@ class SubmitReportUseCase(private val repo: ReportRepository) {
 /** 34 내가 신고한 내역. */
 class MyReportsUseCase(private val repo: ReportRepository) {
     fun observe(): Flow<List<MyReport>> = repo.observeMyReports()
+}
+
+/** 35 운영진 — 동아리 신고 목록. */
+class ClubReportsUseCase(private val repo: ReportRepository) {
+    fun observe(): Flow<List<ClubReport>> = repo.observeClubReports()
 }

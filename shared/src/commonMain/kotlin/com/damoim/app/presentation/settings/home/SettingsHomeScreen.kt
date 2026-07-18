@@ -57,6 +57,7 @@ fun SettingsHomeRoute(
     onOpenNotif: () -> Unit = {},
     onOpenInquiry: () -> Unit = {},
     onOpenMyReports: () -> Unit = {},
+    onOpenClubReports: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -73,6 +74,7 @@ fun SettingsHomeRoute(
         onOpenNotif = onOpenNotif,
         onOpenInquiry = onOpenInquiry,
         onOpenMyReports = onOpenMyReports,
+        onOpenClubReports = onOpenClubReports,
         onTabSelect = onTabSelect,
     )
 }
@@ -91,6 +93,7 @@ fun SettingsHomeScreen(
     onOpenNotif: () -> Unit = {},
     onOpenInquiry: () -> Unit = {},
     onOpenMyReports: () -> Unit = {},
+    onOpenClubReports: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
@@ -164,7 +167,9 @@ fun SettingsHomeScreen(
             SettingsSection(DamoimStrings.SETTINGS_SEC_ETC) {
                 SettingsRow(DamoimStrings.SETTINGS_NOTIF, onOpenNotif)
                 SettingsRow(DamoimStrings.SETTINGS_INQUIRY, onOpenInquiry)
-                SettingsRow(DamoimStrings.SETTINGS_MY_REPORTS, onOpenMyReports, showDivider = false)
+                SettingsRow(DamoimStrings.SETTINGS_MY_REPORTS, onOpenMyReports, showDivider = isStaff)
+                // 신고 목록(모더레이션)은 운영진 전용
+                if (isStaff) SettingsRow(DamoimStrings.SETTINGS_REPORT_LIST, onOpenClubReports, showDivider = false)
             }
             Spacer(Modifier.height(8.dp))
         }

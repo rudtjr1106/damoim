@@ -21,6 +21,7 @@ import com.damoim.app.domain.repository.ResourceRepository
 import com.damoim.app.domain.repository.ScheduleRepository
 import com.damoim.app.domain.repository.SettingsRepository
 import com.damoim.app.domain.usecase.AdminPermissionUseCase
+import com.damoim.app.domain.usecase.ClubReportsUseCase
 import com.damoim.app.domain.usecase.ClubSessionUseCase
 import com.damoim.app.domain.usecase.FetchMyRoleUseCase
 import com.damoim.app.domain.usecase.LogoutUseCase
@@ -160,6 +161,7 @@ object AppGraph {
     // 신고(34/35)
     val submitReportUseCase get() = SubmitReportUseCase(reportRepository)
     val myReportsUseCase get() = MyReportsUseCase(reportRepository)
+    val clubReportsUseCase get() = ClubReportsUseCase(reportRepository)
 
     // 공통 컨텍스트
     val observeMyContextUseCase get() = ObserveMyContextUseCase(authRepository, clubRepository)
