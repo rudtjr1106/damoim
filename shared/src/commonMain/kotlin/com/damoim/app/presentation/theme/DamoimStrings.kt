@@ -209,7 +209,6 @@ object DamoimStrings {
     const val BOARD_EMPTY_CTA = "첫 글 작성하기"
 
     // 40 검색 / 76 무결과
-    const val SEARCH_TAB_ALL = "전체"
     const val SEARCH_SECTION_POST = "게시글"
     const val SEARCH_SECTION_SCHEDULE = "일정"
     const val SEARCH_SECTION_FILE = "파일"

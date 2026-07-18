@@ -185,18 +185,12 @@ private fun NoResultBody(query: String) {
 }
 
 // ── 40 검색 결과 ──
+// 게시판 검색은 게시글만 반환하므로(일정/파일 미연결) 전체=게시글로 동일해 의미 없던
+// 상단 필터 탭(전체/게시글/일정/파일)을 제거했다. 결과는 바로 목록으로 보여준다.
 @Composable
 private fun ResultsBody(results: SearchResults, onOpenPost: (Long) -> Unit, onOpenSchedule: (Long) -> Unit, onComingSoon: () -> Unit) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth()) {
-        // 필터 탭
-        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ResultTab("${DamoimStrings.SEARCH_TAB_ALL} ${results.total}", active = true)
-            if (results.posts.isNotEmpty()) ResultTab("${DamoimStrings.SEARCH_SECTION_POST} ${results.posts.size}", active = false)
-            if (results.schedules.isNotEmpty()) ResultTab("${DamoimStrings.SEARCH_SECTION_SCHEDULE} ${results.schedules.size}", active = false)
-            if (results.files.isNotEmpty()) ResultTab("${DamoimStrings.SEARCH_SECTION_FILE} ${results.files.size}", active = false)
-        }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             if (results.posts.isNotEmpty()) {
                 SectionLabel(DamoimStrings.SEARCH_SECTION_POST)
@@ -236,13 +230,6 @@ private fun ResultsBody(results: SearchResults, onOpenPost: (Long) -> Unit, onOp
             }
         }
     }
-}
-
-@Composable
-private fun ResultTab(label: String, active: Boolean) {
-    val colors = DamoimTheme.colors
-    Text(label, style = DamoimTheme.typography.caption.copy(fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold), color = if (active) colors.surface else colors.textTertiary,
-        modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(if (active) colors.textPrimary else colors.surfaceVariant).padding(horizontal = 14.dp, vertical = 7.dp))
 }
 
 @Composable
