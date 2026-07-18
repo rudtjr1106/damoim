@@ -156,6 +156,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             // 사진 피커 (Android + iOS) — 이미지 선택 후 ByteArray 반환 + toImageBitmap 제공
             implementation(libs.peekaboo.imagepicker)
+            implementation(libs.qrose)
             // 날짜/시간 (KMP) — 날짜 피커·D-day 계산
             implementation(libs.kotlinx.datetime)
             // Ktor (서버 통합) — HTTP 클라이언트 + JSON 직렬화 + 인증(refresh)

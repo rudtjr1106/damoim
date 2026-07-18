@@ -1,5 +1,6 @@
 package com.damoim.app.presentation.clubsettings
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +32,7 @@ import com.damoim.app.presentation.component.KakaoBubbleIcon
 import com.damoim.app.presentation.component.LinkIcon
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
+import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 
 /**
  * 화면 59 가입 코드 공유 시트. 08에서 코드 카드의 공유 아이콘을 누르면 뜬다.
@@ -72,9 +74,16 @@ fun CodeShareSheet(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Box(
-                    modifier = Modifier.size(140.dp).clip(RoundedCornerShape(16.dp)).background(colors.surface).border(1.dp, colors.divider, RoundedCornerShape(16.dp)),
+                    modifier = Modifier.size(140.dp).clip(RoundedCornerShape(16.dp)).background(colors.surface).border(1.dp, colors.divider, RoundedCornerShape(16.dp)).padding(12.dp),
                     contentAlignment = Alignment.Center,
-                ) { Text("QR", style = DamoimTheme.typography.caption, color = colors.textDisabled) }
+                ) {
+                    // 초대 링크(카카오/링크 공유와 동일 값)를 실제 QR로 렌더 — 스캔하면 가입으로 연결된다.
+                    Image(
+                        painter = rememberQrCodePainter("https://damoim.app/join/$code"),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(code, style = DamoimTheme.typography.headline.copy(fontSize = 28.sp, letterSpacing = 3.sp), color = colors.textPrimary)
                     Box(
