@@ -41,8 +41,13 @@ class JoinManageViewModel(
     fun onSelectTab(tab: JoinManageTab) = setState { copy(tab = tab) }
 
     fun onDecide(applicant: JoinApplicant, approve: Boolean) = viewModelScope.launch {
-        handleResult(decideApplicant(applicant.id, approve), onSuccess = {
-            sendEffect(JoinManageSideEffect.Toast("${applicant.name}님을 ${if (approve) "승인" else "거절"}했어요"))
-        })
+        handleResult(
+            decideApplicant(applicant.id, approve),
+            onSuccess = {
+                sendEffect(JoinManageSideEffect.Toast("${applicant.name}님을 ${if (approve) "승인" else "거절"}했어요"))
+            },
+            // 41 회원 정원 초과 등 서버 거절 메시지를 그대로 표면화(기존엔 조용히 무시됐다).
+            onFailure = { sendEffect(JoinManageSideEffect.Toast(it.message)) },
+        )
     }
 }
