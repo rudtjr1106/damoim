@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -37,9 +40,11 @@ fun BottomNavBar(
     modifier: Modifier = Modifier,
 ) {
     val colors = DamoimTheme.colors
-    Column(modifier = modifier.fillMaxWidth().background(colors.surface)) {
+    // background 뒤에 navigationBars 인셋을 적용 — 표면은 시스템 내비바 뒤까지 칠하되 탭은 그 위로 올린다.
+    // 3버튼 내비는 인셋이 커서 간격이 생기고, 제스처 내비/iOS는 안전영역만큼만 확보돼 기존과 유사하다.
+    Column(modifier = modifier.fillMaxWidth().background(colors.surface).windowInsetsPadding(WindowInsets.navigationBars)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, start = 8.dp, end = 8.dp, bottom = 26.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, start = 8.dp, end = 8.dp, bottom = 8.dp)) {
             TabItem(MainTab.HOME, DamoimStrings.TAB_HOME, selected, onSelect) { t, m -> HomeIcon(t, m) }
             TabItem(MainTab.BOARD, DamoimStrings.TAB_BOARD, selected, onSelect) { t, m -> BoardIcon(t, m) }
             TabItem(MainTab.SCHEDULE, DamoimStrings.TAB_SCHEDULE, selected, onSelect) { t, m -> CalendarIcon(t, m) }
