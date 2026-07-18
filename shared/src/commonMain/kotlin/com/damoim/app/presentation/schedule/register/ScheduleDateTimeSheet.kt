@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,23 +71,30 @@ internal fun ScheduleDateTimeSheet(
                 Tab(DamoimStrings.PICKER_TAB_DATE, active = !timeTab, Modifier.weight(1f)) { timeTab = false }
                 Tab(DamoimStrings.PICKER_TAB_TIME, active = timeTab, Modifier.weight(1f)) { timeTab = true }
             }
-            if (!timeTab) {
-                // 월 이동
-                Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 14.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(schMonthTitle(year, month), style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Box(Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(colors.surfaceVariant).noRippleClick { if (month == 1) { year--; month = 12 } else month-- }, contentAlignment = Alignment.Center) { BackChevronIcon(colors.textTertiary, Modifier.size(15.dp)) }
-                        Box(Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(colors.surfaceVariant).noRippleClick { if (month == 12) { year++; month = 1 } else month++ }, contentAlignment = Alignment.Center) { ChevronRightIcon(colors.textTertiary, Modifier.size(15.dp)) }
+            // 날짜/시간 탭 영역을 고정 높이로 감싸 탭 전환·월 이동에도 시트 크기가 일정하게 유지된다.
+            Box(Modifier.fillMaxWidth().height(332.dp)) {
+                if (!timeTab) {
+                    Column(Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
+                        // 월 이동
+                        Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 14.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(schMonthTitle(year, month), style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Box(Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(colors.surfaceVariant).noRippleClick { if (month == 1) { year--; month = 12 } else month-- }, contentAlignment = Alignment.Center) { BackChevronIcon(colors.textTertiary, Modifier.size(15.dp)) }
+                                Box(Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(colors.surfaceVariant).noRippleClick { if (month == 12) { year++; month = 1 } else month++ }, contentAlignment = Alignment.Center) { ChevronRightIcon(colors.textTertiary, Modifier.size(15.dp)) }
+                            }
+                        }
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+                            DamoimStrings.PICKER_WEEKDAYS.forEachIndexed { i, w ->
+                                Text(w, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold), color = when (i) { 0 -> colors.calSunday; 6 -> colors.calSaturday; else -> colors.textMuted }, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                            }
+                        }
+                        CalendarGrid(year, month, selected, today) { selected = it }
+                    }
+                } else {
+                    Box(Modifier.fillMaxWidth().align(Alignment.Center)) {
+                        TimeWheel(isPm, hour12, minute, onAmPm = { isPm = it }, onHour = { hour12 = it }, onMinute = { minute = it })
                     }
                 }
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-                    DamoimStrings.PICKER_WEEKDAYS.forEachIndexed { i, w ->
-                        Text(w, style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold), color = when (i) { 0 -> colors.calSunday; 6 -> colors.calSaturday; else -> colors.textMuted }, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    }
-                }
-                CalendarGrid(year, month, selected, today) { selected = it }
-            } else {
-                TimeWheel(isPm, hour12, minute, onAmPm = { isPm = it }, onHour = { hour12 = it }, onMinute = { minute = it })
             }
             // 확정 버튼
             Box(

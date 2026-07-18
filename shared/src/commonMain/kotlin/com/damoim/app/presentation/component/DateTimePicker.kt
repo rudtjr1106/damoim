@@ -51,7 +51,8 @@ internal fun CalendarGrid(year: Int, month: Int, selected: LocalDate, today: Loc
     val first = LocalDate(year, month, 1)
     val offset = first.dayOfWeek.isoDayNumber % 7               // 일요일 시작(일=0)
     val daysInMonth = first.plus(DatePeriod(months = 1)).plus(DatePeriod(days = -1)).dayOfMonth
-    val rows = (offset + daysInMonth + 6) / 7
+    // 항상 6주(6행)를 렌더 — 월마다 주 수(5~6)가 달라져 시트 높이가 변하는 것을 막는다.
+    val rows = 6
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         repeat(rows) { row ->
             Row(Modifier.fillMaxWidth()) {
