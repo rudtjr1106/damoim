@@ -71,14 +71,6 @@ object DamoimStrings {
     const val HOME_SECTION_SCHEDULE = "다가오는 일정"
     const val HOME_SECTION_BOARD = "지금 게시판에선"
     const val HOME_SEE_ALL = "전체보기"
-    // 퀵액션
-    const val QA_BOARD = "게시판"
-    const val QA_SCHEDULE = "일정"
-    const val QA_MEMBERS = "회원 관리"
-    const val QA_CODE = "가입 코드"
-    const val QA_ARCHIVE = "자료실"
-    const val QA_NOTICE = "공지"
-    const val QA_PROFILE = "내 프로필"
     // 하단 탭
     const val TAB_HOME = "홈"
     const val TAB_BOARD = "게시판"

@@ -54,18 +54,13 @@ import com.damoim.app.domain.model.HomeSummary
 import com.damoim.app.domain.model.UpcomingSchedule
 import com.damoim.app.presentation.component.ArrowRightIcon
 import com.damoim.app.presentation.component.BellIcon
-import com.damoim.app.presentation.component.BoardIcon
 import com.damoim.app.presentation.component.BottomNavBar
 import com.damoim.app.presentation.component.CalendarIcon
 import com.damoim.app.presentation.component.ChevronDownIcon
 import com.damoim.app.presentation.component.CrownIcon
-import com.damoim.app.presentation.component.FolderIcon
-import com.damoim.app.presentation.component.LockIcon
 import com.damoim.app.presentation.component.MainTab
 import com.damoim.app.presentation.component.MegaphoneIcon
-import com.damoim.app.presentation.component.PeopleIcon
 import com.damoim.app.presentation.component.PersonPlusIcon
-import com.damoim.app.presentation.component.UserSingleIcon
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
@@ -80,9 +75,7 @@ fun HomeRoute(
     viewModel: HomeViewModel = viewModel(key = "home_${role.name}") { HomeViewModel(AppGraph.getHomeSummaryUseCase) },
     onNavigateJoinManage: () -> Unit = {},
     onNavigateNotifications: () -> Unit = {},
-    onNavigateClubSettings: () -> Unit = {},
-    onNavigateArchive: () -> Unit = {},
-    onComingSoon: (String) -> Unit = {},
+    onOpenScheduleTab: () -> Unit = {},        // 일정 알림 터치 → 일정 탭
     onOpenSchedule: (Long) -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
     onSwitched: () -> Unit = {},
@@ -97,19 +90,12 @@ fun HomeRoute(
         onAlertClick = {
             when (state.summary?.alert?.kind) {
                 AlertKind.JOIN_REQUEST -> onNavigateJoinManage()
-                AlertKind.SCHEDULE -> onComingSoon(DamoimStrings.HOME_SECTION_SCHEDULE)
+                AlertKind.SCHEDULE -> onOpenScheduleTab()
                 null -> {}
             }
         },
         onOpenSchedule = onOpenSchedule,
         onOpenPost = onOpenPost,
-        onQuickAction = { label ->
-            when (label) {
-                DamoimStrings.QA_CODE -> onNavigateClubSettings()
-                DamoimStrings.QA_ARCHIVE -> onNavigateArchive()
-                else -> onComingSoon(label)
-            }
-        },
         onSwitched = onSwitched,
         onJoinClub = onJoinClub,
         onAddClub = onAddClub,
@@ -125,7 +111,6 @@ fun HomeScreen(
     state: HomeUiState = HomeUiState(isLoading = false, summary = previewSummary(ClubRole.LEADER)),
     onBellClick: () -> Unit = {},
     onAlertClick: () -> Unit = {},
-    onQuickAction: (String) -> Unit = {},
     onOpenSchedule: (Long) -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
     onSwitched: () -> Unit = {},
@@ -146,7 +131,6 @@ fun HomeScreen(
                     Column(modifier = Modifier.offset(y = (-36).dp)) {
                         // 알림 카드는 있을 때만(예: 신청 0건이면 숨김)
                         summary.alert?.let { AlertCard(it, onAlertClick) }
-                        QuickActions(summary.role, onQuickAction)
                         if (summary.schedules.isNotEmpty()) {
                             ScheduleSection(summary.schedules, onOpenSchedule)
                         }
@@ -280,52 +264,6 @@ private fun AlertCard(alert: HomeAlert, onClick: () -> Unit) {
             )
         }
     }
-}
-
-@Composable
-private fun QuickActions(role: ClubRole, onAction: (String) -> Unit) {
-    val actions = quickActionsFor(role)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        actions.forEach { qa ->
-            Column(
-                modifier = Modifier.weight(1f).clickable(
-                    interactionSource = remember { MutableInteractionSource() }, indication = null,
-                ) { onAction(qa.label) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    modifier = Modifier.size(54.dp).clip(RoundedCornerShape(18.dp)).background(DamoimTheme.colors.primaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) { qa.icon() }
-                Spacer(Modifier.height(7.dp))
-                Text(qa.label, style = DamoimTheme.typography.label, color = DamoimTheme.colors.textSecondary)
-            }
-        }
-    }
-}
-
-private class QuickAction(val label: String, val icon: @Composable () -> Unit)
-
-@Composable
-private fun quickActionsFor(role: ClubRole): List<QuickAction> {
-    val c = DamoimTheme.colors.primaryDark
-    val s = Modifier.size(22.dp)
-    return if (role == ClubRole.LEADER) listOf(
-        QuickAction(DamoimStrings.QA_BOARD) { BoardIcon(c, s) },
-        QuickAction(DamoimStrings.QA_SCHEDULE) { CalendarIcon(c, s) },
-        QuickAction(DamoimStrings.QA_MEMBERS) { PeopleIcon(c, s) },
-        QuickAction(DamoimStrings.QA_CODE) { LockIcon(c, s) },
-        QuickAction(DamoimStrings.QA_ARCHIVE) { FolderIcon(c, s) },
-    ) else listOf(
-        QuickAction(DamoimStrings.QA_BOARD) { BoardIcon(c, s) },
-        QuickAction(DamoimStrings.QA_SCHEDULE) { CalendarIcon(c, s) },
-        QuickAction(DamoimStrings.QA_NOTICE) { MegaphoneIcon(c, s) },
-        QuickAction(DamoimStrings.QA_PROFILE) { UserSingleIcon(c, s) },
-        QuickAction(DamoimStrings.QA_ARCHIVE) { FolderIcon(c, s) },
-    )
 }
 
 @Composable

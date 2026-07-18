@@ -171,18 +171,7 @@ fun MainNavHost(
                 role = role,
                 onNavigateJoinManage = { if (canApproveJoin) navigate(MainDestination.JoinManage) },
                 onNavigateNotifications = { navigate(MainDestination.Notification) },
-                onNavigateClubSettings = { if (canManageClubSettings) navigate(MainDestination.ClubSettings) },
-                onNavigateArchive = { navigate(MainDestination.Archive) },
-                onComingSoon = { label ->
-                    // 홈 퀵액션: 게시판→탭, 회원 관리(리더)→16, 내 프로필(회원)→20, 그 외 준비중
-                    when (label) {
-                        DamoimStrings.QA_BOARD -> resetTo(MainDestination.BoardHome)
-                        DamoimStrings.QA_MEMBERS -> navigate(MainDestination.MemberManage)
-                        DamoimStrings.QA_PROFILE -> navigate(MainDestination.MyProfile)
-                        DamoimStrings.QA_SCHEDULE, DamoimStrings.HOME_SECTION_SCHEDULE -> resetTo(MainDestination.ScheduleHome)
-                        else -> toast = DamoimStrings.TOAST_COMING_SOON
-                    }
-                },
+                onOpenScheduleTab = { resetTo(MainDestination.ScheduleHome) },  // 일정 알림 → 일정 탭
                 onOpenSchedule = { navigate(MainDestination.EventDetail(it)) },
                 onOpenPost = { navigate(MainDestination.PostDetail(it)) },
                 onSwitched = { resetTo(MainDestination.Home) },        // 46 동아리 전환 → 새 동아리 홈
