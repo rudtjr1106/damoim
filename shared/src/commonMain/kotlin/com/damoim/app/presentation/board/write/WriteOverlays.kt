@@ -280,6 +280,8 @@ internal fun DatePickerSheet(
 ) {
     val colors = DamoimTheme.colors
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    // 현재 시각 — 마감은 지금 이후만 허용(오늘 날짜에 지나간 시간 차단).
+    val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
     val initialDate = initial?.date ?: today.plus(DatePeriod(days = 1))
     var year by remember { mutableStateOf(initialDate.year) }
     var month by remember { mutableStateOf(initialDate.monthNumber) }
@@ -288,10 +290,15 @@ internal fun DatePickerSheet(
     var hour12 by remember { mutableStateOf(initial?.let { (it.hour24 % 12).let { h -> if (h == 0) 12 else h } } ?: 6) }
     var minute by remember { mutableStateOf(initial?.minute ?: 0) }
 
+    fun isFuture(date: LocalDate, h24: Int, min: Int) = date.atTime(h24, min) > now
+    // 지금 이후일 때만 확정한다(프리셋 포함 공통 경로).
+    fun tryConfirm(picked: PickedDeadline) { if (isFuture(picked.date, picked.hour24, picked.minute)) onConfirm(picked) }
+
     fun confirmCurrent() {
         val h24 = (hour12 % 12) + if (isPm) 12 else 0
-        onConfirm(PickedDeadline(deadlineLabel(selected, isPm, hour12, minute), selected, h24, minute))
+        tryConfirm(PickedDeadline(deadlineLabel(selected, isPm, hour12, minute), selected, h24, minute))
     }
+    val canConfirm = isFuture(selected, (hour12 % 12) + if (isPm) 12 else 0, minute)
 
     DamoimBottomSheet(onDismiss = onDismiss, showGrabber = true) {
         Column(Modifier.fillMaxWidth().padding(bottom = 34.dp)) {
@@ -299,7 +306,7 @@ internal fun DatePickerSheet(
             Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(DamoimStrings.COMMON_CANCEL, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp), color = colors.textMuted, modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss))
                 Text(DamoimStrings.PICKER_TITLE, style = DamoimTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 16.sp), color = colors.textPrimary, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                Text(DamoimStrings.COMMON_DONE, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp), color = colors.primary, modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { confirmCurrent() })
+                Text(DamoimStrings.COMMON_DONE, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp), color = if (canConfirm) colors.primary else colors.textDisabled, modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { confirmCurrent() })
             }
             // 월 이동
             Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -346,16 +353,16 @@ internal fun DatePickerSheet(
             // 프리셋 — 실제 날짜로 즉시 확정
             Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PresetChip(DamoimStrings.PICKER_PRESETS[0]) {
-                    onConfirm(PickedDeadline(midnightLabel(today), today, 23, 59))
+                    tryConfirm(PickedDeadline(midnightLabel(today), today, 23, 59))
                 }
                 PresetChip(DamoimStrings.PICKER_PRESETS[1]) {
                     val d = today.plus(DatePeriod(days = 1))
-                    onConfirm(PickedDeadline(deadlineLabel(d, isPm = true, hour12 = 6, minute = 0), d, 18, 0))
+                    tryConfirm(PickedDeadline(deadlineLabel(d, isPm = true, hour12 = 6, minute = 0), d, 18, 0))
                 }
                 PresetChip(DamoimStrings.PICKER_PRESETS[2]) {
                     val d = today.plus(DatePeriod(days = 7))
                     val h24 = (hour12 % 12) + if (isPm) 12 else 0
-                    onConfirm(PickedDeadline(deadlineLabel(d, isPm, hour12, minute), d, h24, minute))
+                    tryConfirm(PickedDeadline(deadlineLabel(d, isPm, hour12, minute), d, h24, minute))
                 }
             }
         }

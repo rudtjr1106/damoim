@@ -37,7 +37,9 @@ import kotlin.time.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
 import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 
 /** 61 날짜·시간 피커. 시작/종료/마감 컨텍스트 제목을 받고, 확정 시 (날짜, 시, 분)을 돌려준다. */
@@ -52,6 +54,8 @@ internal fun ScheduleDateTimeSheet(
 ) {
     val colors = DamoimTheme.colors
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    // 현재 시각 — 오늘 날짜에 과거 시간을 고르는 것을 막기 위해 확정 시 비교한다.
+    val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
     val start = initialDate ?: today.plus(DatePeriod(days = 1))
     var year by remember { mutableStateOf(start.year) }
     var month by remember { mutableStateOf(start.monthNumber) }
@@ -62,6 +66,9 @@ internal fun ScheduleDateTimeSheet(
     var timeTab by remember { mutableStateOf(false) }
 
     val confirmLabel = "${selected.monthNumber}월 ${selected.dayOfMonth}일 (${koreanWeekday(selected)}) ${if (isPm) DamoimStrings.PICKER_PM else DamoimStrings.PICKER_AM} $hour12:${minute.toString().padStart(2, '0')}"
+    val selectedH24 = (hour12 % 12) + if (isPm) 12 else 0
+    // 현재 시각 이후만 확정 가능 — 오늘 날짜에 지나간 시간을 고르면 비활성.
+    val canConfirm = selected.atTime(selectedH24, minute) > now
 
     DamoimBottomSheet(onDismiss = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(bottom = 34.dp)) {
@@ -96,13 +103,13 @@ internal fun ScheduleDateTimeSheet(
                     }
                 }
             }
-            // 확정 버튼
+            // 확정 버튼 — 현재 시각 이후만 활성
             Box(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp).clip(RoundedCornerShape(14.dp)).background(colors.primary)
-                    .noRippleClick { onConfirm(selected, (hour12 % 12) + if (isPm) 12 else 0, minute) }.padding(vertical = 16.dp),
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp).clip(RoundedCornerShape(14.dp)).background(if (canConfirm) colors.primary else colors.surfaceVariant)
+                    .noRippleClick { if (canConfirm) onConfirm(selected, selectedH24, minute) }.padding(vertical = 16.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(DamoimStrings.pickerConfirm(confirmLabel), style = DamoimTheme.typography.button, color = colors.onPrimary)
+                Text(DamoimStrings.pickerConfirm(confirmLabel), style = DamoimTheme.typography.button, color = if (canConfirm) colors.onPrimary else colors.textDisabled)
             }
         }
     }
