@@ -58,17 +58,6 @@ data class AdminMember(
     val imageUrl: String? = null,
 )
 
-// ══════════ 차단 관리(83) ══════════
-
-data class BlockedUser(
-    val id: Long,
-    val name: String,
-    val initials: String,
-    val blockedLabel: String,        // "2026.06.18 차단"
-    val isWithdrawn: Boolean = false,
-    val imageUrl: String? = null,
-)
-
 // ══════════ 알림 설정(65) ══════════
 
 /** 65 알림 설정 — 토글 묶음 + 리마인드/방해금지. '운영' 섹션은 동아리장·운영진만. */

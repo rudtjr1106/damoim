@@ -55,6 +55,8 @@ import com.damoim.app.domain.model.Poll
 import com.damoim.app.domain.model.PostAttachment
 import com.damoim.app.domain.model.PostDetail
 import com.damoim.app.domain.model.RecruitInfo
+import com.damoim.app.domain.model.ReportReason
+import com.damoim.app.domain.model.ReportTargetType
 import com.damoim.app.domain.model.RecruitStatus
 import com.damoim.app.platform.PlatformBackHandler
 import com.damoim.app.platform.rememberShareText
@@ -86,7 +88,7 @@ private sealed interface DetailOverlay {
     data object PostMenu : DetailOverlay                       // 54 ⋯ 메뉴
     data class CommentMenu(val comment: Comment) : DetailOverlay // 55 댓글 메뉴
     data object DeleteConfirm : DetailOverlay                  // 56 삭제 확인
-    data object Report : DetailOverlay                         // 82 신고 사유
+    data class Report(val targetType: ReportTargetType, val targetId: Long) : DetailOverlay // 82 신고 사유
     data class ImageViewer(val images: List<String>, val index: Int, val caption: String) : DetailOverlay // 57
     data object Roster : DetailOverlay                          // 84 신청자 명단
 }
@@ -99,7 +101,7 @@ private sealed interface DetailOverlay {
 fun PostDetailRoute(
     postId: Long,
     viewModel: PostDetailViewModel = viewModel(key = "postdetail_$postId") {
-        PostDetailViewModel(AppGraph.getPostDetailUseCase, AppGraph.observeMyContextUseCase, AppGraph.postActionUseCase, postId)
+        PostDetailViewModel(AppGraph.getPostDetailUseCase, AppGraph.observeMyContextUseCase, AppGraph.postActionUseCase, AppGraph.submitReportUseCase, postId)
     },
     onBack: () -> Unit = {},
     onEdit: (BoardPost) -> Unit = {},
@@ -134,6 +136,7 @@ fun PostDetailRoute(
             onSendComment = viewModel::onSendComment,
             onTogglePin = viewModel::onTogglePin,
             onDelete = viewModel::onDelete,
+            onReport = viewModel::onReport,
         )
     }
 }
@@ -154,6 +157,7 @@ fun PostDetailScreen(
     onSendComment: () -> Unit = {},
     onTogglePin: () -> Unit = {},
     onDelete: () -> Unit = {},
+    onReport: (ReportTargetType, Long, ReportReason) -> Unit = { _, _, _ -> },
 ) {
     val colors = DamoimTheme.colors
     val detail = state.detail
@@ -235,7 +239,7 @@ fun PostDetailScreen(
                 },
                 onPin = { overlay = null; onTogglePin() },
                 onDelete = { overlay = DetailOverlay.DeleteConfirm },
-                onReport = { overlay = DetailOverlay.Report },
+                onReport = { detail?.post?.let { overlay = DetailOverlay.Report(ReportTargetType.POST, it.id) } },
             )
             is DetailOverlay.CommentMenu -> CommentMenuSheet(
                 comment = o.comment,
@@ -246,16 +250,20 @@ fun PostDetailScreen(
                     clipboard.setText(AnnotatedString(o.comment.content))
                     onToast(DamoimStrings.TOAST_COMMENT_COPIED)
                 },
-                onReport = { overlay = DetailOverlay.Report },
+                onReport = { overlay = DetailOverlay.Report(ReportTargetType.COMMENT, o.comment.id) },
             )
             DetailOverlay.DeleteConfirm -> DeleteConfirmDialog(
                 commentCount = detail?.post?.commentCount ?: 0,
                 onDismiss = { overlay = null },
                 onConfirm = { overlay = null; onDelete() },
             )
-            DetailOverlay.Report -> ReportSheet(
+            is DetailOverlay.Report -> ReportSheet(
                 onDismiss = { overlay = null },
-                onSubmit = { overlay = null; onToast(DamoimStrings.TOAST_REPORTED) },
+                onSubmit = { reason ->
+                    onReport(o.targetType, o.targetId, reason)
+                    overlay = null
+                    onToast(DamoimStrings.TOAST_REPORTED)
+                },
             )
             DetailOverlay.Roster -> RosterSheet(
                 recruit = detail?.post?.recruit,

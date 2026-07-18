@@ -167,9 +167,9 @@ internal fun DeleteConfirmDialog(commentCount: Int, onDismiss: () -> Unit, onCon
 
 // ── 82 신고 사유 선택 시트 ──
 @Composable
-internal fun ReportSheet(onDismiss: () -> Unit, onSubmit: () -> Unit) {
+internal fun ReportSheet(onDismiss: () -> Unit, onSubmit: (ReportReason) -> Unit) {
     val colors = DamoimTheme.colors
-    var selected by remember { mutableStateOf<ReportReason?>(ReportReason.ABUSE) }
+    var selected by remember { mutableStateOf(ReportReason.ABUSE) }
     DamoimBottomSheet(onDismiss = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Column(Modifier.padding(start = 6.dp, end = 6.dp, bottom = 4.dp)) {
@@ -181,7 +181,7 @@ internal fun ReportSheet(onDismiss: () -> Unit, onSubmit: () -> Unit) {
                 ReportReasonRow(reason, selected == reason, isLast = i == ReportReason.entries.lastIndex) { selected = reason }
             }
             Spacer(Modifier.height(4.dp))
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.primary).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onSubmit).padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.primary).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onSubmit(selected) }).padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
                 Text(DamoimStrings.REPORT_SUBMIT, style = DamoimTheme.typography.button, color = colors.onPrimary)
             }
         }

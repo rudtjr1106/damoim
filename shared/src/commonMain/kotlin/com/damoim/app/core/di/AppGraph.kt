@@ -10,16 +10,17 @@ import com.damoim.app.data.remote.core.buildHttpClient
 import com.damoim.app.data.remote.notification.RemoteNotificationRepository
 import com.damoim.app.data.remote.resource.RemoteResourceRepository
 import com.damoim.app.data.remote.schedule.RemoteScheduleRepository
+import com.damoim.app.data.remote.report.RemoteReportRepository
 import com.damoim.app.data.remote.settings.RemoteSettingsRepository
 import com.damoim.app.domain.repository.AuthRepository
 import com.damoim.app.domain.repository.BoardRepository
 import com.damoim.app.domain.repository.ClubRepository
 import com.damoim.app.domain.repository.NotificationRepository
+import com.damoim.app.domain.repository.ReportRepository
 import com.damoim.app.domain.repository.ResourceRepository
 import com.damoim.app.domain.repository.ScheduleRepository
 import com.damoim.app.domain.repository.SettingsRepository
 import com.damoim.app.domain.usecase.AdminPermissionUseCase
-import com.damoim.app.domain.usecase.BlockedUserUseCase
 import com.damoim.app.domain.usecase.ClubSessionUseCase
 import com.damoim.app.domain.usecase.FetchMyRoleUseCase
 import com.damoim.app.domain.usecase.LogoutUseCase
@@ -57,6 +58,8 @@ import com.damoim.app.domain.usecase.GetStorageUsageUseCase
 import com.damoim.app.domain.usecase.LoginWithKakaoUseCase
 import com.damoim.app.domain.usecase.ManageRecentSearchUseCase
 import com.damoim.app.domain.usecase.MarkNotificationsReadUseCase
+import com.damoim.app.domain.usecase.MyReportsUseCase
+import com.damoim.app.domain.usecase.SubmitReportUseCase
 import com.damoim.app.domain.usecase.ObserveMyContextUseCase
 import com.damoim.app.domain.usecase.PostActionUseCase
 import com.damoim.app.domain.usecase.RegenerateJoinCodeUseCase
@@ -86,6 +89,7 @@ object AppGraph {
     private val resourceRepository: ResourceRepository by lazy { RemoteResourceRepository(apiClient) }
     private val scheduleRepository: ScheduleRepository by lazy { RemoteScheduleRepository(apiClient) }
     private val settingsRepository: SettingsRepository by lazy { RemoteSettingsRepository(apiClient) }
+    private val reportRepository: ReportRepository by lazy { RemoteReportRepository(apiClient) }
 
     /** 로그인 여부(콜드스타트 라우팅용) — 저장된 토큰 존재 여부. */
     val isLoggedIn: Boolean get() = authRepository.isLoggedIn()
@@ -151,8 +155,11 @@ object AppGraph {
     // G. 설정·구독·권한
     val subscriptionUseCase get() = SubscriptionUseCase(settingsRepository)
     val adminPermissionUseCase get() = AdminPermissionUseCase(settingsRepository)
-    val blockedUserUseCase get() = BlockedUserUseCase(settingsRepository)
     val notifSettingsUseCase get() = NotifSettingsUseCase(settingsRepository)
+
+    // 신고(34/35)
+    val submitReportUseCase get() = SubmitReportUseCase(reportRepository)
+    val myReportsUseCase get() = MyReportsUseCase(reportRepository)
 
     // 공통 컨텍스트
     val observeMyContextUseCase get() = ObserveMyContextUseCase(authRepository, clubRepository)

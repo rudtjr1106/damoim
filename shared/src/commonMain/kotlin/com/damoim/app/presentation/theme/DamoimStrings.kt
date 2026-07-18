@@ -693,7 +693,7 @@ object DamoimStrings {
     const val SETTINGS_PAYMENT_HISTORY = "결제 내역"
     const val SETTINGS_NOTIF = "알림 설정"
     const val SETTINGS_INQUIRY = "문의하기"
-    const val SETTINGS_BLOCKED = "차단한 사용자"
+    const val SETTINGS_MY_REPORTS = "신고한 사용자"
     const val SETTINGS_LOGOUT = "로그아웃"
     fun settingsClubMeta(count: Int, plan: String) = "회원 ${count}명 · $plan"
     const val SETTINGS_OVERLIMIT_TITLE = "무료 플랜 인원 초과"
@@ -796,13 +796,14 @@ object DamoimStrings {
     const val INQUIRY_SUBJECT_PREFIX = "[다모임 문의]"
     const val TOAST_INQUIRY_ATTACH = "메일 앱에서 스크린샷을 첨부할 수 있어요"
 
-    // 83 차단한 사용자
-    const val BLOCKED_TITLE = "차단한 사용자"
-    const val BLOCKED_DESC = "차단한 사용자의 게시글·댓글이 보이지 않고, 서로의 프로필에 접근할 수 없어요"
-    fun blockedCount(n: Int) = "차단 ${n}명"
-    const val BLOCKED_UNBLOCK = "차단 해제"
-    const val BLOCKED_EMPTY_TITLE = "차단한 사용자가 없어요"
-    const val BLOCKED_EMPTY_SUB = "차단하면 여기에서 관리할 수 있어요"
+    // 34 신고한 사용자(내 신고 내역)
+    const val MY_REPORTS_TITLE = "신고한 사용자"
+    const val MY_REPORTS_DESC = "내가 신고한 게시글·댓글 내역이에요. 처리 결과는 운영진이 확인해요"
+    const val MY_REPORTS_EMPTY_TITLE = "신고한 내역이 없어요"
+    const val MY_REPORTS_EMPTY_SUB = "게시글·댓글을 신고하면 여기에 모여요"
+    fun reportCount(n: Int) = "신고 ${n}건"
+    const val REPORT_TARGET_POST = "게시글"
+    const val REPORT_TARGET_COMMENT = "댓글"
 
     // G 토스트
     const val TOAST_SUBSCRIBED = "구독이 시작됐어요"
@@ -811,7 +812,6 @@ object DamoimStrings {
     const val TOAST_ADMIN_ADDED = "운영진으로 지정했어요"
     const val TOAST_ADMIN_REMOVED = "운영진에서 해제했어요"
     const val TOAST_ADMIN_TITLE_CHANGED = "직함을 변경했어요"
-    const val TOAST_UNBLOCKED = "차단을 해제했어요"
     const val TOAST_INQUIRY_SENT = "문의가 접수되었어요"
     const val TOAST_NOTIF_SAVED = "알림 설정을 저장했어요"
 

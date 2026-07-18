@@ -7,9 +7,12 @@ import com.damoim.app.core.mvi.UiState
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.Comment
 import com.damoim.app.domain.model.PostDetail
+import com.damoim.app.domain.model.ReportReason
+import com.damoim.app.domain.model.ReportTargetType
 import com.damoim.app.domain.usecase.GetPostDetailUseCase
 import com.damoim.app.domain.usecase.ObserveMyContextUseCase
 import com.damoim.app.domain.usecase.PostActionUseCase
+import com.damoim.app.domain.usecase.SubmitReportUseCase
 import com.damoim.app.presentation.theme.DamoimStrings
 import kotlinx.coroutines.launch
 
@@ -39,6 +42,7 @@ class PostDetailViewModel(
     getPostDetail: GetPostDetailUseCase,
     observeMyContext: ObserveMyContextUseCase,
     private val postAction: PostActionUseCase,
+    private val submitReport: SubmitReportUseCase,
     private val postId: Long,
 ) : BaseViewModel<PostDetailUiState, PostDetailSideEffect>(PostDetailUiState()) {
 
@@ -108,5 +112,10 @@ class PostDetailViewModel(
         handleResult(postAction.delete(postId), onSuccess = {
             sendEffect(PostDetailSideEffect.Deleted)
         })
+    }
+
+    // ── 82 신고 ──
+    fun onReport(targetType: ReportTargetType, targetId: Long, reason: ReportReason) = viewModelScope.launch {
+        submitReport(targetType, targetId, reason)
     }
 }

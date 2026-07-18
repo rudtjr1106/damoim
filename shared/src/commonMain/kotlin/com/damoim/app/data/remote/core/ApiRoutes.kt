@@ -96,9 +96,10 @@ object ApiRoutes {
         fun admin(userId: Long) = "$ROOT/$userId"
     }
 
-    object Blocked {
-        const val ROOT = "/api/blocked"
-        fun byId(blockedId: Long) = "$ROOT/$blockedId"
+    object Reports {
+        const val ROOT = "/api/reports"          // POST 신고 접수
+        const val ME = "/api/me/reports"         // 34 내 신고 내역
+        const val CLUB = "/api/clubs/me/reports" // 35 운영진 신고 목록
     }
 }
 

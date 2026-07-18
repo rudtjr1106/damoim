@@ -1,7 +1,6 @@
 package com.damoim.app.data.remote.settings
 
 import com.damoim.app.domain.model.AdminMember
-import com.damoim.app.domain.model.BlockedUser
 import com.damoim.app.domain.model.Member
 import com.damoim.app.domain.model.MemberRole
 import com.damoim.app.domain.model.MemberStatus
@@ -103,16 +102,6 @@ data class AdminCandidateResponseDto(
 )
 
 @Serializable
-data class BlockedUserResponseDto(
-    val id: Long,
-    val name: String = "",
-    val initials: String = "",
-    val blockedLabel: String = "",
-    val isWithdrawn: Boolean = false,
-    val imageUrl: String? = null,
-)
-
-@Serializable
 data class NotifSettingsResponseDto(
     val push: Boolean = true,
     val newPost: Boolean = true,
@@ -168,15 +157,6 @@ internal fun AdminCandidateResponseDto.toMember(): Member = Member(
     role = MemberRole.MEMBER,
     status = MemberStatus.ACTIVE,
     profileImageUrl = imageUrl,
-)
-
-internal fun BlockedUserResponseDto.toDomain(): BlockedUser = BlockedUser(
-    id = id,
-    name = name,
-    initials = initials,
-    blockedLabel = blockedLabel,
-    isWithdrawn = isWithdrawn,
-    imageUrl = imageUrl,
 )
 
 internal fun NotifSettingsResponseDto.toDomain(): NotifSettings = NotifSettings(

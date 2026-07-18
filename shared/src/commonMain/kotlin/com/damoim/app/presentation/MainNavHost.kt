@@ -44,7 +44,7 @@ import com.damoim.app.presentation.schedule.home.ScheduleHomeRoute
 import com.damoim.app.presentation.schedule.myapplications.MyApplicationsRoute
 import com.damoim.app.presentation.schedule.register.ScheduleRegisterRoute
 import com.damoim.app.presentation.settings.admin.AdminRoute
-import com.damoim.app.presentation.settings.blocked.BlockedRoute
+import com.damoim.app.presentation.settings.reports.MyReportsRoute
 import com.damoim.app.presentation.settings.home.SettingsHomeRoute
 import com.damoim.app.presentation.settings.inquiry.InquiryRoute
 import com.damoim.app.presentation.settings.notification.NotifSettingsRoute
@@ -88,7 +88,7 @@ private sealed interface MainDestination {
     data object Admin : MainDestination                               // 30 (+64/다이얼로그)
     data object NotifSettings : MainDestination                        // 65
     data object Inquiry : MainDestination                             // 66
-    data object Blocked : MainDestination                            // 83
+    data object MyReports : MainDestination                          // 34 신고한 사용자(내 신고 내역)
     // B 서브
     data object ClubSettings : MainDestination
     data object JoinManage : MainDestination
@@ -345,7 +345,7 @@ fun MainNavHost(
                 onOpenSubscription = { navigate(MainDestination.SubscriptionManage) },
                 onOpenNotif = { navigate(MainDestination.NotifSettings) },
                 onOpenInquiry = { navigate(MainDestination.Inquiry) },
-                onOpenBlocked = { navigate(MainDestination.Blocked) },
+                onOpenMyReports = { navigate(MainDestination.MyReports) },
                 onTabSelect = { tab -> onTab(tab) },
             )
 
@@ -386,9 +386,8 @@ fun MainNavHost(
                 onToast = { toast = it },
             )
 
-            MainDestination.Blocked -> BlockedRoute(
+            MainDestination.MyReports -> MyReportsRoute(
                 onBack = { back() },
-                onToast = { toast = it },
             )
 
             MainDestination.ClubSettings -> ClubSettingsRoute(
@@ -445,7 +444,7 @@ private fun topicsFor(d: MainDestination): Set<DataTopic> = when (d) {
     MainDestination.Admin -> setOf(DataTopic.SETTINGS, DataTopic.MEMBER)
     MainDestination.NotifSettings -> setOf(DataTopic.SETTINGS)
     MainDestination.Inquiry -> emptySet()
-    MainDestination.Blocked -> setOf(DataTopic.SETTINGS)
+    MainDestination.MyReports -> setOf(DataTopic.SETTINGS)
     MainDestination.ClubSettings -> setOf(DataTopic.CLUB)
     MainDestination.JoinManage -> setOf(DataTopic.CLUB)
     MainDestination.Notification -> setOf(DataTopic.NOTIFICATION)

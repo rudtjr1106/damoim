@@ -9,7 +9,6 @@ import com.damoim.app.data.remote.core.RemoteBus
 import com.damoim.app.data.remote.core.SharedFlows
 import com.damoim.app.data.remote.core.reactiveFlow
 import com.damoim.app.domain.model.AdminMember
-import com.damoim.app.domain.model.BlockedUser
 import com.damoim.app.domain.model.Member
 import com.damoim.app.domain.model.NotifSettings
 import com.damoim.app.domain.model.PermissionType
@@ -95,17 +94,6 @@ class RemoteSettingsRepository(private val api: ApiClient) : SettingsRepository 
     override suspend fun changeAdminTitle(userId: Long, title: String): DataResult<Unit> =
         api.patchUnit(ApiRoutes.Admins.title(userId), ChangeTitleRequestDto(title))
             .also { RemoteBus.invalidate(DataTopic.SETTINGS) }
-
-    // ── 차단 ──
-    override fun observeBlocked(): Flow<List<BlockedUser>> = shared.get("blocked") {
-        reactiveFlow(DataTopic.SETTINGS, fallback = emptyList()) {
-            api.getData<List<BlockedUserResponseDto>>(ApiRoutes.Blocked.ROOT).getOrNull()?.map { it.toDomain() }
-                ?: emptyList()
-        }
-    }
-
-    override suspend fun unblock(id: Long): DataResult<Unit> =
-        api.deleteUnit(ApiRoutes.Blocked.byId(id)).also { RemoteBus.invalidate(DataTopic.SETTINGS) }
 
     // ── 알림 설정 ──
     override fun observeNotifSettings(): Flow<NotifSettings> = shared.get("notif-settings") {

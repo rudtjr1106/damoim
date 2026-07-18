@@ -56,7 +56,7 @@ fun SettingsHomeRoute(
     onOpenSubscription: () -> Unit = {},
     onOpenNotif: () -> Unit = {},
     onOpenInquiry: () -> Unit = {},
-    onOpenBlocked: () -> Unit = {},
+    onOpenMyReports: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -72,7 +72,7 @@ fun SettingsHomeRoute(
         onOpenSubscription = onOpenSubscription,
         onOpenNotif = onOpenNotif,
         onOpenInquiry = onOpenInquiry,
-        onOpenBlocked = onOpenBlocked,
+        onOpenMyReports = onOpenMyReports,
         onTabSelect = onTabSelect,
     )
 }
@@ -90,7 +90,7 @@ fun SettingsHomeScreen(
     onOpenSubscription: () -> Unit = {},
     onOpenNotif: () -> Unit = {},
     onOpenInquiry: () -> Unit = {},
-    onOpenBlocked: () -> Unit = {},
+    onOpenMyReports: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
@@ -164,7 +164,7 @@ fun SettingsHomeScreen(
             SettingsSection(DamoimStrings.SETTINGS_SEC_ETC) {
                 SettingsRow(DamoimStrings.SETTINGS_NOTIF, onOpenNotif)
                 SettingsRow(DamoimStrings.SETTINGS_INQUIRY, onOpenInquiry)
-                SettingsRow(DamoimStrings.SETTINGS_BLOCKED, onOpenBlocked, showDivider = false)
+                SettingsRow(DamoimStrings.SETTINGS_MY_REPORTS, onOpenMyReports, showDivider = false)
             }
             Spacer(Modifier.height(8.dp))
         }
