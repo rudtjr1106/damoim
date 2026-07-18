@@ -64,10 +64,16 @@ class PostDetailViewModel(
     fun onVote(optionIndex: Int) = viewModelScope.launch { postAction.vote(postId, optionIndex) }
     fun onRevote() = viewModelScope.launch { postAction.clearVote(postId) }
 
-    // ── 모집 신청(84) ──
+    // ── 모집 신청/취소(84) ──
     fun onApplyRecruit() = viewModelScope.launch {
         handleResult(postAction.applyRecruit(postId), onSuccess = { applied ->
             sendEffect(PostDetailSideEffect.Toast(if (applied) DamoimStrings.TOAST_RECRUIT_APPLIED else DamoimStrings.TOAST_RECRUIT_FULL))
+        })
+    }
+
+    fun onCancelRecruit() = viewModelScope.launch {
+        handleResult(postAction.cancelRecruit(postId), onSuccess = {
+            sendEffect(PostDetailSideEffect.Toast(DamoimStrings.TOAST_RECRUIT_CANCELED))
         })
     }
 

@@ -164,6 +164,9 @@ class RemoteBoardRepository(private val api: ApiClient) : BoardRepository {
         }
     }
 
+    override suspend fun cancelRecruit(postId: Long): DataResult<Unit> =
+        api.deleteUnit(ApiRoutes.Board.recruitApply(postId)).also { RemoteBus.invalidate(DataTopic.BOARD) }
+
     override suspend fun addComment(postId: Long, content: String, parentId: Long?): DataResult<Unit> =
         api.postUnit(ApiRoutes.Board.comments(postId), AddCommentRequestDto(content, parentId))
             .also { RemoteBus.invalidate(DataTopic.BOARD) }

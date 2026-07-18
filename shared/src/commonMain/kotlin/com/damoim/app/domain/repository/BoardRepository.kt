@@ -46,6 +46,9 @@ interface BoardRepository {
     /** 모집 신청(84). 성공 여부 반환(정원 초과/중복이면 false). */
     suspend fun applyRecruit(postId: Long): DataResult<Boolean>
 
+    /** 모집 신청 취소(84). */
+    suspend fun cancelRecruit(postId: Long): DataResult<Unit>
+
     /** 댓글/답글 추가(14/36/84). */
     suspend fun addComment(postId: Long, content: String, parentId: Long?): DataResult<Unit>
 

@@ -12,6 +12,8 @@ class PostActionUseCase(private val boardRepository: BoardRepository) {
     suspend fun vote(postId: Long, optionIndex: Int): DataResult<Unit> = boardRepository.votePoll(postId, optionIndex)
     suspend fun clearVote(postId: Long): DataResult<Unit> = boardRepository.clearPollVote(postId)
     suspend fun applyRecruit(postId: Long): DataResult<Boolean> = boardRepository.applyRecruit(postId)
+
+    suspend fun cancelRecruit(postId: Long): DataResult<Unit> = boardRepository.cancelRecruit(postId)
     suspend fun addComment(postId: Long, content: String, parentId: Long?): DataResult<Unit> =
         boardRepository.addComment(postId, content, parentId)
     suspend fun delete(postId: Long): DataResult<Unit> = boardRepository.deletePost(postId)

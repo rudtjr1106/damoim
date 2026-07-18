@@ -128,6 +128,7 @@ fun PostDetailRoute(
             onVote = viewModel::onVote,
             onRevote = viewModel::onRevote,
             onApplyRecruit = viewModel::onApplyRecruit,
+            onCancelRecruit = viewModel::onCancelRecruit,
             onCommentChange = viewModel::onCommentInputChange,
             onReplyTo = viewModel::onReplyTo,
             onSendComment = viewModel::onSendComment,
@@ -147,6 +148,7 @@ fun PostDetailScreen(
     onVote: (Int) -> Unit = {},
     onRevote: () -> Unit = {},
     onApplyRecruit: () -> Unit = {},
+    onCancelRecruit: () -> Unit = {},
     onCommentChange: (String) -> Unit = {},
     onReplyTo: (Comment?) -> Unit = {},
     onSendComment: () -> Unit = {},
@@ -214,6 +216,7 @@ fun PostDetailScreen(
                     onCancelReply = { onReplyTo(null) },
                     onSend = onSendComment,
                     onApply = onApplyRecruit,
+                    onCancel = onCancelRecruit,
                 )
             }
         }
@@ -672,6 +675,7 @@ private fun CommentInputBar(
     onCancelReply: () -> Unit,
     onSend: () -> Unit,
     onApply: () -> Unit,
+    onCancel: () -> Unit,
 ) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().background(colors.surface)) {
@@ -704,19 +708,23 @@ private fun CommentInputBar(
                 )
             }
             if (applyState != null && input.isEmpty()) {
-                // 모집(84): 입력 중이 아니면 신청하기 버튼
+                // 모집(84): 입력 중이 아니면 신청/취소 버튼. 신청됨=취소 가능, 마감=비활성.
                 val applied = applyState.appliedByMe
                 val closed = applyState.status == RecruitStatus.CLOSED && !applied
                 Box(
                     Modifier.clip(RoundedCornerShape(14.dp))
                         .background(if (applied || closed) colors.surfaceVariant else colors.primary)
-                        .clickable(enabled = !applied && !closed, interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onApply)
+                        .clickable(enabled = applied || !closed, interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { if (applied) onCancel() else onApply() })
                         .padding(horizontal = 22.dp, vertical = 13.dp),
                 ) {
                     Text(
-                        if (applied) DamoimStrings.RECRUIT_APPLIED_BUTTON else DamoimStrings.RECRUIT_APPLY,
+                        if (applied) DamoimStrings.RECRUIT_CANCEL_BUTTON else DamoimStrings.RECRUIT_APPLY,
                         style = DamoimTheme.typography.button.copy(fontWeight = FontWeight.ExtraBold),
-                        color = if (applied || closed) colors.textMuted else colors.onPrimary,
+                        color = when {
+                            applied -> colors.textSecondary
+                            closed -> colors.textMuted
+                            else -> colors.onPrimary
+                        },
                     )
                 }
             } else {
