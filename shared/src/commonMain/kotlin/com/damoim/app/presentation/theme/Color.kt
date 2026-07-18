@@ -64,8 +64,7 @@ data class DamoimColors(
     val imageViewerTile: Color = Color(0xFF1A1E2A),   // 뷰어 썸네일/플레이스홀더(57)
 
     // D 자료실 전용
-    val surfaceTrack: Color = Color(0xFFEEF1F6),      // 저장공간 바 트랙(67) · 미리보기 스트라이프(68)
-    val previewPillText: Color = Color(0xFF93A0BD),   // 68 '문서 미리보기' 알약 텍스트(본문 muted보다 푸른 회색)
+    val surfaceTrack: Color = Color(0xFFEEF1F6),      // 저장공간 바 트랙(67)
     val fileSheet: Color = Color(0xFF1F9D55),         // XLSX 배지(성공색과 동일)
     val filePresentation: Color = Color(0xFFE8833A),  // PPTX 배지
     val fileArchive: Color = Color(0xFF6B7280),       // ZIP 배지

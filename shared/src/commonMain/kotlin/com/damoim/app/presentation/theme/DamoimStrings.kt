@@ -359,8 +359,6 @@ object DamoimStrings {
 
     // 68 자료 상세
     const val RESOURCE_DETAIL_TITLE = "자료 상세"
-    const val RESOURCE_PREVIEW = "문서 미리보기"
-    fun resourcePreviewPages(pages: Int) = "문서 미리보기 · ${pages}쪽"
     const val RESOURCE_INFO_UPLOADER = "올린 사람"
     const val RESOURCE_INFO_FOLDER = "폴더"
     const val RESOURCE_INFO_FORMAT = "형식 · 크기"

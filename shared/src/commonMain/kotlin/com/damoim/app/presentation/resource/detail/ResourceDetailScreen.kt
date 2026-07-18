@@ -27,9 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -50,7 +47,6 @@ import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.resource.ResourceDeleteDialog
 import com.damoim.app.presentation.resource.ResourceMenuSheet
 import com.damoim.app.presentation.resource.archive.previewResources
-import com.damoim.app.presentation.resource.resourceBadgeColor
 import com.damoim.app.presentation.resource.resourceFolderLabel
 import com.damoim.app.presentation.theme.DamoimStrings
 import com.damoim.app.presentation.theme.DamoimTheme
@@ -131,7 +127,6 @@ fun ResourceDetailScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
-                    DocumentPreview(resource) { onToast(DamoimStrings.TOAST_COMING_SOON) }
                     TitleBlock(resource)
                     InfoBox(resource, state.cohortSummary)
                 }
@@ -200,43 +195,6 @@ private fun DetailHeader(onBack: () -> Unit, onMore: () -> Unit) {
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))
-    }
-}
-
-/** 문서 미리보기 자리(사선 스트라이프). 실제 뷰어는 없고, 탭하면 준비 중 안내. */
-@Composable
-private fun DocumentPreview(resource: ResourceFile, onTap: () -> Unit) {
-    val colors = DamoimTheme.colors
-    val stripe = Brush.linearGradient(
-        0f to colors.surfaceTrack,
-        0.5f to colors.surfaceTrack,
-        0.5f to colors.divider,
-        1f to colors.divider,
-        start = Offset(0f, 0f),
-        end = Offset(22f, 22f),
-        tileMode = TileMode.Repeated,
-    )
-    Box(
-        modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(16.dp))
-            .background(stripe).noRippleClick(onTap),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            resource.ext,
-            style = DamoimTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-            color = colors.onPrimary,
-            modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
-                .clip(RoundedCornerShape(8.dp)).background(resourceBadgeColor(resource.ext))
-                .padding(horizontal = 9.dp, vertical = 4.dp),
-        )
-        Text(
-            resource.pageCount?.let { DamoimStrings.resourcePreviewPages(it) } ?: DamoimStrings.RESOURCE_PREVIEW,
-            style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Normal),
-            color = colors.previewPillText,
-            modifier = Modifier.clip(RoundedCornerShape(999.dp))
-                .background(colors.surface.copy(alpha = 0.85f))
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-        )
     }
 }
 
