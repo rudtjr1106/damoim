@@ -249,9 +249,10 @@ fun PostWriteScreen(
             val host = normalized.substringAfter("://").substringBefore("/").ifBlank { normalized }
             DraftLink(url = normalized, title = host, domain = host)
         },
-        poll = if (pollEnabled && pollOptions.any { it.isNotBlank() }) {
-            PollDraft(pollOptions.toList(), pollAnon, pollMulti, pollDeadlineLabel.ifBlank { DamoimStrings.PICKER_TITLE }, pollDeadlineMillis)
-        } else null,
+        // 공백 항목을 제거하고 2개 이상일 때만 투표를 담는다(서버는 유효 항목 2개 이상을 요구 → 전체 글 롤백 방지).
+        poll = pollOptions.map { it.trim() }.filter { it.isNotEmpty() }
+            .takeIf { pollEnabled && it.size >= 2 }
+            ?.let { opts -> PollDraft(opts, pollAnon, pollMulti, pollDeadlineLabel.ifBlank { DamoimStrings.PICKER_TITLE }, pollDeadlineMillis) },
         recruit = if (category == BoardCategory.RECRUIT) {
             RecruitDraft(recruitCapacity, recruitDeadlineLabel.ifBlank { "미정" }, recruitDday, recruitFirstCome, recruitDeadlineMillis)
         } else null,
@@ -269,7 +270,11 @@ fun PostWriteScreen(
                     style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.ExtraBold, fontSize = 15.sp),
                     color = colors.primary,
                     modifier = Modifier.alpha(if (isSaving) 0.4f else 1f)
-                        .clickable(enabled = !isSaving, interactionSource = remember { MutableInteractionSource() }, indication = null) { onSubmit(buildDraft()) },
+                        .clickable(enabled = !isSaving, interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                            // 투표를 켰는데 유효 항목이 2개 미만이면 조용히 빠지지 않도록 미리 안내한다.
+                            if (pollEnabled && pollOptions.count { it.isNotBlank() } < 2) onToast(DamoimStrings.TOAST_POLL_MIN_OPTIONS)
+                            else onSubmit(buildDraft())
+                        },
                 )
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(colors.dividerLight))

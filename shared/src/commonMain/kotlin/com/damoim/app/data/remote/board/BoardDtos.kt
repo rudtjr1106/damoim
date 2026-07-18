@@ -413,7 +413,9 @@ private fun DraftLink.toInput(): AttachmentInputDto =
 
 private fun PostDraft.pollInput(): PollInputDto? = poll?.let {
     PollInputDto(
-        options = it.options, anonymous = it.anonymous, multiSelect = it.multiSelect,
+        // 공백 항목이 서버로 새어나가지 않도록 방어(임시저장 복원 경로 포함).
+        options = it.options.map { o -> o.trim() }.filter { o -> o.isNotEmpty() },
+        anonymous = it.anonymous, multiSelect = it.multiSelect,
         deadline = it.deadlineEpochMillis?.toIsoInstant(),
     )
 }

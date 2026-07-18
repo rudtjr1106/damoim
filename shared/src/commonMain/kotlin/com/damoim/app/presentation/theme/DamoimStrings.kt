@@ -328,6 +328,7 @@ object DamoimStrings {
     const val TOAST_DRAFT_LOADED = "임시저장한 글을 불러왔어요"
     const val TOAST_CAMERA_UNAVAILABLE = "카메라를 사용할 수 없어요"
     const val TOAST_PHOTO_MAX = "사진은 최대 10장까지예요. 지우고 추가해 주세요"
+    const val TOAST_POLL_MIN_OPTIONS = "투표 항목을 2개 이상 입력해 주세요"
     const val ROSTER_TITLE = "신청한 부원"
     fun replyingTo(name: String) = "${name}님에게 답글 작성 중"
     const val POLL_TAP_TO_VOTE = "항목을 탭해 투표하세요"

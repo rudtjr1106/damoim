@@ -65,7 +65,12 @@ class PostWriteViewModel(
                 submitPost.create(draft)
             }
             setState { copy(isSaving = false) }
-            handleResult(result, onSuccess = { sendEffect(PostWriteSideEffect.Done) })
+            handleResult(
+                result,
+                onSuccess = { sendEffect(PostWriteSideEffect.Done) },
+                // 서버 거절(예: 투표 항목 부족)을 조용히 삼키지 않고 표시한다.
+                onFailure = { error -> sendEffect(PostWriteSideEffect.Toast(error.message)) },
+            )
         }
     }
 
