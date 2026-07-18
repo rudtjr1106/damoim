@@ -69,6 +69,9 @@ fun JoinCodeRoute(
 ) {
     val state by viewModel.uiState.collectAsState()
 
+    // 재사용되는 VM에 남은 이전 입력을 진입 시마다 초기화(뒤로 갔다 다시 들어와도 빈 칸).
+    LaunchedEffect(Unit) { viewModel.reset() }
+
     LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {

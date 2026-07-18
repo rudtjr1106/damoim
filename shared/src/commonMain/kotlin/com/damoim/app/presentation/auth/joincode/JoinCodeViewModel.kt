@@ -30,6 +30,11 @@ class JoinCodeViewModel(
     private val submitJoinCode: SubmitJoinCodeUseCase,
 ) : BaseViewModel<JoinCodeUiState, JoinCodeSideEffect>(JoinCodeUiState()) {
 
+    /** 화면 재진입 시 이전 입력을 지운다 — AuthNavHost가 VM을 재사용하므로 Route에서 명시적으로 초기화한다. */
+    fun reset() {
+        setState { JoinCodeUiState() }
+    }
+
     fun onCodeChange(value: String) {
         // 가입 코드는 영문/숫자만 — isLetterOrDigit()은 한글도 통과시키므로 ASCII 영숫자로 제한한다.
         val normalized = value.filter { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' }
