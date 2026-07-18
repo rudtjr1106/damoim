@@ -24,22 +24,24 @@ data class ArchiveUiState(
     val folder: ResourceFolder? = null,               // null = 전체 칩
     val cohorts: List<Cohort> = emptyList(),          // 기수 필터 칩 목록
     val selectedCohortId: Long? = null,               // null = 전체 기수
+    val query: String = "",                           // 자료 제목/파일명 검색어
 ) : UiState {
     /**
-     * 폴더 목록에 기수 필터를 적용한 최종 표시 목록. cohortIds는 목록 항목마다 이미
-     * 채워져 있어 서버 재조회 없이 클라에서 거른다. 기수를 고르면 그 기수가 볼 수 있는
-     * 자료(전체 공개 + 해당 기수 한정)를 보여준다.
+     * 폴더 목록에 기수 필터와 검색어를 적용한 최종 표시 목록. cohortIds는 목록 항목마다
+     * 이미 채워져 있고 검색도 로드된 목록 위에서 이뤄지므로 서버 재조회가 없다. 기수를
+     * 고르면 그 기수가 볼 수 있는 자료(전체 공개 + 해당 기수 한정)를 보여준다.
      */
     val visibleResources: List<ResourceFile> get() {
         val cohortId = selectedCohortId
-        return if (cohortId == null) resources
-        else resources.filter {
-            it.visibility == ResourceVisibility.ALL_MEMBERS || cohortId in it.cohortIds
+        val q = query.trim()
+        return resources.filter { r ->
+            (cohortId == null || r.visibility == ResourceVisibility.ALL_MEMBERS || cohortId in r.cohortIds) &&
+                (q.isEmpty() || r.title.contains(q, ignoreCase = true) || r.fileName.contains(q, ignoreCase = true))
         }
     }
 
-    /** 폴더/기수 필터가 하나라도 걸려 있으면 카운트/빈 상태를 필터 결과 기준으로 판단한다. */
-    val isFiltered: Boolean get() = folder != null || selectedCohortId != null
+    /** 폴더/기수/검색 필터가 하나라도 걸려 있으면 카운트/빈 상태를 필터 결과 기준으로 판단한다. */
+    val isFiltered: Boolean get() = folder != null || selectedCohortId != null || query.isNotBlank()
 
     /**
      * 자료실 자체가 비어있음(신규 동아리) — 폴더 필터로 인한 빈 목록과 구분한다.
@@ -89,5 +91,11 @@ class ArchiveViewModel(
     fun onSelectCohort(cohortId: Long?) {
         if (currentState.selectedCohortId == cohortId) return
         setState { copy(selectedCohortId = cohortId) }
+    }
+
+    /** 검색어 변경 — 로드된 목록 위에서 제목/파일명으로 거른다(서버 재조회 없음). */
+    fun onQueryChange(query: String) {
+        if (currentState.query == query) return
+        setState { copy(query = query) }
     }
 }

@@ -344,6 +344,8 @@ object DamoimStrings {
     fun archiveStorageTotal(total: String) = " / $total"
     const val ARCHIVE_FILTER_ALL = "전체"
     const val ARCHIVE_COHORT_ALL = "전체 기수"
+    const val ARCHIVE_SEARCH_PLACEHOLDER = "자료 제목 검색"
+    const val ARCHIVE_SEARCH_EMPTY = "검색 결과가 없어요"
     const val ARCHIVE_FOLDER_DOCS = "회칙·문서"
     const val ARCHIVE_FOLDER_ACCOUNTING = "회계"
     const val ARCHIVE_FOLDER_PRESENTATION = "발표자료"

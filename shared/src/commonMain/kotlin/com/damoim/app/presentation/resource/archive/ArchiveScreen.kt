@@ -1,7 +1,10 @@
 package com.damoim.app.presentation.resource.archive
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,16 +22,21 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,8 +48,10 @@ import com.damoim.app.domain.model.ResourceFolder
 import com.damoim.app.domain.repository.StorageUsage
 import com.damoim.app.presentation.component.BackChevronIcon
 import com.damoim.app.presentation.component.BottomNavBar
+import com.damoim.app.presentation.component.CloseIcon
 import com.damoim.app.presentation.component.FolderIcon
 import com.damoim.app.presentation.component.MainTab
+import com.damoim.app.presentation.component.SearchIcon
 import com.damoim.app.presentation.component.UploadIcon
 import com.damoim.app.presentation.component.noRippleClick
 import com.damoim.app.presentation.resource.ArchiveFilterChip
@@ -71,6 +81,7 @@ fun ArchiveRoute(
         onBack = onBack,
         onSelectFolder = viewModel::onSelectFolder,
         onSelectCohort = viewModel::onSelectCohort,
+        onQueryChange = viewModel::onQueryChange,
         onOpenResource = onOpenResource,
         onUpload = onUpload,
         onTabSelect = onTabSelect,
@@ -83,14 +94,15 @@ fun ArchiveScreen(
     onBack: () -> Unit = {},
     onSelectFolder: (ResourceFolder?) -> Unit = {},
     onSelectCohort: (Long?) -> Unit = {},
+    onQueryChange: (String) -> Unit = {},
     onOpenResource: (Long) -> Unit = {},
     onUpload: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     Column(modifier = Modifier.fillMaxSize().background(colors.surfaceInput)) {
-        // 헤더(뒤로가기·제목·저장공간·폴더칩·기수칩)는 고정, 아래 목록만 스크롤한다
-        ArchiveHeader(state, onBack, onSelectFolder, onSelectCohort)
+        // 헤더(뒤로가기·제목·저장공간·검색·폴더칩·기수칩)는 고정, 아래 목록만 스크롤한다
+        ArchiveHeader(state, onBack, onSelectFolder, onSelectCohort, onQueryChange)
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 when {
@@ -112,6 +124,7 @@ private fun ArchiveHeader(
     onBack: () -> Unit,
     onSelectFolder: (ResourceFolder?) -> Unit,
     onSelectCohort: (Long?) -> Unit,
+    onQueryChange: (String) -> Unit,
 ) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().background(colors.surface)) {
@@ -128,6 +141,7 @@ private fun ArchiveHeader(
             Text(DamoimStrings.ARCHIVE_TITLE, style = DamoimTheme.typography.titleMedium, color = colors.textPrimary, modifier = Modifier.weight(1f))
         }
         StorageBar(state.storage, Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 12.dp))
+        ArchiveSearchField(state.query, onQueryChange, Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp))
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
                 .padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = if (state.cohorts.isEmpty()) 14.dp else 8.dp),
@@ -155,6 +169,42 @@ private fun ArchiveHeader(
     }
 }
 
+/** 자료 제목/파일명 검색 입력창. 게시판 검색 바(85)와 동일한 시각 패턴. */
+@Composable
+private fun ArchiveSearchField(query: String, onQueryChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    val colors = DamoimTheme.colors
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    Row(
+        modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(colors.surfaceVariant)
+            .then(if (focused) Modifier.border(1.5.dp, colors.primary, RoundedCornerShape(14.dp)) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        SearchIcon(colors.textMuted, Modifier.size(17.dp))
+        Box(Modifier.weight(1f)) {
+            if (query.isEmpty()) {
+                Text(DamoimStrings.ARCHIVE_SEARCH_PLACEHOLDER, style = DamoimTheme.typography.body, color = colors.textDisabled)
+            }
+            BasicTextField(
+                value = query, onValueChange = onQueryChange, singleLine = true,
+                textStyle = DamoimTheme.typography.body.copy(color = colors.textPrimary, fontWeight = FontWeight.Bold),
+                cursorBrush = SolidColor(colors.primary),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                interactionSource = interaction,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (query.isNotEmpty()) {
+            Box(
+                Modifier.size(18.dp).clip(CircleShape).background(colors.outline).noRippleClick { onQueryChange("") },
+                contentAlignment = Alignment.Center,
+            ) { CloseIcon(colors.surface, Modifier.size(10.dp)) }
+        }
+    }
+}
+
 @Composable
 private fun ArchiveList(state: ArchiveUiState, onOpenResource: (Long) -> Unit) {
     val colors = DamoimTheme.colors
@@ -176,7 +226,7 @@ private fun ArchiveList(state: ArchiveUiState, onOpenResource: (Long) -> Unit) {
         )
         if (state.isFolderEmpty) {
             Text(
-                DamoimStrings.ARCHIVE_FOLDER_EMPTY,
+                if (state.query.isNotBlank()) DamoimStrings.ARCHIVE_SEARCH_EMPTY else DamoimStrings.ARCHIVE_FOLDER_EMPTY,
                 style = DamoimTheme.typography.bodySmall.copy(fontWeight = FontWeight.Normal),
                 color = colors.textDisabled,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
