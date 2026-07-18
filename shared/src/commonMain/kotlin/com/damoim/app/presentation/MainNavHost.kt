@@ -185,6 +185,9 @@ fun MainNavHost(
                 },
                 onOpenSchedule = { navigate(MainDestination.EventDetail(it)) },
                 onOpenPost = { navigate(MainDestination.PostDetail(it)) },
+                onSwitched = { resetTo(MainDestination.Home) },        // 46 동아리 전환 → 새 동아리 홈
+                onJoinClub = onJoinClub,
+                onAddClub = onAddClub,
                 onTabSelect = { tab -> onTab(tab) },
             )
 

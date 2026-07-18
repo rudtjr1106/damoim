@@ -28,7 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.damoim.app.core.di.AppGraph
+import com.damoim.app.presentation.club.ClubSwitchOverlay
 import com.damoim.app.domain.model.AlertKind
 import com.damoim.app.domain.model.BoardCategory
 import com.damoim.app.domain.model.BoardPreview
@@ -54,6 +57,7 @@ import com.damoim.app.presentation.component.BellIcon
 import com.damoim.app.presentation.component.BoardIcon
 import com.damoim.app.presentation.component.BottomNavBar
 import com.damoim.app.presentation.component.CalendarIcon
+import com.damoim.app.presentation.component.ChevronDownIcon
 import com.damoim.app.presentation.component.CrownIcon
 import com.damoim.app.presentation.component.FolderIcon
 import com.damoim.app.presentation.component.LockIcon
@@ -81,6 +85,9 @@ fun HomeRoute(
     onComingSoon: (String) -> Unit = {},
     onOpenSchedule: (Long) -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
+    onSwitched: () -> Unit = {},
+    onJoinClub: () -> Unit = {},
+    onAddClub: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -103,6 +110,9 @@ fun HomeRoute(
                 else -> onComingSoon(label)
             }
         },
+        onSwitched = onSwitched,
+        onJoinClub = onJoinClub,
+        onAddClub = onAddClub,
         onTabSelect = onTabSelect,
     )
 }
@@ -118,36 +128,50 @@ fun HomeScreen(
     onQuickAction: (String) -> Unit = {},
     onOpenSchedule: (Long) -> Unit = {},
     onOpenPost: (Long) -> Unit = {},
+    onSwitched: () -> Unit = {},
+    onJoinClub: () -> Unit = {},
+    onAddClub: () -> Unit = {},
     onTabSelect: (MainTab) -> Unit = {},
 ) {
     val colors = DamoimTheme.colors
     val summary = state.summary
-    Column(modifier = Modifier.fillMaxSize().background(colors.surface)) {
-        Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-        ) {
-            if (summary != null) {
-                HomeHeader(summary, onBellClick)
-                Column(modifier = Modifier.offset(y = (-36).dp)) {
-                    // 알림 카드는 있을 때만(예: 신청 0건이면 숨김)
-                    summary.alert?.let { AlertCard(it, onAlertClick) }
-                    QuickActions(summary.role, onQuickAction)
-                    if (summary.schedules.isNotEmpty()) {
-                        ScheduleSection(summary.schedules, onOpenSchedule)
+    var showSwitch by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().background(colors.surface)) {
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            ) {
+                if (summary != null) {
+                    HomeHeader(summary, onBellClick, onClubNameClick = { showSwitch = true })
+                    Column(modifier = Modifier.offset(y = (-36).dp)) {
+                        // 알림 카드는 있을 때만(예: 신청 0건이면 숨김)
+                        summary.alert?.let { AlertCard(it, onAlertClick) }
+                        QuickActions(summary.role, onQuickAction)
+                        if (summary.schedules.isNotEmpty()) {
+                            ScheduleSection(summary.schedules, onOpenSchedule)
+                        }
+                        if (summary.boardPreviews.isNotEmpty()) {
+                            BoardSection(summary.boardPreviews, onOpenPost)
+                        }
+                        Spacer(Modifier.height(8.dp))
                     }
-                    if (summary.boardPreviews.isNotEmpty()) {
-                        BoardSection(summary.boardPreviews, onOpenPost)
-                    }
-                    Spacer(Modifier.height(8.dp))
                 }
             }
+            BottomNavBar(selected = MainTab.HOME, onSelect = onTabSelect)
         }
-        BottomNavBar(selected = MainTab.HOME, onSelect = onTabSelect)
+        // 46 동아리 전환 — 동아리명 탭 시 공유 시트(설정 42와 동일).
+        ClubSwitchOverlay(
+            visible = showSwitch,
+            onDismiss = { showSwitch = false },
+            onSwitched = onSwitched,
+            onJoin = onJoinClub,
+            onCreate = onAddClub,
+        )
     }
 }
 
 @Composable
-private fun HomeHeader(summary: HomeSummary, onBellClick: () -> Unit) {
+private fun HomeHeader(summary: HomeSummary, onBellClick: () -> Unit, onClubNameClick: () -> Unit) {
     val colors = DamoimTheme.colors
     val onP = colors.onPrimary
     Column(
@@ -176,7 +200,15 @@ private fun HomeHeader(summary: HomeSummary, onBellClick: () -> Unit) {
                     Text(DamoimStrings.homeGreeting(summary.memberName), style = DamoimTheme.typography.bodySmall, color = onP.copy(alpha = 0.75f))
                 }
                 Spacer(Modifier.height(4.dp))
-                Text(summary.clubName, style = DamoimTheme.typography.titleLarge.copy(fontSize = 22.sp), color = onP)
+                // 46 동아리명 탭 → 전환 시트. 아래 화살표로 전환 가능함을 표시.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClubNameClick),
+                ) {
+                    Text(summary.clubName, style = DamoimTheme.typography.titleLarge.copy(fontSize = 22.sp), color = onP, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    Spacer(Modifier.width(6.dp))
+                    ChevronDownIcon(tint = onP, modifier = Modifier.size(18.dp))
+                }
             }
             // 알림 벨
             Box(
