@@ -33,6 +33,8 @@ data class ResourceDetailUiState(
 
 sealed interface ResourceDetailSideEffect : UiSideEffect {
     data class Toast(val message: String) : ResourceDetailSideEffect
+    /** presigned 다운로드 URL을 화면 레이어에서 실제로 열어 파일을 내려받는다. */
+    data class OpenDownload(val url: String) : ResourceDetailSideEffect
     data object Deleted : ResourceDetailSideEffect
 }
 
@@ -64,8 +66,8 @@ class ResourceDetailViewModel(
     }
 
     fun onDownload() = viewModelScope.launch {
-        handleResult(resourceAction.download(resourceId), onSuccess = {
-            sendEffect(ResourceDetailSideEffect.Toast(DamoimStrings.TOAST_FILE_DOWNLOADED))
+        handleResult(resourceAction.download(resourceId), onSuccess = { url ->
+            sendEffect(ResourceDetailSideEffect.OpenDownload(url))
         })
     }
 

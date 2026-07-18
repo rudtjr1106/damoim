@@ -80,10 +80,17 @@ fun ResourceDetailRoute(
     onToast: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     LaunchedEffect(viewModel) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {
                 is ResourceDetailSideEffect.Toast -> onToast(effect.message)
+                is ResourceDetailSideEffect.OpenDownload -> {
+                    // presigned URL을 열면 서버가 attachment(Content-Disposition)로 내려줘 실제 다운로드된다.
+                    runCatching { uriHandler.openUri(effect.url) }
+                        .onSuccess { onToast(DamoimStrings.TOAST_FILE_DOWNLOADED) }
+                        .onFailure { onToast(DamoimStrings.TOAST_FILE_DOWNLOAD_FAILED) }
+                }
                 ResourceDetailSideEffect.Deleted -> {
                     onBack()
                     onToast(DamoimStrings.TOAST_RESOURCE_DELETED)

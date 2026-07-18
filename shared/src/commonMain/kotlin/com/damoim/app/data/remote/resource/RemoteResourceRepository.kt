@@ -117,10 +117,10 @@ class RemoteResourceRepository(private val api: ApiClient) : ResourceRepository 
     override suspend fun deleteResource(resourceId: Long): DataResult<Unit> =
         api.deleteUnit(ApiRoutes.Resources.detail(resourceId)).also { RemoteBus.invalidate(DataTopic.RESOURCE) }
 
-    override suspend fun incrementDownload(resourceId: Long): DataResult<Unit> {
-        // 전용 증가 엔드포인트가 없어 download-url 호출(서버가 카운트 증가) 후 URL은 폐기.
+    override suspend fun getDownloadUrl(resourceId: Long): DataResult<String> {
+        // download-url 호출로 presigned URL을 받고(서버가 다운로드 카운트도 증가) URL을 그대로 돌려준다.
         val result = api.getData<DownloadUrlResponseDto>(ApiRoutes.Resources.downloadUrl(resourceId))
         RemoteBus.invalidate(DataTopic.RESOURCE)
-        return result.map { }
+        return result.map { it.downloadUrl }
     }
 }

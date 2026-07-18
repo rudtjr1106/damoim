@@ -314,6 +314,7 @@ object DamoimStrings {
     const val TOAST_POST_LINK_COPIED = "링크가 복사되었어요"
     const val TOAST_REPORTED = "신고가 접수되었어요"
     const val TOAST_FILE_DOWNLOADED = "파일을 다운로드했어요"
+    const val TOAST_FILE_DOWNLOAD_FAILED = "다운로드를 열 수 없어요"
     const val TOAST_POST_DELETED = "게시글을 삭제했어요"
     const val TOAST_POST_PINNED = "게시글을 상단에 고정했어요"
     const val TOAST_POST_UNPINNED = "상단 고정을 해제했어요"

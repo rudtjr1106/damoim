@@ -14,7 +14,8 @@ interface ResourceRepository {
 
     suspend fun uploadResource(draft: ResourceDraft): DataResult<Long>
     suspend fun deleteResource(resourceId: Long): DataResult<Unit>
-    suspend fun incrementDownload(resourceId: Long): DataResult<Unit>
+    /** 실제 다운로드용 presigned URL 조회(서버가 다운로드 카운트도 증가). */
+    suspend fun getDownloadUrl(resourceId: Long): DataResult<String>
 }
 
 /** 67 저장공간 바. [usedBytes]는 실제 파일 크기 합계. */
