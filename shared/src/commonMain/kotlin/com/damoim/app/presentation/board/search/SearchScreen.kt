@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -64,6 +65,9 @@ fun SearchRoute(
     onComingSoon: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    // 검색 화면은 세션 내내 살아있는 앱-전역 ViewModelStore에 남아 재진입 시 이전 검색어가
+    // 그대로 뜬다 → 진입할 때마다 입력창/결과를 초기화(최근 검색어는 별도 flow라 유지).
+    LaunchedEffect(Unit) { viewModel.onClear() }
     SearchScreen(
         state = state,
         onBack = onBack,
