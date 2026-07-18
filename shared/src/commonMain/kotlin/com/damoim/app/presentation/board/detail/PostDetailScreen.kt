@@ -610,9 +610,23 @@ private fun ReactionRow(post: BoardPost, onToggleLike: () -> Unit) {
 @Composable
 private fun CommentsSection(comments: List<Comment>, commentCount: Int, onReply: (Comment) -> Unit, onCommentLongPress: (Comment) -> Unit) {
     val colors = DamoimTheme.colors
+    // 답글을 부모 댓글 바로 아래로 묶어 정렬한다. 서버가 시간순 flat 리스트를 주면 특정 댓글에
+    // 단 답글이 목록 맨 끝에 붙어 보여, 답글 타겟이 잘못된 것처럼 느껴지던 문제를 해결한다.
+    val ordered = remember(comments) {
+        val repliesByParent = comments.filter { it.isReply }.groupBy { it.parentId }
+        val consumed = mutableSetOf<Long>()
+        buildList {
+            comments.filter { !it.isReply }.forEach { root ->
+                add(root)
+                repliesByParent[root.id]?.forEach { reply -> add(reply); consumed.add(reply.id) }
+            }
+            // 부모가 사라진(삭제 등) 답글은 유실 없이 맨 뒤에 유지
+            comments.filter { it.isReply && it.id !in consumed }.forEach { add(it) }
+        }
+    }
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(DamoimStrings.commentSectionHeader(commentCount), style = DamoimTheme.typography.bodyStrong.copy(fontWeight = FontWeight.ExtraBold), color = colors.textPrimary)
-        comments.forEach { CommentItem(it, onReply = { onReply(it) }, onLongPress = { onCommentLongPress(it) }) }
+        ordered.forEach { CommentItem(it, onReply = { onReply(it) }, onLongPress = { onCommentLongPress(it) }) }
     }
 }
 
