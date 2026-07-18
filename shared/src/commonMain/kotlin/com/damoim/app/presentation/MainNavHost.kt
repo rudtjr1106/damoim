@@ -33,6 +33,7 @@ import com.damoim.app.presentation.member.detail.MemberDetailRoute
 import com.damoim.app.presentation.member.list.MemberListRoute
 import com.damoim.app.presentation.member.manage.MemberManageRoute
 import com.damoim.app.presentation.notification.NotificationRoute
+import com.damoim.app.presentation.profile.clubprofile.ClubProfileEditRoute
 import com.damoim.app.presentation.profile.edit.ProfileEditRoute
 import com.damoim.app.presentation.profile.myprofile.MyProfileRoute
 import com.damoim.app.presentation.resource.archive.ArchiveRoute
@@ -75,6 +76,7 @@ private sealed interface MainDestination {
     data object CohortManage : MainDestination                         // 19
     data object MyProfile : MainDestination                            // 20
     data object ProfileEdit : MainDestination                          // 45
+    data object ClubProfileEdit : MainDestination                      // 44 동아리별 프로필
     // F 일정·이벤트
     data object ScheduleHome : MainDestination                         // 21/22 (일정 탭 루트)
     data class ScheduleRegister(val editId: Long? = null) : MainDestination // 23 (+46/51 오버레이)
@@ -271,6 +273,7 @@ fun MainNavHost(
             MainDestination.MyProfile -> MyProfileRoute(
                 onBack = { back() },
                 onEditProfile = { navigate(MainDestination.ProfileEdit) },
+                onEditClubProfile = { navigate(MainDestination.ClubProfileEdit) },   // 44 동아리별 프로필
                 onLoggedOut = onLoggedOut,                             // 로그아웃 → 로그인
                 onWithdrewToClub = { resetTo(MainDestination.Home) },  // 탈퇴 후 잔존 → 새 동아리 홈
                 onWithdrewToOnboarding = onWithdrewToOnboarding,       // 탈퇴 후 없음 → 온보딩
@@ -284,6 +287,11 @@ fun MainNavHost(
                     back()
                     toast = DamoimStrings.TOAST_PROFILE_UPDATED
                 },
+            )
+
+            MainDestination.ClubProfileEdit -> ClubProfileEditRoute(
+                onBack = { back() },
+                onToast = { toast = it },
             )
 
             MainDestination.ScheduleHome -> ScheduleHomeRoute(
@@ -436,6 +444,7 @@ private fun topicsFor(d: MainDestination): Set<DataTopic> = when (d) {
     MainDestination.CohortManage -> setOf(DataTopic.CLUB, DataTopic.MEMBER)
     MainDestination.MyProfile -> setOf(DataTopic.CLUB, DataTopic.MEMBER)
     MainDestination.ProfileEdit -> emptySet()
+    MainDestination.ClubProfileEdit -> setOf(DataTopic.MEMBER)
     MainDestination.ScheduleHome -> setOf(DataTopic.SCHEDULE)
     is MainDestination.ScheduleRegister -> emptySet()
     is MainDestination.EventDetail -> setOf(DataTopic.SCHEDULE)

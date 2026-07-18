@@ -81,6 +81,9 @@ interface ClubRepository {
     /** 내 명부 정보 (20 내 프로필의 기수·역할 뱃지). */
     fun observeMyMember(): Flow<Member?>
 
+    /** 44 동아리별 프로필 수정 — 표시 이름 오버라이드(빈값=해제). 명부·게시글 작성자 등에 반영. */
+    suspend fun updateMyClubProfile(displayName: String): DataResult<Member>
+
     /** 내가 속한 동아리들 (33 동아리 전환). */
     fun observeJoinedClubs(): Flow<List<ClubMembership>>
 

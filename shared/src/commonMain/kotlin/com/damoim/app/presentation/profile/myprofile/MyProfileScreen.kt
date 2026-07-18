@@ -45,6 +45,7 @@ import com.damoim.app.presentation.board.InitialAvatar
 import com.damoim.app.presentation.component.NetworkAvatar
 import com.damoim.app.presentation.component.BackChevronIcon
 import com.damoim.app.presentation.component.BellIcon
+import com.damoim.app.presentation.component.UserSingleIcon
 import com.damoim.app.presentation.component.CameraIcon
 import com.damoim.app.presentation.component.ChevronRightIcon
 import com.damoim.app.presentation.component.DoorExitIcon
@@ -72,6 +73,7 @@ fun MyProfileRoute(
     },
     onBack: () -> Unit = {},
     onEditProfile: () -> Unit = {},
+    onEditClubProfile: () -> Unit = {},        // 44 동아리별 프로필
     onLoggedOut: () -> Unit = {},              // 로그아웃 → 로그인
     onWithdrewToClub: () -> Unit = {},         // 탈퇴 후 잔존 → 새 동아리 홈
     onWithdrewToOnboarding: () -> Unit = {},   // 탈퇴 후 없음 → 온보딩(재로그인 X)
@@ -93,6 +95,7 @@ fun MyProfileRoute(
         state = state,
         onBack = onBack,
         onEditProfile = onEditProfile,
+        onEditClubProfile = onEditClubProfile,
         onLogout = viewModel::onLogout,
         onWithdraw = viewModel::onWithdraw,
         onOpenNotification = onOpenNotification,
@@ -104,6 +107,7 @@ fun MyProfileScreen(
     state: MyProfileUiState = MyProfileUiState("이서연", "서연", "24기", "2024학년 1기 (24기)", MemberRole.MEMBER, "2024.09.15", "코딩하는 사람들"),
     onBack: () -> Unit = {},
     onEditProfile: () -> Unit = {},
+    onEditClubProfile: () -> Unit = {},
     onLogout: () -> Unit = {},
     onWithdraw: () -> Unit = {},
     onOpenNotification: () -> Unit = {},
@@ -123,7 +127,7 @@ fun MyProfileScreen(
                 Hero(state, onEditProfile)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     InfoCard(state)
-                    ActionCard(state, onEditProfile, onNotification = onOpenNotification)
+                    ActionCard(state, onEditProfile, onClubProfile = onEditClubProfile, onNotification = onOpenNotification)
                     DangerCard(onLogout = { overlay = ProfileOverlay.Logout }, onLeave = { overlay = ProfileOverlay.Leave })
                     Text(DamoimStrings.APP_VERSION, style = DamoimTheme.typography.label, color = colors.outlineStrong, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
@@ -196,12 +200,20 @@ private fun LinkedRow() {
 }
 
 @Composable
-private fun ActionCard(state: MyProfileUiState, onEdit: () -> Unit, onNotification: () -> Unit) {
+private fun ActionCard(state: MyProfileUiState, onEdit: () -> Unit, onClubProfile: () -> Unit, onNotification: () -> Unit) {
     val colors = DamoimTheme.colors
     Column(Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(18.dp)).clip(RoundedCornerShape(18.dp)).background(colors.surface).padding(horizontal = 18.dp, vertical = 6.dp)) {
         Row(Modifier.fillMaxWidth().noRippleClick(onEdit).padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             EditIcon(colors.textSecondary, Modifier.size(18.dp))
             Text(DamoimStrings.PROFILE_ROW_EDIT, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
+            ChevronRightIcon(colors.outlineStrong, Modifier.size(16.dp))
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))
+        // 44 동아리별 프로필(현재 동아리 표시 이름) — 전역 프로필 수정과 별개.
+        Row(Modifier.fillMaxWidth().noRippleClick(onClubProfile).padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            UserSingleIcon(colors.textSecondary, Modifier.size(18.dp))
+            Text(DamoimStrings.PROFILE_ROW_CLUB_PROFILE, style = DamoimTheme.typography.body.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp), color = colors.textPrimary, modifier = Modifier.weight(1f))
+            Text(state.name, style = DamoimTheme.typography.caption, color = colors.textMuted)
             ChevronRightIcon(colors.outlineStrong, Modifier.size(16.dp))
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.surfaceDim))

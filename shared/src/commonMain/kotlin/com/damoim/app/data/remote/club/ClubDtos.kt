@@ -79,6 +79,10 @@ data class ClubImageUploadResponseDto(val uploadUrl: String, val storageKey: Str
 @Serializable
 data class UpdateClubRequestDto(val name: String? = null, val intro: String? = null, val imageKey: String? = null)
 
+/** 44 동아리별 프로필 수정 — 표시 이름 오버라이드(null/빈값=해제). */
+@Serializable
+data class UpdateClubProfileRequestDto(val displayName: String? = null)
+
 @Serializable
 data class CohortResponseDto(val id: Long, val label: String, val short: String, val memberCount: Int = 0)
 

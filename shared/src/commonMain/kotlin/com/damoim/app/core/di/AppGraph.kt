@@ -71,6 +71,7 @@ import com.damoim.app.domain.usecase.SearchBoardUseCase
 import com.damoim.app.domain.usecase.SubmitJoinCodeUseCase
 import com.damoim.app.domain.usecase.SubmitPostUseCase
 import com.damoim.app.domain.usecase.UpdateProfileUseCase
+import com.damoim.app.domain.usecase.UpdateClubProfileUseCase
 import com.damoim.app.domain.usecase.UpdateClubUseCase
 import com.damoim.app.domain.usecase.UploadClubImageUseCase
 import com.damoim.app.domain.usecase.UploadProfileImageUseCase
@@ -125,6 +126,7 @@ object AppGraph {
     val getMembersUseCase get() = GetMembersUseCase(clubRepository)
     val getMemberDetailUseCase get() = GetMemberDetailUseCase(clubRepository)
     val getMyMemberUseCase get() = GetMyMemberUseCase(clubRepository)
+    val updateClubProfileUseCase get() = UpdateClubProfileUseCase(clubRepository)
     val getJoinedClubsUseCase get() = GetJoinedClubsUseCase(clubRepository)
     val memberActionUseCase get() = MemberActionUseCase(clubRepository)
     val cohortActionUseCase get() = CohortActionUseCase(clubRepository)

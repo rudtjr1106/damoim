@@ -123,6 +123,12 @@ class RemoteClubRepository(private val api: ApiClient) : ClubRepository {
             // 이름/이미지가 홈·설정·전환 시트에 반영되므로 CLUB 무효화(observeClub 즉시 재조회).
             .also { RemoteBus.invalidate(DataTopic.CLUB) }
 
+    override suspend fun updateMyClubProfile(displayName: String): DataResult<Member> =
+        api.patchData<MemberResponseDto>(ApiRoutes.Members.ME, UpdateClubProfileRequestDto(displayName.ifBlank { null }))
+            .map { it.toDomain() }
+            // 동아리별 이름이 명부·홈·게시글 작성자·일정 호스트·자료 업로더에 반영되므로 폭넓게 무효화.
+            .also { RemoteBus.invalidate(DataTopic.MEMBER, DataTopic.CLUB, DataTopic.BOARD, DataTopic.SCHEDULE, DataTopic.RESOURCE) }
+
     override suspend fun regenerateJoinCode(): DataResult<String> =
         api.postData<JoinCodeResponseDto>(ApiRoutes.Clubs.JOIN_CODE_REGENERATE)
             .map { it.joinCode ?: "" }
