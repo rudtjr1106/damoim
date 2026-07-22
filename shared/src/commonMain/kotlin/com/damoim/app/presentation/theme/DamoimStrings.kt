@@ -70,6 +70,7 @@ object DamoimStrings {
     fun homeGreeting(name: String) = "안녕하세요, ${name}님"
     const val HOME_SECTION_SCHEDULE = "다가오는 일정"
     const val HOME_SECTION_BOARD = "지금 게시판에선"
+    const val HOME_SECTION_RECRUIT = "지금 모집 중"
     const val HOME_SEE_ALL = "전체보기"
     // 하단 탭
     const val TAB_HOME = "홈"

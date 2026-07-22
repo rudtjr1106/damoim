@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,6 +48,7 @@ import com.damoim.app.presentation.club.ClubSwitchOverlay
 import com.damoim.app.presentation.component.PullRefreshColumn
 import com.damoim.app.domain.model.AlertKind
 import com.damoim.app.domain.model.BoardCategory
+import com.damoim.app.domain.model.BoardPost
 import com.damoim.app.domain.model.BoardPreview
 import com.damoim.app.domain.model.ClubRole
 import com.damoim.app.domain.model.HomeAlert
@@ -75,7 +75,7 @@ import com.damoim.app.presentation.theme.DamoimTheme
 @Composable
 fun HomeRoute(
     role: ClubRole,
-    viewModel: HomeViewModel = viewModel(key = "home_${role.name}") { HomeViewModel(AppGraph.getHomeSummaryUseCase) },
+    viewModel: HomeViewModel = viewModel(key = "home_${role.name}") { HomeViewModel(AppGraph.getHomeSummaryUseCase, AppGraph.getBoardPostsUseCase) },
     onNavigateJoinManage: () -> Unit = {},
     onNavigateNotifications: () -> Unit = {},
     onOpenScheduleTab: () -> Unit = {},        // 일정 알림 터치 → 일정 탭
@@ -141,6 +141,9 @@ fun HomeScreen(
                         }
                         if (summary.boardPreviews.isNotEmpty()) {
                             BoardSection(summary.boardPreviews, onOpenPost)
+                        }
+                        if (state.recruits.isNotEmpty()) {
+                            RecruitSection(state.recruits, onOpenPost)
                         }
                         Spacer(Modifier.height(8.dp))
                     }
@@ -360,6 +363,58 @@ private fun BoardRow(preview: BoardPreview, onClick: () -> Unit = {}) {
     }
 }
 
+// 게시판 아래 '지금 모집 중' — 모집 게시판(13)의 진행 중(OPEN) 공고를 재활용해 정원 게이지로 요약.
+@Composable
+private fun RecruitSection(recruits: List<BoardPost>, onOpenPost: (Long) -> Unit) {
+    SectionHeader(DamoimStrings.HOME_SECTION_RECRUIT, Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp))
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        recruits.forEach { post -> HomeRecruitCard(post) { onOpenPost(post.id) } }
+    }
+}
+
+@Composable
+private fun HomeRecruitCard(post: BoardPost, onClick: () -> Unit) {
+    val colors = DamoimTheme.colors
+    val recruit = post.recruit
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp)).background(colors.surface)
+            .border(1.dp, colors.divider, RoundedCornerShape(16.dp))
+            .noRippleClick(onClick)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(11.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                DamoimStrings.RECRUIT_OPEN,
+                style = DamoimTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                color = colors.onPrimary,
+                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(colors.primary).padding(horizontal = 9.dp, vertical = 4.dp),
+            )
+            if (recruit?.dday != null) {
+                Text(recruit.dday, style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.ExtraBold), color = colors.primaryDark)
+            }
+            Spacer(Modifier.weight(1f))
+            if (recruit != null && recruit.remaining > 0) {
+                Text(DamoimStrings.recruitRemaining(recruit.remaining), style = DamoimTheme.typography.label.copy(fontWeight = FontWeight.Bold), color = colors.primary)
+            }
+        }
+        Text(post.title, style = DamoimTheme.typography.bodyStrong, color = colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (recruit != null) {
+            val fraction = if (recruit.capacity == 0) 0f else (recruit.current.toFloat() / recruit.capacity).coerceIn(0f, 1f)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(99.dp)).background(colors.surfaceDim)) {
+                    Box(Modifier.fillMaxWidth(fraction).height(6.dp).clip(RoundedCornerShape(99.dp)).background(colors.primary))
+                }
+                Text(DamoimStrings.recruitProgress(recruit.current, recruit.capacity), style = DamoimTheme.typography.caption.copy(fontWeight = FontWeight.Bold), color = colors.textTertiary)
+            }
+        }
+    }
+}
+
 @Composable
 private fun SectionHeader(title: String, modifier: Modifier = Modifier) {
     Text(title, style = DamoimTheme.typography.titleMedium, color = DamoimTheme.colors.textPrimary, modifier = modifier.fillMaxWidth())
@@ -394,14 +449,20 @@ internal fun previewSummary(role: ClubRole) = HomeSummary(
     hasUnreadNotification = role == ClubRole.LEADER,
 )
 
+/** 프리뷰/검증용 샘플 모집 글(OPEN). */
+internal fun previewRecruits(): List<BoardPost> = listOf(
+    BoardPost(301, BoardCategory.RECRUIT, "2025 하반기 신입 부원 모집", authorName = "김민준", authorInitials = "민준", timeLabel = "2시간 전", recruit = com.damoim.app.domain.model.RecruitInfo(com.damoim.app.domain.model.RecruitStatus.OPEN, "D-7", current = 12, capacity = 20)),
+    BoardPost(304, BoardCategory.RECRUIT, "사이드 프로젝트 팀원 모집", authorName = "정하늘", authorInitials = "하늘", timeLabel = "어제", recruit = com.damoim.app.domain.model.RecruitInfo(com.damoim.app.domain.model.RecruitStatus.OPEN, "D-3", current = 4, capacity = 6)),
+)
+
 @Preview
 @Composable
 private fun HomeScreenLeaderPreview() {
-    DamoimTheme { HomeScreen(state = HomeUiState(isLoading = false, summary = previewSummary(ClubRole.LEADER))) }
+    DamoimTheme { HomeScreen(state = HomeUiState(isLoading = false, summary = previewSummary(ClubRole.LEADER), recruits = previewRecruits())) }
 }
 
 @Preview
 @Composable
 private fun HomeScreenMemberPreview() {
-    DamoimTheme { HomeScreen(state = HomeUiState(isLoading = false, summary = previewSummary(ClubRole.MEMBER))) }
+    DamoimTheme { HomeScreen(state = HomeUiState(isLoading = false, summary = previewSummary(ClubRole.MEMBER), recruits = previewRecruits())) }
 }
