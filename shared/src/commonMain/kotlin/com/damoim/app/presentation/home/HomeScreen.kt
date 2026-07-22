@@ -133,8 +133,9 @@ fun HomeScreen(
                 if (summary != null) {
                     HomeHeader(summary, onBellClick, onClubNameClick = { showSwitch = true })
                     Column(modifier = Modifier.offset(y = (-36).dp)) {
-                        // 알림 카드는 있을 때만(예: 신청 0건이면 숨김)
-                        summary.alert?.let { AlertCard(it, onAlertClick) }
+                        // 알림 카드는 있을 때만(예: 신청 0건이면 숨김). 없으면 -36 오프셋이
+                        // 다음 콘텐츠를 헤더로 끌어올려 침범하므로, 같은 높이 여백으로 막는다.
+                        summary.alert?.let { AlertCard(it, onAlertClick) } ?: Spacer(Modifier.height(36.dp))
                         if (summary.schedules.isNotEmpty()) {
                             ScheduleSection(summary.schedules, onOpenSchedule)
                         }
