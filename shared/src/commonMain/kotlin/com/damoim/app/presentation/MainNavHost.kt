@@ -38,6 +38,7 @@ import com.damoim.app.presentation.profile.edit.ProfileEditRoute
 import com.damoim.app.presentation.profile.myprofile.MyProfileRoute
 import com.damoim.app.presentation.resource.archive.ArchiveRoute
 import com.damoim.app.presentation.resource.detail.ResourceDetailRoute
+import com.damoim.app.presentation.resource.search.ResourceSearchRoute
 import com.damoim.app.presentation.resource.upload.ResourceUploadRoute
 import com.damoim.app.presentation.schedule.applicants.ApplicantsRoute
 import com.damoim.app.presentation.schedule.detail.EventDetailRoute
@@ -69,6 +70,7 @@ private sealed interface MainDestination {
     data object Archive : MainDestination                              // 67
     data class ResourceDetail(val resourceId: Long) : MainDestination  // 68
     data object ResourceUpload : MainDestination                       // 69
+    data object ResourceSearch : MainDestination                       // 자료실 검색(게시판 85/40/76 대칭)
     // E 회원·기수 관리
     data object MemberManage : MainDestination                         // 16 (회원 탭 루트)
     data class MemberList(val cohortId: Long? = null) : MainDestination // 17/77
@@ -224,9 +226,15 @@ fun MainNavHost(
             MainDestination.Archive -> ArchiveRoute(
                 // 자료실이 탭 루트가 됐으므로(43) 백스택이 비면 뒤로가기=홈, 푸시됐으면 pop.
                 onBack = { if (backStack.size > 1) back() else resetTo(MainDestination.Home) },
+                onSearch = { navigate(MainDestination.ResourceSearch) },
                 onOpenResource = { id -> navigate(MainDestination.ResourceDetail(id)) },
                 onUpload = { navigate(MainDestination.ResourceUpload) },
                 onTabSelect = { tab -> onTab(tab) },
+            )
+
+            MainDestination.ResourceSearch -> ResourceSearchRoute(
+                onBack = { back() },
+                onOpenResource = { id -> navigate(MainDestination.ResourceDetail(id)) },
             )
 
             is MainDestination.ResourceDetail -> ResourceDetailRoute(
@@ -438,6 +446,7 @@ private fun topicsFor(d: MainDestination): Set<DataTopic> = when (d) {
     MainDestination.Archive -> setOf(DataTopic.RESOURCE)
     is MainDestination.ResourceDetail -> setOf(DataTopic.RESOURCE)
     MainDestination.ResourceUpload -> emptySet()
+    MainDestination.ResourceSearch -> setOf(DataTopic.RESOURCE)
     MainDestination.MemberManage -> setOf(DataTopic.MEMBER, DataTopic.CLUB)
     is MainDestination.MemberList -> setOf(DataTopic.MEMBER, DataTopic.CLUB)
     is MainDestination.MemberDetail -> setOf(DataTopic.MEMBER)
